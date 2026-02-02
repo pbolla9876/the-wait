@@ -34,6 +34,7 @@
             position: absolute; bottom: 20vh; width: 60px; height: 100px;
             font-size: 50px; display: flex; align-items: center; 
             justify-content: center; transition: all 0.5s linear;
+            animation: bounce 1s infinite ease-in-out;
         }
 
         #timer-display {
@@ -57,6 +58,7 @@
         }
 
         @keyframes fall { to { transform: translateY(100vh); } }
+        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
 
         /* Music Widget */
         #music-box {
@@ -91,13 +93,14 @@
 
 <script>
     // CONFIGURATION
-    const START_DATE = new Date("2024-05-01T00:00:00").getTime(); // When you stopped talking
+    const START_DATE = new Date("2024-05-21T00:00:00").getTime(); // Set this to today's date
     const TARGET_DATE = new Date("2026-03-01T00:00:00-06:00").getTime(); // March 1st 12am CST
     
     // Songs list - Add your favorites here
     const songs = [
         { name: "First Day - The Moments", url: "https://open.spotify.com" },
-        { name: "Thinking of You", url: "https://youtube.com" }
+        { name: "Thinking of You", url: "https://youtube.com" },
+        { name: "Wait for Me", url: "https://spotify.com" }
     ];
 
     function updateApp() {
@@ -144,6 +147,7 @@
         if (progress >= 99.9) {
             charMe.innerHTML = "👩‍❤️‍👨"; // Change to hug emoji at the end
             charHer.style.display = "none";
+            charMe.style.animation = "none"; // Stop bouncing when hugging
         }
     }
 
@@ -160,7 +164,8 @@
     function createRain() {
         const weatherLayer = document.getElementById("weather-layer");
         // Simple logic: Change this to true if you want to force rain
-        const isRaining = false; 
+        // For demo purposes, we simulate a 30% chance of rain
+        const isRaining = Math.random() < 0.3; 
 
         if(isRaining) {
             for(let i=0; i<50; i++) {
@@ -174,11 +179,16 @@
     }
 
     function playSong() {
-        // Just opens a link for now
-        window.open(songs[0].url, '_blank');
+        // Select a song based on the current day (Daily Rotation)
+        const dayIndex = Math.floor(Date.now() / (1000 * 60 * 60 * 24));
+        const dailySong = songs[dayIndex % songs.length];
+        window.open(dailySong.url, '_blank');
     }
 
-    document.getElementById("song-name").innerText = songs[0].name;
+    // Initialize song name display
+    const initialDayIndex = Math.floor(Date.now() / (1000 * 60 * 60 * 24));
+    document.getElementById("song-name").innerText = songs[initialDayIndex % songs.length].name;
+    
     setInterval(updateApp, 1000);
     createRain();
     updateApp();
