@@ -45,17 +45,10 @@
         }
 
         /* --- SKELETAL WALKING ANIMATIONS --- */
-        @keyframes legSwing { 0%, 100% { transform: rotate(-18deg); } 50% { transform: rotate(22deg); } }
-        @keyframes armSwing { 0%, 100% { transform: rotate(25deg); } 50% { transform: rotate(-25deg); } }
         @keyframes bodyBob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-7px); } }
 
         .char-box { position: absolute; bottom: 18vh; width: 85px; height: 150px; transition: left 1s linear, opacity 1s; z-index: 5; }
         .walking-human { width: 100%; height: 100%; animation: bodyBob 0.65s infinite ease-in-out; }
-        .limb { fill: #fff; transform-origin: center top; }
-        .left-leg { animation: legSwing 0.65s infinite ease-in-out; }
-        .right-leg { animation: legSwing 0.65s infinite ease-in-out reverse; }
-        .left-arm { animation: armSwing 0.65s infinite ease-in-out; }
-        .right-arm { animation: armSwing 0.65s infinite ease-in-out reverse; }
 
         /* --- UI ELEMENTS --- */
         #ui { margin-top: 12vh; text-align: center; color: white; z-index: 10; }
@@ -89,20 +82,14 @@
     <div id="ground"></div>
 
     <div id="char-1" class="char-box">
-        <svg class="walking-human" viewBox="0 0 100 180">
-            <circle cx="50" cy="30" r="13" fill="#fff" /> <rect x="41" y="46" width="18" height="58" rx="9" fill="#fff" /> <rect class="limb left-arm" x="34" y="49" width="7" height="38" rx="4" />
-            <rect class="limb right-arm" x="59" y="49" width="7" height="38" rx="4" />
-            <rect class="limb left-leg" x="42" y="102" width="8" height="48" rx="4" />
-            <rect class="limb right-leg" x="50" y="102" width="8" height="48" rx="4" />
+        <svg class="walking-human" viewBox="0 0 40 60">
+            <path d="M19.5,0C16.5,0,14,2.5,14,5.5S16.5,11,19.5,11S25,8.5,25,5.5S22.5,0,19.5,0z M22.5,13h-6c-2.5,0-4.5,2-4.5,4.5v11 h4v-9h1l-3.5,17l-4,18h4.5l2.5-12l2,12h4.5l-2.5-15l2-10h2v9h4v-11C27,15,25,13,22.5,13z" fill="#fff"/>
         </svg>
     </div>
 
     <div id="char-2" class="char-box">
-        <svg class="walking-human" style="transform: scaleX(-1);" viewBox="0 0 100 180">
-            <circle cx="50" cy="30" r="13" fill="#fff" /> <path d="M36 108 L50 46 L64 108 Z" fill="#fff" /> <rect class="limb left-arm" x="34" y="49" width="6" height="32" rx="4" />
-            <rect class="limb right-arm" x="60" y="49" width="6" height="32" rx="4" />
-            <rect class="limb left-leg" x="42" y="106" width="7" height="42" rx="4" />
-            <rect class="limb right-leg" x="51" y="106" width="7" height="42" rx="4" />
+        <svg class="walking-human" style="transform: scaleX(-1);" viewBox="0 0 40 60">
+            <path d="M19.5,0C16.5,0,14,2.5,14,5.5S16.5,11,19.5,11S25,8.5,25,5.5S22.5,0,19.5,0z M21.5,13h-4c-2.5,0-4.5,2-4.5,4.5v6.5 l-2.5,10l-3,19h4.5l2-13l2.5,13h4.5l-1.5-16l2.5-10h1.5v9h4v-11C26,15,24,13,21.5,13z" fill="#fff"/>
         </svg>
     </div>
 
