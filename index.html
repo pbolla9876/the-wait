@@ -40,6 +40,22 @@
             transition: opacity 1.5s ease-out;
         }
 
+        /* Vignette & Atmosphere */
+        .vignette {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle, transparent 50%, rgba(0,0,0,0.4) 100%);
+            pointer-events: none; z-index: 90;
+        }
+        
+        #hearts { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; overflow: hidden; }
+        .heart {
+            position: absolute; bottom: -50px; width: 20px; height: 20px;
+            background: rgba(255, 105, 180, 0.6);
+            clip-path: path('M10 3.22C10 3.22 6.66 0 3.33 0 1.49 0 0 1.49 0 3.33 0 6.66 10 16.66 10 16.66s10-10 10-13.33C20 1.49 18.51 0 16.66 0 13.33 0 10 3.22 10 3.22z');
+            animation: floatUp linear forwards;
+        }
+        @keyframes floatUp { to { transform: translateY(-110vh) scale(1.5); opacity: 0; } }
+
         .splash-char-box {
             display: flex;
             align-items: flex-end;
@@ -73,7 +89,7 @@
         /* Typography */
         #ui { margin-top: 12vh; text-align: center; color: white; z-index: 10; }
         h1 { font-weight: 200; font-size: 1.5rem; text-transform: uppercase; letter-spacing: 8px; margin-bottom: 10px; opacity: 0.8; }
-        #countdown { font-weight: 600; font-size: clamp(2rem, 8vw, 4rem); text-shadow: 0 10px 30px rgba(0,0,0,0.2); }
+        #countdown { font-weight: 600; font-size: clamp(2rem, 8vw, 4rem); text-shadow: 0 10px 30px rgba(0,0,0,0.2); font-variant-numeric: tabular-nums; }
 
         /* Modern Music Player UI */
         #music {
@@ -106,6 +122,8 @@
 
 <div id="world">
     <div id="stars"></div>
+    <div class="vignette"></div>
+    <div id="hearts"></div>
     <div id="ui">
         <h1 id="title">The Distance Between Us</h1>
         <div id="countdown">Connecting...</div>
@@ -126,7 +144,10 @@
             <small style="opacity: 0.7; display: block; font-size: 0.7rem;">NOW PLAYING</small>
             <span id="song-title" style="font-weight: 600;">Thinking of You</span>
         </div>
-        <a href="YOUR_LINK_HERE" target="_blank" class="play-btn">OPEN SONG</a>
+        <button id="play-btn" class="play-btn" onclick="toggleAudio()">PLAY</button>
+        <audio id="bg-music" loop>
+            <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" type="audio/mp3">
+        </audio>
     </div>
 </div>
 
@@ -188,6 +209,26 @@
 
     setInterval(update, 1000);
     update();
+
+    // Floating Hearts Logic
+    function createHeart() {
+        const heart = document.createElement('div');
+        heart.classList.add('heart');
+        heart.style.left = Math.random() * 100 + "vw";
+        heart.style.animationDuration = Math.random() * 3 + 4 + "s";
+        heart.style.opacity = Math.random() * 0.5 + 0.3;
+        document.getElementById('hearts').appendChild(heart);
+        setTimeout(() => { heart.remove(); }, 7000);
+    }
+    setInterval(createHeart, 400);
+
+    // Audio Logic
+    function toggleAudio() {
+        const audio = document.getElementById("bg-music");
+        const btn = document.getElementById("play-btn");
+        if (audio.paused) { audio.play(); btn.innerText = "PAUSE"; }
+        else { audio.pause(); btn.innerText = "PLAY"; }
+    }
 
     // Splash Screen Logic
     window.addEventListener('load', () => {
