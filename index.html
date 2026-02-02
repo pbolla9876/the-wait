@@ -1,197 +1,174 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>The Wait | March 1st 2026</title>
-    <style>
-        :root {
-            --sky-color: #87CEEB;
-            --ground-color: #4a7c44;
-        }
+<meta charset="UTF-8">
+<title>Until We Meet</title>
 
-        body, html {
-            margin: 0; padding: 0; width: 100%; height: 100%;
-            overflow: hidden; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
+<style>
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: 'Segoe UI', sans-serif;
+    }
 
-        /* Dynamic Sky Background */
-        #world {
-            position: relative; width: 100%; height: 100vh;
-            transition: background 2s ease;
-            background: var(--sky-color);
-            display: flex; flex-direction: column; align-items: center;
-        }
+    body {
+        height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background 2s ease;
+        overflow: hidden;
+    }
 
-        /* The Ground/Path */
-        #path {
-            position: absolute; bottom: 0; width: 100%; height: 30vh;
-            background: #e0d0b0; border-top: 5px solid #c4b08d;
-        }
+    .scene {
+        width: 100%;
+        max-width: 900px;
+        text-align: center;
+        position: relative;
+        padding: 40px;
+    }
 
-        /* Characters */
-        .character {
-            position: absolute; bottom: 20vh; width: 60px; height: 100px;
-            font-size: 50px; display: flex; align-items: center; 
-            justify-content: center; transition: all 0.5s linear;
-            animation: bounce 1s infinite ease-in-out;
-        }
+    h1 {
+        color: #fff;
+        margin-bottom: 20px;
+        font-weight: 300;
+    }
 
-        #timer-display {
-            margin-top: 50px; text-align: center; color: white;
-            text-shadow: 2px 2px 8px rgba(0,0,0,0.5); z-index: 10;
-        }
+    .timer {
+        font-size: 28px;
+        color: #fff;
+        margin-bottom: 40px;
+        letter-spacing: 2px;
+    }
 
-        h1 { font-size: 3rem; margin-bottom: 0; }
-        #countdown { font-size: 1.5rem; font-weight: 300; }
+    .world {
+        position: relative;
+        height: 250px;
+        margin-top: 40px;
+    }
 
-        /* Weather Overlay */
-        #weather-layer {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            pointer-events: none; z-index: 5;
-        }
+    .character {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        position: absolute;
+        top: 80px;
+        transition: all 2s ease;
+    }
 
-        .rain {
-            position: absolute; background-color: rgba(255, 255, 255, 0.6);
-            width: 2px; height: 15px; top: -20px;
-            animation: fall linear infinite;
-        }
+    .left {
+        background: #ffb6c1;
+        left: 10%;
+    }
 
-        @keyframes fall { to { transform: translateY(100vh); } }
-        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+    .right {
+        background: #add8e6;
+        right: 10%;
+    }
 
-        /* Music Widget */
-        #music-box {
-            position: absolute; bottom: 20px; right: 20px;
-            background: rgba(255, 255, 255, 0.8); padding: 15px;
-            border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-            z-index: 20; text-align: center;
-        }
-    </style>
+    .hug {
+        animation: hug 2s forwards;
+    }
+
+    @keyframes hug {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.1); }
+        100% { transform: scale(1); }
+    }
+
+    .message {
+        color: #fff;
+        margin-top: 30px;
+        font-size: 18px;
+        opacity: 0.8;
+    }
+</style>
 </head>
+
 <body>
 
-<div id="world">
-    <div id="weather-layer"></div>
-    
-    <div id="timer-display">
-        <h1 id="status-text">Still Waiting...</h1>
-        <div id="countdown">Calculating time...</div>
+<div class="scene">
+    <h1>Distance, With Intention</h1>
+
+    <div class="timer" id="timer">Loading...</div>
+
+    <div class="world">
+        <div class="character left" id="leftChar"></div>
+        <div class="character right" id="rightChar"></div>
     </div>
 
-    <div id="path"></div>
-    
-    <div id="char-me" class="character">🚶‍♂️</div>
-    <div id="char-her" class="character">🚶‍♀️</div>
-
-    <div id="music-box">
-        <div style="font-size: 12px; color: #666;">TODAY'S SONG</div>
-        <div id="song-name" style="font-weight: bold; margin: 5px 0;">Loading melody...</div>
-        <button onclick="playSong()" style="cursor:pointer; border:none; background:#ff4b2b; color:white; padding:5px 15px; border-radius:20px;">Listen Together</button>
+    <div class="message" id="message">
+        We are not talking, but time is working on us.
     </div>
 </div>
 
+<audio id="dailySong" src="song.mp3"></audio>
+
 <script>
-    // CONFIGURATION
-    const START_DATE = new Date("2024-05-21T00:00:00").getTime(); // Set this to today's date
-    const TARGET_DATE = new Date("2026-03-01T00:00:00-06:00").getTime(); // March 1st 12am CST
-    
-    // Songs list - Add your favorites here
-    const songs = [
-        { name: "First Day - The Moments", url: "https://open.spotify.com" },
-        { name: "Thinking of You", url: "https://youtube.com" },
-        { name: "Wait for Me", url: "https://spotify.com" }
-    ];
+    const targetDate = new Date("March 1, 2026 00:00:00 CST");
+    const leftChar = document.getElementById("leftChar");
+    const rightChar = document.getElementById("rightChar");
+    const timerEl = document.getElementById("timer");
+    const messageEl = document.getElementById("message");
+    const song = document.getElementById("dailySong");
 
-    function updateApp() {
-        const now = new Date().getTime();
-        const timeLeft = TARGET_DATE - now;
-        const totalDuration = TARGET_DATE - START_DATE;
-        const timePassed = now - START_DATE;
+    function updateBackground() {
+        const hour = new Date().getHours();
 
-        // 1. COUNTDOWN LOGIC
-        if (timeLeft <= 0) {
-            document.getElementById("countdown").innerHTML = "00:00:00:00";
-            document.getElementById("status-text").innerHTML = "Together Again ❤️";
-            moveCharacters(100); // 100% progress = Meeting
+        if (hour >= 5 && hour < 8) {
+            document.body.style.background = "linear-gradient(#ffcf9f, #87ceeb)";
+        } else if (hour >= 8 && hour < 12) {
+            document.body.style.background = "linear-gradient(#87ceeb, #ffffff)";
+        } else if (hour >= 12 && hour < 17) {
+            document.body.style.background = "linear-gradient(#5dade2, #aed6f1)";
+        } else if (hour >= 17 && hour < 20) {
+            document.body.style.background = "linear-gradient(#f39c12, #8e44ad)";
+        } else {
+            document.body.style.background = "linear-gradient(#0b0c2a, #000000)";
+        }
+    }
+
+    function updateTimer() {
+        const now = new Date();
+        const diff = targetDate - now;
+
+        if (diff <= 0) {
+            timerEl.innerHTML = "00 : 00 : 00 : 00";
+            leftChar.style.left = "45%";
+            rightChar.style.right = "45%";
+            leftChar.classList.add("hug");
+            rightChar.classList.add("hug");
+            messageEl.innerText = "Now… talk.";
             return;
         }
 
-        const days = Math.floor(timeLeft / (1000 * 60 * 60 * 24));
-        const hours = Math.floor((timeLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-        const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
-        const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
+        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
+        const minutes = Math.floor((diff / (1000 * 60)) % 60);
+        const seconds = Math.floor((diff / 1000) % 60);
 
-        document.getElementById("countdown").innerHTML = 
-            `${days}d ${hours}h ${minutes}m ${seconds}s`;
+        timerEl.innerHTML =
+            `${days} Days : ${hours} Hours : ${minutes} Minutes : ${seconds} Seconds`;
 
-        // 2. MOVEMENT LOGIC
-        const progress = (timePassed / totalDuration) * 100;
-        moveCharacters(progress);
-
-        // 3. DAY/NIGHT CYCLE LOGIC
-        updateSky();
+        // Move characters closer
+        const totalDays = 500; // approx length
+        const progress = Math.min(1, (totalDays - days) / totalDays);
+        leftChar.style.left = `${10 + progress * 30}%`;
+        rightChar.style.right = `${10 + progress * 30}%`;
     }
 
-    function moveCharacters(progress) {
-        const charMe = document.getElementById("char-me");
-        const charHer = document.getElementById("char-her");
-
-        // They start at 5% and 95% and move toward 50%
-        const myPos = 5 + (progress * 0.45); 
-        const herPos = 95 - (progress * 0.45);
-
-        charMe.style.left = myPos + "%";
-        charHer.style.left = herPos + "%";
-
-        if (progress >= 99.9) {
-            charMe.innerHTML = "👩‍❤️‍👨"; // Change to hug emoji at the end
-            charHer.style.display = "none";
-            charMe.style.animation = "none"; // Stop bouncing when hugging
+    function playDailySong() {
+        const now = new Date();
+        if (now.getHours() === 21 && now.getMinutes() === 21) {
+            song.play().catch(() => {});
         }
     }
 
-    function updateSky() {
-        const hour = new Date().getHours();
-        const world = document.getElementById("world");
-        
-        if (hour >= 6 && hour < 10) world.style.background = "linear-gradient(#FF9D6C, #FFFB7D)"; // Sunrise
-        else if (hour >= 10 && hour < 17) world.style.background = "#87CEEB"; // Day
-        else if (hour >= 17 && hour < 20) world.style.background = "linear-gradient(#2c3e50, #fd746c)"; // Sunset
-        else world.style.background = "#1a1a2e"; // Night
-    }
-
-    function createRain() {
-        const weatherLayer = document.getElementById("weather-layer");
-        // Simple logic: Change this to true if you want to force rain
-        // For demo purposes, we simulate a 30% chance of rain
-        const isRaining = Math.random() < 0.3; 
-
-        if(isRaining) {
-            for(let i=0; i<50; i++) {
-                let drop = document.createElement("div");
-                drop.className = "rain";
-                drop.style.left = Math.random() * 100 + "vw";
-                drop.style.animationDuration = (Math.random() * 0.5 + 0.5) + "s";
-                weatherLayer.appendChild(drop);
-            }
-        }
-    }
-
-    function playSong() {
-        // Select a song based on the current day (Daily Rotation)
-        const dayIndex = Math.floor(Date.now() / (1000 * 60 * 60 * 24));
-        const dailySong = songs[dayIndex % songs.length];
-        window.open(dailySong.url, '_blank');
-    }
-
-    // Initialize song name display
-    const initialDayIndex = Math.floor(Date.now() / (1000 * 60 * 60 * 24));
-    document.getElementById("song-name").innerText = songs[initialDayIndex % songs.length].name;
-    
-    setInterval(updateApp, 1000);
-    createRain();
-    updateApp();
+    updateBackground();
+    setInterval(updateTimer, 1000);
+    setInterval(updateBackground, 60000);
+    setInterval(playDailySong, 60000);
 </script>
 
 </body>
