@@ -63,13 +63,13 @@
         }
 
         .splash-char-box .sprite {
-            width: 180px;
+            width: 90px;
             height: 180px;
         }
 
         /* Character Styling */
         .char-box { 
-            position: absolute; bottom: 18vh; width: 150px; height: 150px; 
+            position: absolute; bottom: 18vh; width: 75px; height: 150px;
             transition: left 1s cubic-bezier(0.4, 0, 0.2, 1), opacity 1s; z-index: 5;
             display: flex; justify-content: center;
         }
@@ -115,8 +115,12 @@
 
 <div id="splash-screen">
     <div class="splash-char-box">
-        <lottie-player src="https://lottie.host/a35362e3-3a60-4217-ab29-9c676f77e089/T5i3aK1b6k.json" background="transparent" speed="1" class="sprite" loop autoplay></lottie-player>
-        <lottie-player src="https://lottie.host/58b2d184-2227-449a-99f5-1f6f22689508/vX8a2m2a2f.json" background="transparent" speed="1" class="sprite" style="transform: scaleX(-1);" loop autoplay></lottie-player>
+        <svg class="sprite" viewBox="0 0 100 100">
+            <path d="M27.81 53.51c0 2.3-1.86 4.16-4.16 4.16s-4.16-1.86-4.16-4.16 1.86-4.16 4.16-4.16 4.16 1.86 4.16 4.16zm2.08 19.98v-6.91c0-.57.22-1.11.61-1.51l13.4-13.4c.39-.39.94-.61 1.51-.61h6.91v-8.32h-6.91c-.57 0-1.11-.22-1.51-.61l-13.4-13.4c-.39-.39-.61-.94-.61-1.51v-6.91h8.32v6.91c0 .57-.22 1.11-.61 1.51l-13.4 13.4c-.39.39-.94.61-1.51.61h-6.91v8.32h6.91c.57 0 1.11.22 1.51.61l13.4 13.4c.39.39.61.94.61 1.51v6.91h-8.32zm44.31-19.98c0 2.3-1.86 4.16-4.16 4.16s-4.16-1.86-4.16-4.16 1.86-4.16 4.16-4.16 4.16 1.86 4.16 4.16zm2.08 19.98v-6.91c0-.57.22-1.11.61-1.51l13.4-13.4c.39-.39.94-.61 1.51-.61h6.91v-8.32h-6.91c-.57 0-1.11-.22-1.51-.61l-13.4-13.4c-.39-.39-.61-.94-.61-1.51v-6.91h8.32v6.91c0 .57-.22 1.11-.61 1.51l-13.4 13.4c-.39.39-.94.61-1.51.61h-6.91v8.32h6.91c.57 0 1.11.22 1.51.61l13.4 13.4c.39.39.61.94.61 1.51v6.91h-8.32z" fill="#fff"/>
+        </svg>
+        <svg class="sprite" style="transform: scaleX(-1);" viewBox="0 0 100 100">
+            <path d="M27.81 53.51c0 2.3-1.86 4.16-4.16 4.16s-4.16-1.86-4.16-4.16 1.86-4.16 4.16-4.16 4.16 1.86 4.16 4.16zm2.08 19.98v-6.91c0-.57.22-1.11.61-1.51l13.4-13.4c.39-.39.94-.61 1.51-.61h6.91v-8.32h-6.91c-.57 0-1.11-.22-1.51-.61l-13.4-13.4c-.39-.39-.61-.94-.61-1.51v-6.91h8.32v6.91c0 .57-.22 1.11-.61 1.51l-13.4 13.4c-.39.39-.94.61-1.51.61h-6.91v8.32h6.91c.57 0 1.11.22 1.51.61l13.4 13.4c.39.39.61.94.61 1.51v6.91h-8.32z" fill="#fff"/>
+        </svg>
     </div>
 </div>
 
@@ -132,11 +136,15 @@
     <div id="ground"></div>
 
     <div id="char-1" class="char-box">
-        <lottie-player src="https://lottie.host/a35362e3-3a60-4217-ab29-9c676f77e089/T5i3aK1b6k.json" background="transparent" speed="1" class="sprite" loop autoplay></lottie-player>
+        <svg class="sprite" viewBox="0 0 100 100">
+            <path d="M27.81 53.51c0 2.3-1.86 4.16-4.16 4.16s-4.16-1.86-4.16-4.16 1.86-4.16 4.16-4.16 4.16 1.86 4.16 4.16zm2.08 19.98v-6.91c0-.57.22-1.11.61-1.51l13.4-13.4c.39-.39.94-.61 1.51-.61h6.91v-8.32h-6.91c-.57 0-1.11-.22-1.51-.61l-13.4-13.4c-.39-.39-.61-.94-.61-1.51v-6.91h8.32v6.91c0 .57-.22 1.11-.61 1.51l-13.4 13.4c-.39.39-.94.61-1.51.61h-6.91v8.32h6.91c.57 0 1.11.22 1.51.61l13.4 13.4c.39.39.61.94.61 1.51v6.91h-8.32z" fill="#fff"/>
+        </svg>
     </div>
 
     <div id="char-2" class="char-box">
-        <lottie-player src="https://lottie.host/58b2d184-2227-449a-99f5-1f6f22689508/vX8a2m2a2f.json" background="transparent" speed="1" class="sprite" style="transform: scaleX(-1);" loop autoplay></lottie-player>
+        <svg class="sprite" style="transform: scaleX(-1);" viewBox="0 0 100 100">
+            <path d="M27.81 53.51c0 2.3-1.86 4.16-4.16 4.16s-4.16-1.86-4.16-4.16 1.86-4.16 4.16-4.16 4.16 1.86 4.16 4.16zm2.08 19.98v-6.91c0-.57.22-1.11.61-1.51l13.4-13.4c.39-.39.94-.61 1.51-.61h6.91v-8.32h-6.91c-.57 0-1.11-.22-1.51-.61l-13.4-13.4c-.39-.39-.61-.94-.61-1.51v-6.91h8.32v6.91c0 .57-.22 1.11-.61 1.51l-13.4 13.4c-.39.39-.94.61-1.51.61h-6.91v8.32h6.91c.57 0 1.11.22 1.51.61l13.4 13.4c.39.39.61.94.61 1.51v6.91h-8.32z" fill="#fff"/>
+        </svg>
     </div>
 
     <div id="music">
@@ -181,7 +189,7 @@
             document.getElementById("title").innerHTML = "I Am Home";
             document.getElementById("char-1").style.left = "48%";
             document.getElementById("char-1").innerHTML = '<lottie-player src="https://lottie.host/87768519-93b5-4e08-a488-693320299e52/85k9B9xT2A.json" background="transparent" speed="1" class="sprite" loop autoplay></lottie-player>';
-            document.getElementById("char-2").style.opacity = "0";
+           document.getElementById("char-2").style.opacity = "0";
         }
 
         updateSky();
@@ -247,5 +255,7 @@
         }, 2500); // Splash screen visible for 2.5 seconds
     });
 </script>
+
+
 </body>
 </html>
