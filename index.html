@@ -3,227 +3,190 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>The Distance Between Us</title>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@200;600&display=swap" rel="stylesheet">
+    <title>The Distance Between Us - 3D</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;600&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <style>
-        :root {
-            --sky-top: #a1c4fd;
-            --sky-bottom: #e6d5b8;
-        }
-
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; font-family: 'Montserrat', sans-serif; background: #000; }
+        body { margin: 0; overflow: hidden; font-family: 'Montserrat', sans-serif; background: #feb47b; }
         
-        /* Splash Screen Style */
-        #splash-screen {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: #0f2027; display: flex; justify-content: center; align-items: center;
-            z-index: 200; transition: opacity 1.5s ease-out;
-            color: white; font-size: 1.2rem; letter-spacing: 5px; text-transform: uppercase;
+        /* Overlay UI */
+        #ui-layer {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            padding: 40px 0;
+            z-index: 10;
         }
 
-        #world { 
-            position: relative; width: 100%; height: 100vh;
-            background: linear-gradient(to bottom, var(--sky-top), var(--sky-bottom));
-            transition: background 3s ease-in-out, opacity 1.5s ease-in;
-            display: flex; flex-direction: column; align-items: center;
-            opacity: 0;
+        .glass-box {
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 20px;
+            padding: 20px 40px;
+            text-align: center;
+            color: white;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
         }
 
-        #stars { 
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
-            opacity: 0; transition: opacity 2s; pointer-events: none; 
-        }
-        #stars::after {
-            content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: url('https://www.transparenttextures.com/patterns/stardust.png');
-            animation: twinkle 3s infinite ease-in-out;
-        }
-        @keyframes twinkle { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }
+        h1 { font-size: 1.5rem; letter-spacing: 5px; text-transform: uppercase; margin: 0; font-weight: 300; }
+        #timer { font-size: 2.5rem; font-weight: 600; margin-top: 10px; }
 
-        #hearts { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; overflow: hidden; }
-        .heart { position: absolute; bottom: -50px; width: 20px; height: 20px; background: rgba(255, 105, 180, 0.6); clip-path: path('M10 3.22C10 3.22 6.66 0 3.33 0 1.49 0 0 1.49 0 3.33 0 6.66 10 16.66 10 16.66s10-10 10-13.33C20 1.49 18.51 0 16.66 0 13.33 0 10 3.22 10 3.22z'); animation: floatUp linear forwards; }
-        @keyframes floatUp { to { transform: translateY(-110vh) scale(1.5); opacity: 0; } }
-
-        #ground { 
-            position: absolute; bottom: 0; width: 100%; height: 22vh;
-            background: #d4c4a8; box-shadow: inset 0 20px 40px rgba(0,0,0,0.15); z-index: 2;
+        .music-bar {
+            width: 300px;
+            border-radius: 50px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 25px;
+            pointer-events: auto;
         }
 
-        /* --- SKELETAL WALKING ANIMATIONS --- */
-        @keyframes bodyBob { 0%, 100% { transform: translateY(0) rotate(3deg); } 50% { transform: translateY(-4px) rotate(1deg); } }
-        @keyframes limbSwing { from { transform: rotate(-20deg); } to { transform: rotate(20deg); } }
-        @keyframes limbSwingOpposite { from { transform: rotate(20deg); } to { transform: rotate(-20deg); } }
-        @keyframes pulse { 0% { transform: scale(1); opacity: 0.8; } 50% { transform: scale(1.1); opacity: 1; } 100% { transform: scale(1); opacity: 0.8; } }
-
-        .char-box { 
-            position: absolute; bottom: 18vh; width: 100px; height: 180px; 
-            transition: left 1s linear, opacity 1s; z-index: 5; 
-            filter: drop-shadow(0 15px 10px rgba(0,0,0,0.2));
-        }
-        .paper-cut-svg { width: 100%; height: 100%; overflow: visible; }
-        .body-group { animation: bodyBob 0.8s infinite ease-in-out; transform-origin: bottom center; }
-        .limb { transform-origin: 50% 15%; fill: #fff; }
-        .swing-1 { animation: limbSwing 0.8s infinite ease-in-out alternate; }
-        .swing-2 { animation: limbSwingOpposite 0.8s infinite ease-in-out alternate; }
-
-        /* --- UI ELEMENTS --- */
-        #ui { margin-top: 12vh; text-align: center; color: white; z-index: 10; }
-        h1 { font-weight: 200; font-size: 1.4rem; text-transform: uppercase; letter-spacing: 8px; margin-bottom: 10px; opacity: 0.8; }
-        #countdown { font-weight: 600; font-size: clamp(2rem, 8vw, 4rem); text-shadow: 0 10px 30px rgba(0,0,0,0.2); }
-
-        #music { 
-            position: absolute; bottom: 5vh; 
-            background: rgba(255, 255, 255, 0.2); 
-            backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-            border: 1px solid rgba(255,255,255,0.2); 
-            padding: 12px 30px; border-radius: 50px; display: flex; align-items: center; gap: 20px; color: white; z-index: 100; 
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-        }
-        .play-btn { 
-            background: rgba(255,255,255,0.9); color: #333; border: none; 
-            padding: 10px 25px; border-radius: 50px; font-weight: 600; font-size: 0.8rem; letter-spacing: 1px;
-            cursor: pointer; transition: 0.3s; text-transform: uppercase;
-        }
-        .play-btn:hover { background: #fff; transform: scale(1.05); }
-        
-        #reunion-heart {
-            position: absolute; bottom: 25vh; left: 50%; transform: translateX(-50%);
-            width: 150px; height: 150px; display: none;
-            filter: drop-shadow(0 0 30px rgba(255, 105, 180, 0.8));
-            animation: pulse 2s infinite ease-in-out;
-            z-index: 20;
+        #song-btn {
+            background: white;
+            color: #ff7e5f;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 0.8rem;
         }
     </style>
 </head>
 <body>
 
-<div id="splash-screen">
-    <div id="splash-text">Preparing the Journey...</div>
-</div>
+    <div id="ui-layer">
+        <div class="glass-box">
+            <h1>The Distance Between Us</h1>
+            <div id="timer">00d 00h 00m 00s</div>
+        </div>
 
-<div id="world">
-    <div id="stars"></div>
-    <div id="hearts"></div>
-    <div id="ui">
-        <h1 id="title">The Distance Between Us</h1>
-        <div id="countdown">Connecting...</div>
+        <div class="glass-box music-bar">
+            <span>Thinking of You...</span>
+            <a href="#" id="song-btn">OPEN SONG</a>
+        </div>
     </div>
 
-    <div id="ground"></div>
+    <script>
+        // --- 1. THREE.JS SCENE SETUP ---
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        document.body.appendChild(renderer.domElement);
 
-    <div id="char-1" class="char-box">
-        <!-- Man Silhouette (Skeletal) -->
-        <svg class="paper-cut-svg" viewBox="0 0 100 200">
-            <g class="body-group">
-                <polygon class="limb swing-2" points="62,90 74,90 70,160 66,160" /> <!-- Back Leg -->
-                <polygon class="limb swing-1" points="72,55 82,55 80,110 74,110" /> <!-- Back Arm -->
-                <polygon points="30,50 70,50 65,125 35,125" fill="#fff" /> <!-- Torso -->
-                <polygon points="40,15 60,15 68,30 50,45 32,30" fill="#fff" /> <!-- Head -->
-                <polygon class="limb swing-1" points="28,90 40,90 36,160 32,160" /> <!-- Front Leg -->
-                <polygon class="limb swing-2" points="18,55 28,55 26,110 20,110" /> <!-- Front Arm -->
-            </g>
-        </svg>
-    </div>
+        // Lights (Pixar-style warm lighting)
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+        scene.add(ambientLight);
+        const sunLight = new THREE.DirectionalLight(0xffccaa, 1);
+        sunLight.position.set(5, 5, 5);
+        scene.add(sunLight);
 
-    <div id="char-2" class="char-box">
-        <!-- Woman Silhouette (Skeletal) -->
-        <svg class="paper-cut-svg" style="transform: scaleX(-1);" viewBox="0 0 100 200">
-            <g class="body-group">
-                <polygon class="limb swing-2" points="60,90 70,90 68,160 62,160" /> <!-- Back Leg -->
-                <polygon class="limb swing-1" points="70,55 78,55 76,105 72,105" /> <!-- Back Arm -->
-                <polygon points="35,50 65,50 75,110 25,110" fill="#fff" /> <!-- Dress -->
-                <polygon points="42,15 58,15 64,28 50,40 36,28" fill="#fff" /> <!-- Head -->
-                <polygon class="limb swing-1" points="30,90 40,90 38,160 32,160" /> <!-- Front Leg -->
-                <polygon class="limb swing-2" points="22,55 30,55 28,105 24,105" /> <!-- Front Arm -->
-            </g>
-        </svg>
-    </div>
-    
-    <div id="reunion-heart">
-        <svg viewBox="0 0 24 24" fill="#ff69b4" style="width: 100%; height: 100%;">
-            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
-        </svg>
-    </div>
-
-    <div id="music">
-        <div><small style="opacity: 0.7; display: block; font-size: 0.7rem;">NOW PLAYING</small><span id="song-title" style="font-weight: 600;">Thinking of You</span></div>
-        <button id="play-btn" class="play-btn" onclick="toggleAudio()">Open Song</button>
-        <audio id="bg-music" loop><source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" type="audio/mp3"></audio>
-    </div>
-</div>
-
-<script>
-    const START_DATE = new Date("2024-05-01T00:00:00").getTime();
-    const END_DATE = new Date("2026-03-01T00:00:00").getTime();
-
-    function update() {
-        const now = new Date().getTime();
-        const remaining = END_DATE - now;
-        const total = END_DATE - START_DATE;
-        let progress = (now - START_DATE) / total;
-        if (progress > 1) progress = 1;
-
-        if (remaining > 0) {
-            const d = Math.floor(remaining / 86400000);
-            const h = Math.floor((remaining % 86400000) / 3600000);
-            const m = Math.floor((remaining % 3600000) / 60000);
-            const s = Math.floor((remaining % 60000) / 1000);
-            document.getElementById("countdown").innerHTML = `${d}d ${h}h ${m}m ${s}s`;
-
-            // Movement toward each other
-            document.getElementById("char-1").style.left = (progress * 48) + "%";
-            document.getElementById("char-2").style.left = (100 - (progress * 48)) + "%";
-        } else {
-            // Reunion State
-            document.getElementById("countdown").innerHTML = "00:00:00";
-            document.getElementById("title").innerHTML = "Finally Home";
-            document.getElementById("char-1").style.display = "none";
-            document.getElementById("char-2").style.opacity = "0";
-            document.getElementById("reunion-heart").style.display = "block";
-        }
-        updateSky();
-    }
-
-    function updateSky() {
-        const hr = new Date().getHours();
-        const root = document.documentElement;
-        const stars = document.getElementById('stars');
+        // --- 2. THE ENVIRONMENT ---
+        // Sky Gradient (Simplified via background color)
+        scene.background = new THREE.Color(0xfeb47b);
         
-        if (hr >= 20) {
-            stars.style.opacity = "1";
-        } else {
-            stars.style.opacity = "0";
+        // Ground
+        const groundGeo = new THREE.PlaneGeometry(100, 100);
+        const groundMat = new THREE.MeshStandardMaterial({ color: 0xda916b, roughness: 0.8 });
+        const ground = new THREE.Mesh(groundGeo, groundMat);
+        ground.rotation.x = -Math.PI / 2;
+        ground.position.y = -2;
+        scene.add(ground);
+
+        // --- 3. THE CHARACTERS (Toy-like Figures) ---
+        function createCharacter(skinColor) {
+            const group = new THREE.Group();
+            const bodyMat = new THREE.MeshStandardMaterial({ color: 0xffffff });
+            const skinMat = new THREE.MeshStandardMaterial({ color: skinColor });
+
+            // Head
+            const head = new THREE.Mesh(new THREE.SphereGeometry(0.3, 32, 32), skinMat);
+            head.position.y = 1.6;
+            group.add(head);
+
+            // Body
+            const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.2, 0.8, 32), bodyMat);
+            torso.position.y = 1;
+            group.add(torso);
+
+            // Legs
+            const legGeo = new THREE.CylinderGeometry(0.08, 0.08, 0.7);
+            const legL = new THREE.Mesh(legGeo, bodyMat);
+            legL.position.set(-0.15, 0.35, 0);
+            group.add(legL);
+
+            const legR = new THREE.Mesh(legGeo, bodyMat);
+            legR.position.set(0.15, 0.35, 0);
+            group.add(legR);
+
+            return { group, legL, legR };
         }
-    }
 
-    function toggleAudio() {
-        const audio = document.getElementById("bg-music");
-        const btn = document.getElementById("play-btn");
-        if (audio.paused) { audio.play(); btn.innerText = "PAUSE"; }
-        else { audio.pause(); btn.innerText = "PLAY"; }
-    }
+        const male = createCharacter(0x8d5524); // Indian Skin Tone
+        const female = createCharacter(0xc68642); 
+        scene.add(male.group);
+        scene.add(female.group);
 
-    function createHeart() {
-        const heart = document.createElement('div');
-        heart.classList.add('heart');
-        heart.style.left = Math.random() * 100 + "vw";
-        heart.style.animationDuration = Math.random() * 3 + 4 + "s";
-        document.getElementById('hearts').appendChild(heart);
-        setTimeout(() => { heart.remove(); }, 7000);
-    }
-    
-    setInterval(update, 1000);
-    setInterval(createHeart, 500);
-    update();
+        camera.position.z = 5;
+        camera.position.y = 0.5;
 
-    // Splash Screen Handling
-    window.addEventListener('load', () => {
-        setTimeout(() => {
-            document.getElementById('splash-screen').style.opacity = '0';
-            document.getElementById('world').style.opacity = '1';
-            setTimeout(() => { document.getElementById('splash-screen').style.display = 'none'; }, 1500);
-        }, 2500);
-    });
-</script>
+        // --- 4. ANIMATION & LOGIC ---
+        const startDate = new Date("May 1, 2024").getTime();
+        const endDate = new Date("March 1, 2026").getTime();
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const now = new Date().getTime();
+            
+            // Progress calculation (0 to 1)
+            const total = endDate - startDate;
+            const current = now - startDate;
+            let progress = Math.min(Math.max(current / total, 0), 1);
+
+            // Position characters (meeting at the center)
+            const startPos = 6;
+            male.group.position.x = -startPos + (startPos * 0.95 * progress);
+            female.group.position.x = startPos - (startPos * 0.95 * progress);
+
+            // Walking limb movement
+            const time = Date.now() * 0.005;
+            const swing = Math.sin(time) * 0.4;
+            male.legL.rotation.x = swing;
+            male.legR.rotation.x = -swing;
+            female.legL.rotation.x = -swing;
+            female.legR.rotation.x = swing;
+
+            // Timer Update
+            const diff = endDate - now;
+            if (diff > 0) {
+                const d = Math.floor(diff / (1000 * 60 * 60 * 24));
+                const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                const s = Math.floor((diff % (1000 * 60)) / 1000);
+                document.getElementById("timer").innerHTML = `${d}d ${h}h ${m}m ${s}s`;
+            } else {
+                document.getElementById("timer").innerHTML = "FINALLY HOME ❤️";
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        animate();
+    </script>
 </body>
 </html>
