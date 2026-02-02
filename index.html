@@ -31,9 +31,14 @@
 
         #stars { 
             position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
-            background: url('https://www.transparenttextures.com/patterns/stardust.png'); 
             opacity: 0; transition: opacity 2s; pointer-events: none; 
         }
+        #stars::after {
+            content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: url('https://www.transparenttextures.com/patterns/stardust.png');
+            animation: twinkle 3s infinite ease-in-out;
+        }
+        @keyframes twinkle { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }
 
         #hearts { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; overflow: hidden; }
         .heart { position: absolute; bottom: -50px; width: 20px; height: 20px; background: rgba(255, 105, 180, 0.6); clip-path: path('M10 3.22C10 3.22 6.66 0 3.33 0 1.49 0 0 1.49 0 3.33 0 6.66 10 16.66 10 16.66s10-10 10-13.33C20 1.49 18.51 0 16.66 0 13.33 0 10 3.22 10 3.22z'); animation: floatUp linear forwards; }
