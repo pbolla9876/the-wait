@@ -50,7 +50,7 @@
         }
 
         /* --- SKELETAL WALKING ANIMATIONS --- */
-        @keyframes bodyBob { 0%, 100% { transform: translateY(0) rotate(1deg); } 50% { transform: translateY(-4px) rotate(-1deg); } }
+        @keyframes bodyBob { 0%, 100% { transform: translateY(0) rotate(3deg); } 50% { transform: translateY(-4px) rotate(1deg); } }
         @keyframes limbSwing { from { transform: rotate(-20deg); } to { transform: rotate(20deg); } }
         @keyframes limbSwingOpposite { from { transform: rotate(20deg); } to { transform: rotate(-20deg); } }
         @keyframes pulse { 0% { transform: scale(1); opacity: 0.8; } 50% { transform: scale(1.1); opacity: 1; } 100% { transform: scale(1); opacity: 0.8; } }
@@ -115,12 +115,12 @@
         <!-- Man Silhouette (Skeletal) -->
         <svg class="paper-cut-svg" viewBox="0 0 100 200">
             <g class="body-group">
-                <rect class="limb swing-2" x="60" y="90" width="14" height="70" rx="7" /> <!-- Back Leg -->
-                <rect class="limb swing-1" x="70" y="55" width="12" height="60" rx="6" /> <!-- Back Arm -->
-                <rect x="30" y="50" width="40" height="75" rx="10" fill="#fff" /> <!-- Torso -->
-                <circle cx="50" cy="30" r="18" fill="#fff" /> <!-- Head -->
-                <rect class="limb swing-1" x="26" y="90" width="14" height="70" rx="7" /> <!-- Front Leg -->
-                <rect class="limb swing-2" x="18" y="55" width="12" height="60" rx="6" /> <!-- Front Arm -->
+                <polygon class="limb swing-2" points="62,90 74,90 70,160 66,160" /> <!-- Back Leg -->
+                <polygon class="limb swing-1" points="72,55 82,55 80,110 74,110" /> <!-- Back Arm -->
+                <polygon points="30,50 70,50 65,125 35,125" fill="#fff" /> <!-- Torso -->
+                <polygon points="40,15 60,15 68,30 50,45 32,30" fill="#fff" /> <!-- Head -->
+                <polygon class="limb swing-1" points="28,90 40,90 36,160 32,160" /> <!-- Front Leg -->
+                <polygon class="limb swing-2" points="18,55 28,55 26,110 20,110" /> <!-- Front Arm -->
             </g>
         </svg>
     </div>
@@ -129,12 +129,12 @@
         <!-- Woman Silhouette (Skeletal) -->
         <svg class="paper-cut-svg" style="transform: scaleX(-1);" viewBox="0 0 100 200">
             <g class="body-group">
-                <rect class="limb swing-2" x="60" y="90" width="12" height="70" rx="6" /> <!-- Back Leg -->
-                <rect class="limb swing-1" x="70" y="55" width="10" height="55" rx="5" /> <!-- Back Arm -->
-                <path d="M35,50 L65,50 L70,110 L30,110 Z" fill="#fff" style="border-radius: 10px;" /> <!-- Dress/Torso -->
-                <circle cx="50" cy="30" r="16" fill="#fff" /> <!-- Head -->
-                <rect class="limb swing-1" x="28" y="90" width="12" height="70" rx="6" /> <!-- Front Leg -->
-                <rect class="limb swing-2" x="20" y="55" width="10" height="55" rx="5" /> <!-- Front Arm -->
+                <polygon class="limb swing-2" points="60,90 70,90 68,160 62,160" /> <!-- Back Leg -->
+                <polygon class="limb swing-1" points="70,55 78,55 76,105 72,105" /> <!-- Back Arm -->
+                <polygon points="35,50 65,50 75,110 25,110" fill="#fff" /> <!-- Dress -->
+                <polygon points="42,15 58,15 64,28 50,40 36,28" fill="#fff" /> <!-- Head -->
+                <polygon class="limb swing-1" points="30,90 40,90 38,160 32,160" /> <!-- Front Leg -->
+                <polygon class="limb swing-2" points="22,55 30,55 28,105 24,105" /> <!-- Front Arm -->
             </g>
         </svg>
     </div>
