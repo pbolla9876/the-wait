@@ -21,84 +21,96 @@
             opacity: 0;
         }
 
+        /* Atmosphere Elements */
         #stars { 
             position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
             background: url('https://www.transparenttextures.com/patterns/stardust.png'); 
             opacity: 0; transition: opacity 2s; pointer-events: none; 
         }
 
-        #splash-screen {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: #0f2027; display: flex; justify-content: center; align-items: center;
-            z-index: 200; transition: opacity 1.5s ease-out;
-        }
-
-        /* Walking Animation */
-        @keyframes walk {
-            0%, 100% { transform: translateY(0) rotate(0deg); }
-            25% { transform: translateY(-8px) rotate(2deg); }
-            75% { transform: translateY(-8px) rotate(-2deg); }
-        }
-
-        /* Reunion Pulse */
-        @keyframes pulse-glow {
-            0% { filter: drop-shadow(0 0 5px #fff); }
-            50% { filter: drop-shadow(0 0 25px #ff69b4); }
-            100% { filter: drop-shadow(0 0 5px #fff); }
-        }
-
-        .char-box { 
-            position: absolute; bottom: 18vh; width: 80px; height: 120px;
-            transition: left 1s cubic-bezier(0.4, 0, 0.2, 1), opacity 1s; z-index: 5;
-        }
-
-        .walking { animation: walk 0.8s infinite ease-in-out; }
-
-        .sprite { 
-            width: 100%; height: 100%; fill: white;
-            filter: drop-shadow(0 10px 15px rgba(0,0,0,0.3)); 
-        }
-
+        #hearts { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; overflow: hidden; }
+        
         #ground { 
             position: absolute; bottom: 0; width: 100%; height: 22vh;
             background: #d4c4a8; box-shadow: inset 0 20px 40px rgba(0,0,0,0.15); z-index: 2;
         }
 
+        /* --- SKELETAL ANIMATIONS --- */
+        @keyframes legSwing {
+            0%, 100% { transform: rotate(-15deg); }
+            50% { transform: rotate(20deg); }
+        }
+
+        @keyframes armSwing {
+            0%, 100% { transform: rotate(20deg); }
+            50% { transform: rotate(-20deg); }
+        }
+
+        @keyframes bodyBob {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-6px); }
+        }
+
+        .char-box { 
+            position: absolute; bottom: 18vh; width: 80px; height: 140px;
+            transition: left 1s linear, opacity 1s; z-index: 5;
+        }
+
+        .walking-human {
+            width: 100%; height: 100%;
+            animation: bodyBob 0.6s infinite ease-in-out;
+        }
+
+        .limb { fill: #fff; transform-origin: center top; }
+        
+        /* Opposing movement for realism */
+        .left-leg { animation: legSwing 0.6s infinite ease-in-out; }
+        .right-leg { animation: legSwing 0.6s infinite ease-in-out reverse; }
+        .left-arm { animation: armSwing 0.6s infinite ease-in-out; }
+        .right-arm { animation: armSwing 0.6s infinite ease-in-out reverse; }
+
+        /* --- UI ELEMENTS --- */
         #ui { margin-top: 12vh; text-align: center; color: white; z-index: 10; }
         h1 { font-weight: 200; font-size: 1.5rem; text-transform: uppercase; letter-spacing: 8px; margin-bottom: 10px; opacity: 0.8; }
         #countdown { font-weight: 600; font-size: clamp(2rem, 8vw, 4rem); text-shadow: 0 10px 30px rgba(0,0,0,0.2); }
 
-        /* Hearts & UI elements keep your existing styles */
-        #hearts { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; overflow: hidden; }
-        .heart { position: absolute; bottom: -50px; width: 20px; height: 20px; background: rgba(255, 105, 180, 0.6); clip-path: path('M10 3.22C10 3.22 6.66 0 3.33 0 1.49 0 0 1.49 0 3.33 0 6.66 10 16.66 10 16.66s10-10 10-13.33C20 1.49 18.51 0 16.66 0 13.33 0 10 3.22 10 3.22z'); animation: floatUp linear forwards; }
-        @keyframes floatUp { to { transform: translateY(-110vh) scale(1.5); opacity: 0; } }
+        #music { 
+            position: absolute; bottom: 5vh; background: rgba(255, 255, 255, 0.15); 
+            backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.3); 
+            padding: 15px 40px; border-radius: 100px; display: flex; align-items: center; gap: 25px; color: white; z-index: 100; 
+        }
 
-        #music { position: absolute; bottom: 5vh; background: rgba(255, 255, 255, 0.15); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.3); padding: 15px 40px; border-radius: 100px; display: flex; align-items: center; gap: 25px; color: white; z-index: 100; }
-        .play-btn { background: #fff; color: #333; border: none; padding: 10px 25px; border-radius: 50px; font-weight: 600; cursor: pointer; text-decoration: none; }
+        .play-btn { background: #fff; color: #333; border: none; padding: 10px 25px; border-radius: 50px; font-weight: 600; cursor: pointer; }
     </style>
 </head>
 <body>
-
-<div id="splash-screen">
-    <div style="color:white; font-size: 1.2rem; letter-spacing: 4px;">PREPARING THE JOURNEY...</div>
-</div>
 
 <div id="world">
     <div id="stars"></div>
     <div id="hearts"></div>
     <div id="ui">
         <h1 id="title">The Distance Between Us</h1>
-        <div id="countdown">Connecting...</div>
+        <div id="countdown">Calculating...</div>
     </div>
 
     <div id="ground"></div>
 
-    <div id="char-1" class="char-box walking">
-        <svg class="sprite" viewBox="0 0 24 24"><path d="M13.5 5.5c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zM9.8 8.9L7 21.5h2.1l1.8-8 2.1 2v6h2V14.5l-2.1-2 1-5h-3.9z"/></svg>
+    <div id="char-1" class="char-box">
+        <svg class="walking-human" viewBox="0 0 100 180">
+            <circle cx="50" cy="30" r="12" fill="#fff" /> <rect x="42" y="45" width="16" height="55" rx="8" fill="#fff" /> <rect class="limb left-arm" x="35" y="48" width="6" height="35" rx="3" />
+            <rect class="limb right-arm" x="59" y="48" width="6" height="35" rx="3" />
+            <rect class="limb left-leg" x="43" y="98" width="7" height="45" rx="3" />
+            <rect class="limb right-leg" x="51" y="98" width="7" height="45" rx="3" />
+        </svg>
     </div>
 
-    <div id="char-2" class="char-box walking">
-        <svg class="sprite" style="transform: scaleX(-1);" viewBox="0 0 24 24"><path d="M12 4c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm3 14v4h-2v-4h-2v4H9v-4l1.1-6.1L9 11.5l-1-4h6l-1 4-1.1.4L15 18z"/></svg>
+    <div id="char-2" class="char-box">
+        <svg class="walking-human" style="transform: scaleX(-1);" viewBox="0 0 100 180">
+            <circle cx="50" cy="30" r="12" fill="#fff" /> <path d="M38 105 L50 45 L62 105 Z" fill="#fff" /> <rect class="limb left-arm" x="35" y="48" width="6" height="30" rx="3" />
+            <rect class="limb right-arm" x="59" y="48" width="6" height="30" rx="3" />
+            <rect class="limb left-leg" x="43" y="103" width="6" height="40" rx="3" />
+            <rect class="limb right-leg" x="51" y="103" width="6" height="40" rx="3" />
+        </svg>
     </div>
 
     <div id="music">
@@ -126,45 +138,33 @@
             const s = Math.floor((remaining % 60000) / 1000);
             document.getElementById("countdown").innerHTML = `${d}d ${h}h ${m}m ${s}s`;
 
-            // Dynamic movement: Characters walk toward the center (48-52% mark)
-            document.getElementById("char-1").style.left = (5 + (progress * 43)) + "%";
-            document.getElementById("char-2").style.left = (90 - (progress * 40)) + "%";
+            // Moving toward the meeting point
+            document.getElementById("char-1").style.left = (5 + (progress * 42)) + "%";
+            document.getElementById("char-2").style.left = (90 - (progress * 42)) + "%";
         } else {
-            // REUNION STATE reached
+            // THE HUG
             document.getElementById("countdown").innerHTML = "00:00:00";
-            document.getElementById("title").innerHTML = "Finally Together";
-            
-            const char1 = document.getElementById("char-1");
-            const char2 = document.getElementById("char-2");
-
-            // Stop walking, move to center, and swap for Hug SVG
-            char1.classList.remove('walking');
-            char1.style.left = "47%";
-            char1.style.animation = "pulse-glow 2s infinite";
-            char1.innerHTML = `<svg class="sprite" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>`;
-            
-            char2.style.opacity = "0"; // Hide second character as they become one
+            document.getElementById("title").innerHTML = "Finally Home";
+            document.getElementById("char-1").style.left = "48%";
+            document.getElementById("char-1").innerHTML = `<svg class="walking-human" style="animation: pulse 2s infinite" viewBox="0 0 24 24" fill="white"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>`;
+            document.getElementById("char-2").style.opacity = "0";
         }
         updateSky();
     }
 
     function updateSky() {
-        const hour = new Date().getHours();
+        const hr = new Date().getHours();
         const root = document.documentElement;
         const stars = document.getElementById('stars');
-        if (hour >= 20 || hour < 6) {
+        if (hr >= 20 || hr < 6) {
             root.style.setProperty('--sky-top', '#0f2027'); root.style.setProperty('--sky-bottom', '#203a43');
             stars.style.opacity = "0.5";
-        } else if (hour >= 17) {
-            root.style.setProperty('--sky-top', '#ee0979'); root.style.setProperty('--sky-bottom', '#ff6a00');
-            stars.style.opacity = "0";
         } else {
             root.style.setProperty('--sky-top', '#2193b0'); root.style.setProperty('--sky-bottom', '#6dd5ed');
             stars.style.opacity = "0";
         }
     }
 
-    // Audio & Heart functions remain the same
     function toggleAudio() {
         const audio = document.getElementById("bg-music");
         const btn = document.getElementById("play-btn");
@@ -172,26 +172,9 @@
         else { audio.pause(); btn.innerText = "PLAY"; }
     }
 
-    function createHeart() {
-        const heart = document.createElement('div');
-        heart.classList.add('heart');
-        heart.style.left = Math.random() * 100 + "vw";
-        heart.style.animationDuration = Math.random() * 3 + 4 + "s";
-        document.getElementById('hearts').appendChild(heart);
-        setTimeout(() => { heart.remove(); }, 7000);
-    }
-    
     setInterval(update, 1000);
-    setInterval(createHeart, 400);
     update();
-
-    window.addEventListener('load', () => {
-        setTimeout(() => {
-            document.getElementById('splash-screen').style.opacity = '0';
-            document.getElementById('world').style.opacity = '1';
-            setTimeout(() => { document.getElementById('splash-screen').style.display = 'none'; }, 1500);
-        }, 2000);
-    });
+    window.onload = () => { document.getElementById('world').style.opacity = '1'; };
 </script>
 </body>
 </html>
