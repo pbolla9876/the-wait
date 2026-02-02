@@ -78,6 +78,12 @@
             width: 100%; height: 100%; 
             filter: drop-shadow(0 10px 15px rgba(0,0,0,0.2)); 
         }
+        
+        .walking { animation: walk 1s infinite ease-in-out alternate; }
+        @keyframes walk {
+            from { transform: translateY(0) rotate(-2deg); }
+            to { transform: translateY(-10px) rotate(2deg); }
+        }
 
         #ground { 
             position: absolute; bottom: 0; width: 100%; height: 22vh;
@@ -108,6 +114,26 @@
             text-decoration: none; font-size: 0.9rem;
         }
         .play-btn:hover { background: #ff4b2b; color: #fff; transform: translateY(-3px); }
+
+        /* Reunion Styles */
+        #reunion-container {
+            position: absolute; bottom: 18vh; left: 50%; transform: translateX(-50%);
+            width: 180px; height: 180px;
+            display: none; justify-content: center; align-items: flex-end;
+            z-index: 20;
+        }
+        .reunion-glow {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 300px; height: 300px;
+            background: radial-gradient(circle, rgba(255,255,255,0.6) 0%, rgba(255,255,255,0) 70%);
+            border-radius: 50%;
+            animation: pulse 3s infinite ease-in-out;
+            z-index: -1;
+        }
+        @keyframes pulse {
+            0%, 100% { transform: translate(-50%, -50%) scale(0.8); opacity: 0.4; }
+            50% { transform: translate(-50%, -50%) scale(1.2); opacity: 0.8; }
+        }
     </style>
     <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
 </head>
@@ -136,14 +162,23 @@
     <div id="ground"></div>
 
     <div id="char-1" class="char-box">
-        <svg class="sprite" viewBox="0 0 100 100">
+        <svg class="sprite walking" viewBox="0 0 100 100">
             <path d="M27.81 53.51c0 2.3-1.86 4.16-4.16 4.16s-4.16-1.86-4.16-4.16 1.86-4.16 4.16-4.16 4.16 1.86 4.16 4.16zm2.08 19.98v-6.91c0-.57.22-1.11.61-1.51l13.4-13.4c.39-.39.94-.61 1.51-.61h6.91v-8.32h-6.91c-.57 0-1.11-.22-1.51-.61l-13.4-13.4c-.39-.39-.61-.94-.61-1.51v-6.91h8.32v6.91c0 .57-.22 1.11-.61 1.51l-13.4 13.4c-.39.39-.94.61-1.51.61h-6.91v8.32h6.91c.57 0 1.11.22 1.51.61l13.4 13.4c.39.39.61.94.61 1.51v6.91h-8.32z" fill="#fff"/>
         </svg>
     </div>
 
     <div id="char-2" class="char-box">
-        <svg class="sprite" style="transform: scaleX(-1);" viewBox="0 0 100 100">
-            <path d="M27.81 53.51c0 2.3-1.86 4.16-4.16 4.16s-4.16-1.86-4.16-4.16 1.86-4.16 4.16-4.16 4.16 1.86 4.16 4.16zm2.08 19.98v-6.91c0-.57.22-1.11.61-1.51l13.4-13.4c.39-.39.94-.61 1.51-.61h6.91v-8.32h-6.91c-.57 0-1.11-.22-1.51-.61l-13.4-13.4c-.39-.39-.61-.94-.61-1.51v-6.91h8.32v6.91c0 .57-.22 1.11-.61 1.51l-13.4 13.4c-.39.39-.94.61-1.51.61h-6.91v8.32h6.91c.57 0 1.11.22 1.51.61l13.4 13.4c.39.39.61.94.61 1.51v6.91h-8.32z" fill="#fff"/>
+        <div style="transform: scaleX(-1); width: 100%; height: 100%;">
+            <svg class="sprite walking" viewBox="0 0 100 100">
+                <path d="M47.6,52.9L38.2,43c-1.8-2-4.8-2.8-7.3-1.9l-8.4,3.1c-2.5,0.9-4.2,3.2-4.2,5.9v13.5h6.3V50.1l6.3-2.3l9.4,9.9V71h6.3V56.6 C50.1,55.4,49,53.9,47.6,52.9z M32.4,36.5c2.6,0,4.7-2.1,4.7-4.7s-2.1-4.7-4.7-4.7s-4.7,2.1-4.7,4.7S29.8,36.5,32.4,36.5z" fill="#fff"/>
+            </svg>
+        </div>
+    </div>
+
+    <div id="reunion-container">
+        <div class="reunion-glow"></div>
+        <svg class="sprite" viewBox="0 0 100 100">
+            <path d="M65,35c-2.8,0-5,2.2-5,5c0,0.8,0.2,1.5,0.5,2.2l-6.8,3.4l-6.8-3.4C47.3,41.5,47.5,40.8,47.5,40c0-2.8-2.2-5-5-5 s-5,2.2-5,5c0,2.8,2.2,5,5,5c0.8,0,1.5-0.2,2.2-0.5l6.8,3.4v12.1h-5v20h5v-8.6l5-2.5l5,2.5v8.6h5v-20h-5V52.9l6.8-3.4 c0.7,0.3,1.4,0.5,2.2,0.5c2.8,0,5-2.2,5-5S67.8,35,65,35z" fill="#fff"/>
         </svg>
     </div>
 
@@ -187,9 +222,9 @@
             // REUNION STATE
             document.getElementById("countdown").innerHTML = "00:00:00";
             document.getElementById("title").innerHTML = "I Am Home";
-            document.getElementById("char-1").style.left = "48%";
-            document.getElementById("char-1").innerHTML = '<lottie-player src="https://lottie.host/87768519-93b5-4e08-a488-693320299e52/85k9B9xT2A.json" background="transparent" speed="1" class="sprite" loop autoplay></lottie-player>';
-           document.getElementById("char-2").style.opacity = "0";
+            document.getElementById("char-1").style.display = "none";
+            document.getElementById("char-2").style.display = "none";
+            document.getElementById("reunion-container").style.display = "flex";
         }
 
         updateSky();
