@@ -14,10 +14,11 @@
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; font-family: 'Montserrat', sans-serif; background: #000; }
         
         #world { 
-            position: relative; width: 100%; height: 100vh; 
+            position: relative; width: 100%; height: 100vh;
             background: linear-gradient(to bottom, var(--sky-top), var(--sky-bottom));
-            transition: background 3s ease-in-out;
+            transition: background 3s ease-in-out, opacity 1.5s ease-in;
             display: flex; flex-direction: column; align-items: center;
+            opacity: 0; /* Initially hidden for splash screen */
         }
 
         /* High-Quality Star Overlay */
@@ -27,22 +28,32 @@
             opacity: 0; transition: opacity 2s; pointer-events: none; 
         }
 
-        #ground { 
-            position: absolute; bottom: 0; width: 100%; height: 22vh; 
-            background: #d4c4a8; 
-            box-shadow: inset 0 20px 40px rgba(0,0,0,0.15);
-            z-index: 2;
+        /* Splash Screen */
+        #splash-screen {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: #0f2027;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 200;
+            transition: opacity 1.5s ease-out;
         }
 
-        /* Typography */
-        #ui { margin-top: 12vh; text-align: center; color: white; z-index: 10; }
-        h1 { font-weight: 200; font-size: 1.5rem; text-transform: uppercase; letter-spacing: 8px; margin-bottom: 10px; opacity: 0.8; }
-        #countdown { font-weight: 600; font-size: clamp(2rem, 8vw, 4rem); text-shadow: 0 10px 30px rgba(0,0,0,0.2); }
+        .splash-char-box {
+            display: flex;
+            align-items: flex-end;
+            gap: 10px;
+        }
+
+        .splash-char-box .sprite {
+            width: 100px;
+        }
 
         /* Character Styling */
         .char-box { 
             position: absolute; bottom: 18vh; width: 100px; height: 150px; 
-            transition: left 1s cubic-bezier(0.4, 0, 0.2, 1); z-index: 5;
+            transition: left 1s cubic-bezier(0.4, 0, 0.2, 1), opacity 1s; z-index: 5;
             display: flex; justify-content: center;
         }
 
@@ -56,6 +67,18 @@
             0%, 100% { transform: scale(1); }
             50% { transform: scale(1.05); }
         }
+
+        #ground { 
+            position: absolute; bottom: 0; width: 100%; height: 22vh; 
+            background: #d4c4a8; 
+            box-shadow: inset 0 20px 40px rgba(0,0,0,0.15);
+            z-index: 2;
+        }
+
+        /* Typography */
+        #ui { margin-top: 12vh; text-align: center; color: white; z-index: 10; }
+        h1 { font-weight: 200; font-size: 1.5rem; text-transform: uppercase; letter-spacing: 8px; margin-bottom: 10px; opacity: 0.8; }
+        #countdown { font-weight: 600; font-size: clamp(2rem, 8vw, 4rem); text-shadow: 0 10px 30px rgba(0,0,0,0.2); }
 
         /* Modern Music Player UI */
         #music {
@@ -78,6 +101,13 @@
 </head>
 <body>
 
+<div id="splash-screen">
+    <div class="splash-char-box">
+        <img src="https://www.svgrepo.com/show/439243/male-walking.svg" class="sprite">
+        <img src="https://www.svgrepo.com/show/439242/female-walking.svg" class="sprite" style="transform: scaleX(-1);">
+    </div>
+</div>
+
 <div id="world">
     <div id="stars"></div>
     <div id="ui">
@@ -86,6 +116,14 @@
     </div>
 
     <div id="ground"></div>
+
+    <div id="char-1" class="char-box">
+        <img src="https://www.svgrepo.com/show/439243/male-walking.svg" class="sprite">
+    </div>
+
+    <div id="char-2" class="char-box">
+        <img src="https://www.svgrepo.com/show/439242/female-walking.svg" class="sprite" style="transform: scaleX(-1);">
+    </div>
 
     <div id="music">
         <div>
@@ -116,10 +154,17 @@
             const s = Math.floor((remaining % 60000) / 1000);
             document.getElementById("countdown").innerHTML = `${d}d ${h}h ${m}m ${s}s`;
 
+            // Movement Logic
+            document.getElementById("char-1").style.left = (5 + (progress * 42)) + "%";
+            document.getElementById("char-2").style.left = (90 - (progress * 42)) + "%";
+
         } else {
             // REUNION STATE
             document.getElementById("countdown").innerHTML = "00:00:00";
             document.getElementById("title").innerHTML = "I Am Home";
+            document.getElementById("char-1").style.left = "48%";
+            document.getElementById("char-1").innerHTML = '<img src="https://www.svgrepo.com/show/415582/hug-love-romance.svg" class="sprite">';
+            document.getElementById("char-2").style.opacity = "0";
         }
 
         updateSky();
@@ -147,6 +192,23 @@
 
     setInterval(update, 1000);
     update();
+
+    // Splash Screen Logic
+    window.addEventListener('load', () => {
+        setTimeout(() => {
+            const splash = document.getElementById('splash-screen');
+            const world = document.getElementById('world');
+            
+            splash.style.opacity = '0';
+            world.style.opacity = '1';
+
+            // Hide splash screen from DOM after transition to prevent blocking
+            setTimeout(() => {
+                splash.style.display = 'none';
+            }, 1500); // Match CSS transition duration
+
+        }, 2500); // Splash screen visible for 2.5 seconds
+    });
 </script>
 </body>
 </html>
