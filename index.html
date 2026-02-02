@@ -47,25 +47,20 @@
         }
 
         .splash-char-box .sprite {
-            width: 100px;
+            width: 180px;
+            height: 180px;
         }
 
         /* Character Styling */
         .char-box { 
-            position: absolute; bottom: 18vh; width: 100px; height: 150px; 
+            position: absolute; bottom: 18vh; width: 150px; height: 150px; 
             transition: left 1s cubic-bezier(0.4, 0, 0.2, 1), opacity 1s; z-index: 5;
             display: flex; justify-content: center;
         }
 
         .sprite { 
-            width: 80px; height: auto; 
+            width: 150px; height: 150px; 
             filter: drop-shadow(0 10px 15px rgba(0,0,0,0.2)); 
-            animation: breath 3s infinite ease-in-out; 
-        }
-        
-        @keyframes breath {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.05); }
         }
 
         #ground { 
@@ -98,13 +93,14 @@
         }
         .play-btn:hover { background: #ff4b2b; color: #fff; transform: translateY(-3px); }
     </style>
+    <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
 </head>
 <body>
 
 <div id="splash-screen">
     <div class="splash-char-box">
-        <img src="https://www.svgrepo.com/show/439243/male-walking.svg" class="sprite">
-        <img src="https://www.svgrepo.com/show/439242/female-walking.svg" class="sprite" style="transform: scaleX(-1);">
+        <lottie-player src="https://lottie.host/a35362e3-3a60-4217-ab29-9c676f77e089/T5i3aK1b6k.json" background="transparent" speed="1" class="sprite" loop autoplay></lottie-player>
+        <lottie-player src="https://lottie.host/58b2d184-2227-449a-99f5-1f6f22689508/vX8a2m2a2f.json" background="transparent" speed="1" class="sprite" style="transform: scaleX(-1);" loop autoplay></lottie-player>
     </div>
 </div>
 
@@ -118,11 +114,11 @@
     <div id="ground"></div>
 
     <div id="char-1" class="char-box">
-        <img src="https://www.svgrepo.com/show/439243/male-walking.svg" class="sprite">
+        <lottie-player src="https://lottie.host/a35362e3-3a60-4217-ab29-9c676f77e089/T5i3aK1b6k.json" background="transparent" speed="1" class="sprite" loop autoplay></lottie-player>
     </div>
 
     <div id="char-2" class="char-box">
-        <img src="https://www.svgrepo.com/show/439242/female-walking.svg" class="sprite" style="transform: scaleX(-1);">
+        <lottie-player src="https://lottie.host/58b2d184-2227-449a-99f5-1f6f22689508/vX8a2m2a2f.json" background="transparent" speed="1" class="sprite" style="transform: scaleX(-1);" loop autoplay></lottie-player>
     </div>
 
     <div id="music">
@@ -163,7 +159,7 @@
             document.getElementById("countdown").innerHTML = "00:00:00";
             document.getElementById("title").innerHTML = "I Am Home";
             document.getElementById("char-1").style.left = "48%";
-            document.getElementById("char-1").innerHTML = '<img src="https://www.svgrepo.com/show/415582/hug-love-romance.svg" class="sprite">';
+            document.getElementById("char-1").innerHTML = '<lottie-player src="https://lottie.host/87768519-93b5-4e08-a488-693320299e52/85k9B9xT2A.json" background="transparent" speed="1" class="sprite" loop autoplay></lottie-player>';
             document.getElementById("char-2").style.opacity = "0";
         }
 
