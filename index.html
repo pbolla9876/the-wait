@@ -3,145 +3,164 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Counting Down to Us</title>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;600&display=swap" rel="stylesheet">
+    <title>The Distance Between Us</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@200;600&display=swap" rel="stylesheet">
     <style>
         :root {
-            --sky-top: #1e3c72;
-            --sky-bottom: #2a5298;
-            --path-color: #d4c4a8;
+            --sky-top: #2193b0;
+            --sky-bottom: #6dd5ed;
         }
 
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; font-family: 'Montserrat', sans-serif; }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; font-family: 'Montserrat', sans-serif; background: #000; }
         
         #world { 
             position: relative; width: 100%; height: 100vh; 
             background: linear-gradient(to bottom, var(--sky-top), var(--sky-bottom));
-            transition: all 2s ease-in-out;
+            transition: background 3s ease-in-out;
             display: flex; flex-direction: column; align-items: center;
         }
 
-        /* Artistic Background Elements */
-        .stars { position: absolute; width: 100%; height: 100%; background: url('https://www.transparenttextures.com/patterns/stardust.png'); opacity: 0.3; pointer-events: none; }
-        
+        /* High-Quality Star Overlay */
+        #stars { 
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
+            background: url('https://www.transparenttextures.com/patterns/stardust.png'); 
+            opacity: 0; transition: opacity 2s; pointer-events: none; 
+        }
+
         #ground { 
-            position: absolute; bottom: 0; width: 100%; height: 20vh; 
-            background: #c2b280; 
-            box-shadow: inset 0 10px 20px rgba(0,0,0,0.2);
+            position: absolute; bottom: 0; width: 100%; height: 22vh; 
+            background: #d4c4a8; 
+            box-shadow: inset 0 20px 40px rgba(0,0,0,0.15);
             z-index: 2;
         }
 
         /* Typography */
-        #ui { margin-top: 15vh; text-align: center; color: white; z-index: 10; letter-spacing: 4px; }
-        h1 { font-weight: 300; font-size: 2rem; text-transform: uppercase; margin-bottom: 10px; opacity: 0.9; }
-        #countdown { font-weight: 600; font-size: 3.5rem; text-shadow: 0 0 20px rgba(255,255,255,0.4); }
+        #ui { margin-top: 12vh; text-align: center; color: white; z-index: 10; }
+        h1 { font-weight: 200; font-size: 1.5rem; text-transform: uppercase; letter-spacing: 8px; margin-bottom: 10px; opacity: 0.8; }
+        #countdown { font-weight: 600; font-size: clamp(2rem, 8vw, 4rem); text-shadow: 0 10px 30px rgba(0,0,0,0.2); }
 
-        /* High Quality Character Containers */
-        .char-container { 
-            position: absolute; bottom: 15vh; width: 100px; height: 150px; 
-            transition: left 1s linear; z-index: 5;
-            display: flex; flex-direction: column; align-items: center;
+        /* Character Styling */
+        .char-box { 
+            position: absolute; bottom: 18vh; width: 100px; height: 150px; 
+            transition: left 1s cubic-bezier(0.4, 0, 0.2, 1); z-index: 5;
+            display: flex; justify-content: center;
         }
 
-        /* Using SVG for high-quality, sharp graphics */
-        .person-svg { width: 80px; height: auto; filter: drop-shadow(0 10px 10px rgba(0,0,0,0.3)); }
-
-        /* Music Bar */
-        #music-bar {
-            position: absolute; bottom: 40px; background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.2);
-            padding: 15px 30px; border-radius: 100px; display: flex; align-items: center;
-            gap: 20px; color: white; z-index: 100;
+        .sprite { 
+            width: 80px; height: auto; 
+            filter: drop-shadow(0 10px 15px rgba(0,0,0,0.2)); 
+            animation: breath 3s infinite ease-in-out; 
         }
-        #play-btn { background: #fff; color: #333; border: none; padding: 10px 20px; border-radius: 50px; font-weight: bold; cursor: pointer; transition: 0.3s; }
-        #play-btn:hover { background: #ff4b2b; color: white; transform: scale(1.05); }
+        
+        @keyframes breath {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
 
-        /* Rain Canvas */
-        #rain-canvas { position: absolute; top: 0; left: 0; z-index: 4; pointer-events: none; }
+        /* Modern Music Player UI */
+        #music {
+            position: absolute; bottom: 5vh; 
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.3);
+            padding: 15px 40px; border-radius: 100px;
+            display: flex; align-items: center; gap: 25px;
+            color: white; z-index: 100; box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        .play-btn { 
+            background: #fff; color: #333; border: none; padding: 10px 25px; 
+            border-radius: 50px; font-weight: 600; cursor: pointer; transition: 0.3s;
+            text-decoration: none; font-size: 0.9rem;
+        }
+        .play-btn:hover { background: #ff4b2b; color: #fff; transform: translateY(-3px); }
     </style>
 </head>
 <body>
 
 <div id="world">
-    <div class="stars"></div>
-    <canvas id="rain-canvas"></canvas>
-    
+    <div id="stars"></div>
     <div id="ui">
-        <div id="countdown">Loading...</div>
+        <h1 id="title">The Distance Between Us</h1>
+        <div id="countdown">Connecting...</div>
     </div>
 
     <div id="ground"></div>
 
-    <div id="char-1" class="char-container">
-        <img src="https://cdn-icons-png.flaticon.com/512/11107/11107297.png" class="person-svg" alt="Me">
+    <div id="char-1" class="char-box">
+        <img src="https://www.svgrepo.com/show/439243/male-walking.svg" class="sprite">
     </div>
 
-    <div id="char-2" class="char-container">
-        <img src="https://cdn-icons-png.flaticon.com/512/11107/11107248.png" class="person-svg" alt="Her" style="transform: scaleX(-1);">
+    <div id="char-2" class="char-box">
+        <img src="https://www.svgrepo.com/show/439242/female-walking.svg" class="sprite" style="transform: scaleX(-1);">
     </div>
 
-    <div id="music-bar">
-        <div><strong>Current Song:</strong> <span id="song-name">Melody of Silence</span></div>
-        <button id="play-btn" onclick="window.open('YOUR_SPOTIFY_OR_YT_LINK_HERE', '_blank')">PLAY</button>
+    <div id="music">
+        <div>
+            <small style="opacity: 0.7; display: block; font-size: 0.7rem;">NOW PLAYING</small>
+            <span id="song-title" style="font-weight: 600;">Thinking of You</span>
+        </div>
+        <a href="YOUR_LINK_HERE" target="_blank" class="play-btn">OPEN SONG</a>
     </div>
 </div>
 
 <script>
+    // Configuration
     const START_DATE = new Date("2024-05-01T00:00:00").getTime();
-    const END_DATE = new Date("2026-03-01T00:00:00-06:00").getTime();
+    const END_DATE = new Date("2026-03-01T00:00:00-06:00").getTime(); // 12AM CST
 
-    function updateApp() {
+    function update() {
         const now = new Date().getTime();
         const remaining = END_DATE - now;
         const total = END_DATE - START_DATE;
         const elapsed = now - START_DATE;
-        
         let progress = elapsed / total;
         if (progress > 1) progress = 1;
 
-        // Typography Update
         if (remaining > 0) {
             const d = Math.floor(remaining / 86400000);
             const h = Math.floor((remaining % 86400000) / 3600000);
             const m = Math.floor((remaining % 3600000) / 60000);
             const s = Math.floor((remaining % 60000) / 1000);
             document.getElementById("countdown").innerHTML = `${d}d ${h}h ${m}m ${s}s`;
-            
-            // Smoother Movement
-            // Char 1 moves 5% -> 45%, Char 2 moves 95% -> 55%
+
+            // Movement Logic
             document.getElementById("char-1").style.left = (5 + (progress * 42)) + "%";
             document.getElementById("char-2").style.left = (90 - (progress * 42)) + "%";
         } else {
+            // REUNION STATE
             document.getElementById("countdown").innerHTML = "00:00:00";
+            document.getElementById("title").innerHTML = "I Am Home";
             document.getElementById("char-1").style.left = "48%";
-            document.getElementById("char-2").style.left = "52%";
-            // You could trigger a special hug image here
+            document.getElementById("char-1").innerHTML = '<img src="https://www.svgrepo.com/show/415582/hug-love-romance.svg" class="sprite">';
+            document.getElementById("char-2").style.opacity = "0";
         }
 
-        // Dynamic High-Quality Sky
         updateSky();
     }
 
     function updateSky() {
-        const hr = new Date().getHours();
-        const world = document.getElementById("world");
-        if (hr >= 5 && hr < 8) { // Sunrise
-            world.style.setProperty('--sky-top', '#ff5f6d');
-            world.style.setProperty('--sky-bottom', '#ffc371');
-        } else if (hr >= 8 && hr < 17) { // Day
-            world.style.setProperty('--sky-top', '#2193b0');
-            world.style.setProperty('--sky-bottom', '#6dd5ed');
-        } else if (hr >= 17 && hr < 20) { // Sunset
-            world.style.setProperty('--sky-top', '#ee0979');
-            world.style.setProperty('--sky-bottom', '#ff6a00');
+        const hour = new Date().getHours();
+        const root = document.documentElement;
+        const stars = document.getElementById('stars');
+
+        if (hour >= 6 && hour < 9) { // Sunrise
+            root.style.setProperty('--sky-top', '#ff5f6d'); root.style.setProperty('--sky-bottom', '#ffc371');
+            stars.style.opacity = "0";
+        } else if (hour >= 9 && hour < 17) { // Day
+            root.style.setProperty('--sky-top', '#2193b0'); root.style.setProperty('--sky-bottom', '#6dd5ed');
+            stars.style.opacity = "0";
+        } else if (hour >= 17 && hour < 20) { // Sunset
+            root.style.setProperty('--sky-top', '#ee0979'); root.style.setProperty('--sky-bottom', '#ff6a00');
+            stars.style.opacity = "0";
         } else { // Night
-            world.style.setProperty('--sky-top', '#0f2027');
-            world.style.setProperty('--sky-bottom', '#203a43');
+            root.style.setProperty('--sky-top', '#0f2027'); root.style.setProperty('--sky-bottom', '#203a43');
+            stars.style.opacity = "0.5";
         }
     }
 
-    setInterval(updateApp, 1000);
-    updateApp();
+    setInterval(update, 1000);
+    update();
 </script>
 </body>
 </html>
