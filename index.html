@@ -87,14 +87,6 @@
 
     <div id="ground"></div>
 
-    <div id="char-1" class="char-box">
-        <img src="https://www.svgrepo.com/show/439243/male-walking.svg" class="sprite">
-    </div>
-
-    <div id="char-2" class="char-box">
-        <img src="https://www.svgrepo.com/show/439242/female-walking.svg" class="sprite" style="transform: scaleX(-1);">
-    </div>
-
     <div id="music">
         <div>
             <small style="opacity: 0.7; display: block; font-size: 0.7rem;">NOW PLAYING</small>
@@ -124,16 +116,10 @@
             const s = Math.floor((remaining % 60000) / 1000);
             document.getElementById("countdown").innerHTML = `${d}d ${h}h ${m}m ${s}s`;
 
-            // Movement Logic
-            document.getElementById("char-1").style.left = (5 + (progress * 42)) + "%";
-            document.getElementById("char-2").style.left = (90 - (progress * 42)) + "%";
         } else {
             // REUNION STATE
             document.getElementById("countdown").innerHTML = "00:00:00";
             document.getElementById("title").innerHTML = "I Am Home";
-            document.getElementById("char-1").style.left = "48%";
-            document.getElementById("char-1").innerHTML = '<img src="https://www.svgrepo.com/show/415582/hug-love-romance.svg" class="sprite">';
-            document.getElementById("char-2").style.opacity = "0";
         }
 
         updateSky();
