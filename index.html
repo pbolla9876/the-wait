@@ -18,141 +18,73 @@
             background: linear-gradient(to bottom, var(--sky-top), var(--sky-bottom));
             transition: background 3s ease-in-out, opacity 1.5s ease-in;
             display: flex; flex-direction: column; align-items: center;
-            opacity: 0; /* Initially hidden for splash screen */
+            opacity: 0;
         }
 
-        /* High-Quality Star Overlay */
         #stars { 
             position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
             background: url('https://www.transparenttextures.com/patterns/stardust.png'); 
             opacity: 0; transition: opacity 2s; pointer-events: none; 
         }
 
-        /* Splash Screen */
         #splash-screen {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: #0f2027;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 200;
-            transition: opacity 1.5s ease-out;
-        }
-
-        /* Vignette & Atmosphere */
-        .vignette {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: radial-gradient(circle, transparent 50%, rgba(0,0,0,0.4) 100%);
-            pointer-events: none; z-index: 90;
-        }
-        
-        #hearts { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; overflow: hidden; }
-        .heart {
-            position: absolute; bottom: -50px; width: 20px; height: 20px;
-            background: rgba(255, 105, 180, 0.6);
-            clip-path: path('M10 3.22C10 3.22 6.66 0 3.33 0 1.49 0 0 1.49 0 3.33 0 6.66 10 16.66 10 16.66s10-10 10-13.33C20 1.49 18.51 0 16.66 0 13.33 0 10 3.22 10 3.22z');
-            animation: floatUp linear forwards;
-        }
-        @keyframes floatUp { to { transform: translateY(-110vh) scale(1.5); opacity: 0; } }
-
-        .splash-char-box {
-            display: flex;
-            align-items: flex-end;
-            gap: 10px;
+            background: #0f2027; display: flex; justify-content: center; align-items: center;
+            z-index: 200; transition: opacity 1.5s ease-out;
         }
 
-        .splash-char-box .sprite {
-            width: 90px;
-            height: 180px;
+        /* Walking Animation */
+        @keyframes walk {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            25% { transform: translateY(-8px) rotate(2deg); }
+            75% { transform: translateY(-8px) rotate(-2deg); }
         }
 
-        /* Character Styling */
+        /* Reunion Pulse */
+        @keyframes pulse-glow {
+            0% { filter: drop-shadow(0 0 5px #fff); }
+            50% { filter: drop-shadow(0 0 25px #ff69b4); }
+            100% { filter: drop-shadow(0 0 5px #fff); }
+        }
+
         .char-box { 
-            position: absolute; bottom: 18vh; width: 90px; height: 180px;
+            position: absolute; bottom: 18vh; width: 80px; height: 120px;
             transition: left 1s cubic-bezier(0.4, 0, 0.2, 1), opacity 1s; z-index: 5;
-            display: flex; justify-content: center;
         }
+
+        .walking { animation: walk 0.8s infinite ease-in-out; }
 
         .sprite { 
-            width: 100%; height: 100%; 
-            filter: drop-shadow(0 10px 15px rgba(0,0,0,0.2)); 
-        }
-        
-        .walking { animation: walk 1s infinite ease-in-out alternate; }
-        @keyframes walk {
-            from { transform: translateY(0) rotate(-2deg); }
-            to { transform: translateY(-10px) rotate(2deg); }
+            width: 100%; height: 100%; fill: white;
+            filter: drop-shadow(0 10px 15px rgba(0,0,0,0.3)); 
         }
 
         #ground { 
             position: absolute; bottom: 0; width: 100%; height: 22vh;
-            background: #d4c4a8; 
-            box-shadow: inset 0 20px 40px rgba(0,0,0,0.15);
-            z-index: 2;
+            background: #d4c4a8; box-shadow: inset 0 20px 40px rgba(0,0,0,0.15); z-index: 2;
         }
 
-        /* Typography */
         #ui { margin-top: 12vh; text-align: center; color: white; z-index: 10; }
         h1 { font-weight: 200; font-size: 1.5rem; text-transform: uppercase; letter-spacing: 8px; margin-bottom: 10px; opacity: 0.8; }
-        #countdown { font-weight: 600; font-size: clamp(2rem, 8vw, 4rem); text-shadow: 0 10px 30px rgba(0,0,0,0.2); font-variant-numeric: tabular-nums; }
+        #countdown { font-weight: 600; font-size: clamp(2rem, 8vw, 4rem); text-shadow: 0 10px 30px rgba(0,0,0,0.2); }
 
-        /* Modern Music Player UI */
-        #music {
-            position: absolute; bottom: 5vh; 
-            background: rgba(255, 255, 255, 0.15);
-            backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-            border: 1px solid rgba(255,255,255,0.3);
-            padding: 15px 40px; border-radius: 100px;
-            display: flex; align-items: center; gap: 25px;
-            color: white; z-index: 100; box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-        }
+        /* Hearts & UI elements keep your existing styles */
+        #hearts { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; overflow: hidden; }
+        .heart { position: absolute; bottom: -50px; width: 20px; height: 20px; background: rgba(255, 105, 180, 0.6); clip-path: path('M10 3.22C10 3.22 6.66 0 3.33 0 1.49 0 0 1.49 0 3.33 0 6.66 10 16.66 10 16.66s10-10 10-13.33C20 1.49 18.51 0 16.66 0 13.33 0 10 3.22 10 3.22z'); animation: floatUp linear forwards; }
+        @keyframes floatUp { to { transform: translateY(-110vh) scale(1.5); opacity: 0; } }
 
-        .play-btn { 
-            background: #fff; color: #333; border: none; padding: 10px 25px; 
-            border-radius: 50px; font-weight: 600; cursor: pointer; transition: 0.3s;
-            text-decoration: none; font-size: 0.9rem;
-        }
-        .play-btn:hover { background: #ff4b2b; color: #fff; transform: translateY(-3px); }
-
-        /* Reunion Styles */
-        #reunion-container {
-            position: absolute; bottom: 18vh; left: 50%; transform: translateX(-50%);
-            width: 180px; height: 180px;
-            display: none; justify-content: center; align-items: flex-end;
-            z-index: 20;
-        }
-        .reunion-glow {
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            width: 300px; height: 300px;
-            background: radial-gradient(circle, rgba(255,255,255,0.6) 0%, rgba(255,255,255,0) 70%);
-            border-radius: 50%;
-            animation: pulse 3s infinite ease-in-out;
-            z-index: -1;
-        }
-        @keyframes pulse {
-            0%, 100% { transform: translate(-50%, -50%) scale(0.8); opacity: 0.4; }
-            50% { transform: translate(-50%, -50%) scale(1.2); opacity: 0.8; }
-        }
+        #music { position: absolute; bottom: 5vh; background: rgba(255, 255, 255, 0.15); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.3); padding: 15px 40px; border-radius: 100px; display: flex; align-items: center; gap: 25px; color: white; z-index: 100; }
+        .play-btn { background: #fff; color: #333; border: none; padding: 10px 25px; border-radius: 50px; font-weight: 600; cursor: pointer; text-decoration: none; }
     </style>
-    <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
 </head>
 <body>
 
 <div id="splash-screen">
-    <div class="splash-char-box">
-        <svg class="sprite" viewBox="0 0 100 100">
-            <path d="M47.6,52.9L38.2,43c-1.8-2-4.8-2.8-7.3-1.9l-8.4,3.1c-2.5,0.9-4.2,3.2-4.2,5.9v13.5h6.3V50.1l6.3-2.3l9.4,9.9V71h6.3V56.6 C50.1,55.4,49,53.9,47.6,52.9z M32.4,36.5c2.6,0,4.7-2.1,4.7-4.7s-2.1-4.7-4.7-4.7s-4.7,2.1-4.7,4.7S29.8,36.5,32.4,36.5z" fill="#fff"/>
-        </svg>
-        <svg class="sprite" style="transform: scaleX(-1);" viewBox="0 0 100 100">
-            <path d="M47.6,52.9L38.2,43c-1.8-2-4.8-2.8-7.3-1.9l-8.4,3.1c-2.5,0.9-4.2,3.2-4.2,5.9v13.5h6.3V50.1l6.3-2.3l9.4,9.9V71h6.3V56.6 C50.1,55.4,49,53.9,47.6,52.9z M32.4,36.5c2.6,0,4.7-2.1,4.7-4.7s-2.1-4.7-4.7-4.7s-4.7,2.1-4.7,4.7S29.8,36.5,32.4,36.5z" fill="#fff"/>
-        </svg>
-    </div>
+    <div style="color:white; font-size: 1.2rem; letter-spacing: 4px;">PREPARING THE JOURNEY...</div>
 </div>
 
 <div id="world">
     <div id="stars"></div>
-    <div class="vignette"></div>
     <div id="hearts"></div>
     <div id="ui">
         <h1 id="title">The Distance Between Us</h1>
@@ -161,50 +93,30 @@
 
     <div id="ground"></div>
 
-    <div id="char-1" class="char-box">
-        <svg class="sprite walking" viewBox="0 0 100 100">
-            <path d="M27.81 53.51c0 2.3-1.86 4.16-4.16 4.16s-4.16-1.86-4.16-4.16 1.86-4.16 4.16-4.16 4.16 1.86 4.16 4.16zm2.08 19.98v-6.91c0-.57.22-1.11.61-1.51l13.4-13.4c.39-.39.94-.61 1.51-.61h6.91v-8.32h-6.91c-.57 0-1.11-.22-1.51-.61l-13.4-13.4c-.39-.39-.61-.94-.61-1.51v-6.91h8.32v6.91c0 .57-.22 1.11-.61 1.51l-13.4 13.4c-.39.39-.94.61-1.51.61h-6.91v8.32h6.91c.57 0 1.11.22 1.51.61l13.4 13.4c.39.39.61.94.61 1.51v6.91h-8.32z" fill="#fff"/>
-        </svg>
+    <div id="char-1" class="char-box walking">
+        <svg class="sprite" viewBox="0 0 24 24"><path d="M13.5 5.5c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zM9.8 8.9L7 21.5h2.1l1.8-8 2.1 2v6h2V14.5l-2.1-2 1-5h-3.9z"/></svg>
     </div>
 
-    <div id="char-2" class="char-box">
-        <div style="transform: scaleX(-1); width: 100%; height: 100%;">
-            <svg class="sprite walking" viewBox="0 0 100 100">
-                <path d="M47.6,52.9L38.2,43c-1.8-2-4.8-2.8-7.3-1.9l-8.4,3.1c-2.5,0.9-4.2,3.2-4.2,5.9v13.5h6.3V50.1l6.3-2.3l9.4,9.9V71h6.3V56.6 C50.1,55.4,49,53.9,47.6,52.9z M32.4,36.5c2.6,0,4.7-2.1,4.7-4.7s-2.1-4.7-4.7-4.7s-4.7,2.1-4.7,4.7S29.8,36.5,32.4,36.5z" fill="#fff"/>
-            </svg>
-        </div>
-    </div>
-
-    <div id="reunion-container">
-        <div class="reunion-glow"></div>
-        <svg class="sprite" viewBox="0 0 100 100">
-            <path d="M65,35c-2.8,0-5,2.2-5,5c0,0.8,0.2,1.5,0.5,2.2l-6.8,3.4l-6.8-3.4C47.3,41.5,47.5,40.8,47.5,40c0-2.8-2.2-5-5-5 s-5,2.2-5,5c0,2.8,2.2,5,5,5c0.8,0,1.5-0.2,2.2-0.5l6.8,3.4v12.1h-5v20h5v-8.6l5-2.5l5,2.5v8.6h5v-20h-5V52.9l6.8-3.4 c0.7,0.3,1.4,0.5,2.2,0.5c2.8,0,5-2.2,5-5S67.8,35,65,35z" fill="#fff"/>
-        </svg>
+    <div id="char-2" class="char-box walking">
+        <svg class="sprite" style="transform: scaleX(-1);" viewBox="0 0 24 24"><path d="M12 4c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm3 14v4h-2v-4h-2v4H9v-4l1.1-6.1L9 11.5l-1-4h6l-1 4-1.1.4L15 18z"/></svg>
     </div>
 
     <div id="music">
-        <div>
-            <small style="opacity: 0.7; display: block; font-size: 0.7rem;">NOW PLAYING</small>
-            <span id="song-title" style="font-weight: 600;">Thinking of You</span>
-        </div>
+        <div><small style="opacity: 0.7; display: block;">NOW PLAYING</small><span id="song-title">Thinking of You</span></div>
         <button id="play-btn" class="play-btn" onclick="toggleAudio()">PLAY</button>
-        <audio id="bg-music" loop>
-            <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" type="audio/mp3">
-        </audio>
+        <audio id="bg-music" loop><source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" type="audio/mp3"></audio>
     </div>
 </div>
 
 <script>
-    // Configuration
     const START_DATE = new Date("2024-05-01T00:00:00").getTime();
-    const END_DATE = new Date("2026-03-01T00:00:00-06:00").getTime(); // 12AM CST
+    const END_DATE = new Date("2026-03-01T00:00:00-06:00").getTime();
 
     function update() {
         const now = new Date().getTime();
         const remaining = END_DATE - now;
         const total = END_DATE - START_DATE;
-        const elapsed = now - START_DATE;
-        let progress = elapsed / total;
+        let progress = (now - START_DATE) / total;
         if (progress > 1) progress = 1;
 
         if (remaining > 0) {
@@ -214,19 +126,25 @@
             const s = Math.floor((remaining % 60000) / 1000);
             document.getElementById("countdown").innerHTML = `${d}d ${h}h ${m}m ${s}s`;
 
-            // Movement Logic
-            document.getElementById("char-1").style.left = (5 + (progress * 42)) + "%";
-            document.getElementById("char-2").style.left = (90 - (progress * 42)) + "%";
-
+            // Dynamic movement: Characters walk toward the center (48-52% mark)
+            document.getElementById("char-1").style.left = (5 + (progress * 43)) + "%";
+            document.getElementById("char-2").style.left = (90 - (progress * 40)) + "%";
         } else {
-            // REUNION STATE
+            // REUNION STATE reached
             document.getElementById("countdown").innerHTML = "00:00:00";
-            document.getElementById("title").innerHTML = "I Am Home";
-            document.getElementById("char-1").style.display = "none";
-            document.getElementById("char-2").style.display = "none";
-            document.getElementById("reunion-container").style.display = "flex";
-        }
+            document.getElementById("title").innerHTML = "Finally Together";
+            
+            const char1 = document.getElementById("char-1");
+            const char2 = document.getElementById("char-2");
 
+            // Stop walking, move to center, and swap for Hug SVG
+            char1.classList.remove('walking');
+            char1.style.left = "47%";
+            char1.style.animation = "pulse-glow 2s infinite";
+            char1.innerHTML = `<svg class="sprite" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>`;
+            
+            char2.style.opacity = "0"; // Hide second character as they become one
+        }
         updateSky();
     }
 
@@ -234,38 +152,19 @@
         const hour = new Date().getHours();
         const root = document.documentElement;
         const stars = document.getElementById('stars');
-
-        if (hour >= 6 && hour < 9) { // Sunrise
-            root.style.setProperty('--sky-top', '#ff5f6d'); root.style.setProperty('--sky-bottom', '#ffc371');
-            stars.style.opacity = "0";
-        } else if (hour >= 9 && hour < 17) { // Day
-            root.style.setProperty('--sky-top', '#2193b0'); root.style.setProperty('--sky-bottom', '#6dd5ed');
-            stars.style.opacity = "0";
-        } else if (hour >= 17 && hour < 20) { // Sunset
-            root.style.setProperty('--sky-top', '#ee0979'); root.style.setProperty('--sky-bottom', '#ff6a00');
-            stars.style.opacity = "0";
-        } else { // Night
+        if (hour >= 20 || hour < 6) {
             root.style.setProperty('--sky-top', '#0f2027'); root.style.setProperty('--sky-bottom', '#203a43');
             stars.style.opacity = "0.5";
+        } else if (hour >= 17) {
+            root.style.setProperty('--sky-top', '#ee0979'); root.style.setProperty('--sky-bottom', '#ff6a00');
+            stars.style.opacity = "0";
+        } else {
+            root.style.setProperty('--sky-top', '#2193b0'); root.style.setProperty('--sky-bottom', '#6dd5ed');
+            stars.style.opacity = "0";
         }
     }
 
-    setInterval(update, 1000);
-    update();
-
-    // Floating Hearts Logic
-    function createHeart() {
-        const heart = document.createElement('div');
-        heart.classList.add('heart');
-        heart.style.left = Math.random() * 100 + "vw";
-        heart.style.animationDuration = Math.random() * 3 + 4 + "s";
-        heart.style.opacity = Math.random() * 0.5 + 0.3;
-        document.getElementById('hearts').appendChild(heart);
-        setTimeout(() => { heart.remove(); }, 7000);
-    }
-    setInterval(createHeart, 400);
-
-    // Audio Logic
+    // Audio & Heart functions remain the same
     function toggleAudio() {
         const audio = document.getElementById("bg-music");
         const btn = document.getElementById("play-btn");
@@ -273,24 +172,26 @@
         else { audio.pause(); btn.innerText = "PLAY"; }
     }
 
-    // Splash Screen Logic
+    function createHeart() {
+        const heart = document.createElement('div');
+        heart.classList.add('heart');
+        heart.style.left = Math.random() * 100 + "vw";
+        heart.style.animationDuration = Math.random() * 3 + 4 + "s";
+        document.getElementById('hearts').appendChild(heart);
+        setTimeout(() => { heart.remove(); }, 7000);
+    }
+    
+    setInterval(update, 1000);
+    setInterval(createHeart, 400);
+    update();
+
     window.addEventListener('load', () => {
         setTimeout(() => {
-            const splash = document.getElementById('splash-screen');
-            const world = document.getElementById('world');
-            
-            splash.style.opacity = '0';
-            world.style.opacity = '1';
-
-            // Hide splash screen from DOM after transition to prevent blocking
-            setTimeout(() => {
-                splash.style.display = 'none';
-            }, 1500); // Match CSS transition duration
-
-        }, 2500); // Splash screen visible for 2.5 seconds
+            document.getElementById('splash-screen').style.opacity = '0';
+            document.getElementById('world').style.opacity = '1';
+            setTimeout(() => { document.getElementById('splash-screen').style.display = 'none'; }, 1500);
+        }, 2000);
     });
 </script>
-
-
 </body>
 </html>
