@@ -3,190 +3,186 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>The Distance Between Us - 3D</title>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;600&display=swap" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <title>The Wait | March 1st 2026</title>
     <style>
-        body { margin: 0; overflow: hidden; font-family: 'Montserrat', sans-serif; background: #feb47b; }
-        
-        /* Overlay UI */
-        #ui-layer {
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            pointer-events: none;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: space-between;
-            padding: 40px 0;
-            z-index: 10;
+        :root {
+            --sky-color: #87CEEB;
+            --ground-color: #4a7c44;
         }
 
-        .glass-box {
-            background: rgba(255, 255, 255, 0.2);
-            backdrop-filter: blur(15px);
-            -webkit-backdrop-filter: blur(15px);
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            border-radius: 20px;
-            padding: 20px 40px;
-            text-align: center;
-            color: white;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        body, html {
+            margin: 0; padding: 0; width: 100%; height: 100%;
+            overflow: hidden; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
 
-        h1 { font-size: 1.5rem; letter-spacing: 5px; text-transform: uppercase; margin: 0; font-weight: 300; }
-        #timer { font-size: 2.5rem; font-weight: 600; margin-top: 10px; }
-
-        .music-bar {
-            width: 300px;
-            border-radius: 50px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 15px 25px;
-            pointer-events: auto;
+        /* Dynamic Sky Background */
+        #world {
+            position: relative; width: 100%; height: 100vh;
+            transition: background 2s ease;
+            background: var(--sky-color);
+            display: flex; flex-direction: column; align-items: center;
         }
 
-        #song-btn {
-            background: white;
-            color: #ff7e5f;
-            border: none;
-            padding: 8px 15px;
-            border-radius: 20px;
-            font-weight: 600;
-            cursor: pointer;
-            text-decoration: none;
-            font-size: 0.8rem;
+        /* The Ground/Path */
+        #path {
+            position: absolute; bottom: 0; width: 100%; height: 30vh;
+            background: #e0d0b0; border-top: 5px solid #c4b08d;
+        }
+
+        /* Characters */
+        .character {
+            position: absolute; bottom: 20vh; width: 60px; height: 100px;
+            font-size: 50px; display: flex; align-items: center; 
+            justify-content: center; transition: all 0.5s linear;
+        }
+
+        #timer-display {
+            margin-top: 50px; text-align: center; color: white;
+            text-shadow: 2px 2px 8px rgba(0,0,0,0.5); z-index: 10;
+        }
+
+        h1 { font-size: 3rem; margin-bottom: 0; }
+        #countdown { font-size: 1.5rem; font-weight: 300; }
+
+        /* Weather Overlay */
+        #weather-layer {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 5;
+        }
+
+        .rain {
+            position: absolute; background-color: rgba(255, 255, 255, 0.6);
+            width: 2px; height: 15px; top: -20px;
+            animation: fall linear infinite;
+        }
+
+        @keyframes fall { to { transform: translateY(100vh); } }
+
+        /* Music Widget */
+        #music-box {
+            position: absolute; bottom: 20px; right: 20px;
+            background: rgba(255, 255, 255, 0.8); padding: 15px;
+            border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            z-index: 20; text-align: center;
         }
     </style>
 </head>
 <body>
 
-    <div id="ui-layer">
-        <div class="glass-box">
-            <h1>The Distance Between Us</h1>
-            <div id="timer">00d 00h 00m 00s</div>
-        </div>
-
-        <div class="glass-box music-bar">
-            <span>Thinking of You...</span>
-            <a href="#" id="song-btn">OPEN SONG</a>
-        </div>
+<div id="world">
+    <div id="weather-layer"></div>
+    
+    <div id="timer-display">
+        <h1 id="status-text">Still Waiting...</h1>
+        <div id="countdown">Calculating time...</div>
     </div>
 
-    <script>
-        // --- 1. THREE.JS SCENE SETUP ---
-        const scene = new THREE.Scene();
-        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-        const renderer = new THREE.WebGLRenderer({ antialias: true });
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.setPixelRatio(window.devicePixelRatio);
-        document.body.appendChild(renderer.domElement);
+    <div id="path"></div>
+    
+    <div id="char-me" class="character">🚶‍♂️</div>
+    <div id="char-her" class="character">🚶‍♀️</div>
 
-        // Lights (Pixar-style warm lighting)
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
-        scene.add(ambientLight);
-        const sunLight = new THREE.DirectionalLight(0xffccaa, 1);
-        sunLight.position.set(5, 5, 5);
-        scene.add(sunLight);
+    <div id="music-box">
+        <div style="font-size: 12px; color: #666;">TODAY'S SONG</div>
+        <div id="song-name" style="font-weight: bold; margin: 5px 0;">Loading melody...</div>
+        <button onclick="playSong()" style="cursor:pointer; border:none; background:#ff4b2b; color:white; padding:5px 15px; border-radius:20px;">Listen Together</button>
+    </div>
+</div>
 
-        // --- 2. THE ENVIRONMENT ---
-        // Sky Gradient (Simplified via background color)
-        scene.background = new THREE.Color(0xfeb47b);
+<script>
+    // CONFIGURATION
+    const START_DATE = new Date("2024-05-01T00:00:00").getTime(); // When you stopped talking
+    const TARGET_DATE = new Date("2026-03-01T00:00:00-06:00").getTime(); // March 1st 12am CST
+    
+    // Songs list - Add your favorites here
+    const songs = [
+        { name: "First Day - The Moments", url: "https://open.spotify.com" },
+        { name: "Thinking of You", url: "https://youtube.com" }
+    ];
+
+    function updateApp() {
+        const now = new Date().getTime();
+        const timeLeft = TARGET_DATE - now;
+        const totalDuration = TARGET_DATE - START_DATE;
+        const timePassed = now - START_DATE;
+
+        // 1. COUNTDOWN LOGIC
+        if (timeLeft <= 0) {
+            document.getElementById("countdown").innerHTML = "00:00:00:00";
+            document.getElementById("status-text").innerHTML = "Together Again ❤️";
+            moveCharacters(100); // 100% progress = Meeting
+            return;
+        }
+
+        const days = Math.floor(timeLeft / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((timeLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
+
+        document.getElementById("countdown").innerHTML = 
+            `${days}d ${hours}h ${minutes}m ${seconds}s`;
+
+        // 2. MOVEMENT LOGIC
+        const progress = (timePassed / totalDuration) * 100;
+        moveCharacters(progress);
+
+        // 3. DAY/NIGHT CYCLE LOGIC
+        updateSky();
+    }
+
+    function moveCharacters(progress) {
+        const charMe = document.getElementById("char-me");
+        const charHer = document.getElementById("char-her");
+
+        // They start at 5% and 95% and move toward 50%
+        const myPos = 5 + (progress * 0.45); 
+        const herPos = 95 - (progress * 0.45);
+
+        charMe.style.left = myPos + "%";
+        charHer.style.left = herPos + "%";
+
+        if (progress >= 99.9) {
+            charMe.innerHTML = "👩‍❤️‍👨"; // Change to hug emoji at the end
+            charHer.style.display = "none";
+        }
+    }
+
+    function updateSky() {
+        const hour = new Date().getHours();
+        const world = document.getElementById("world");
         
-        // Ground
-        const groundGeo = new THREE.PlaneGeometry(100, 100);
-        const groundMat = new THREE.MeshStandardMaterial({ color: 0xda916b, roughness: 0.8 });
-        const ground = new THREE.Mesh(groundGeo, groundMat);
-        ground.rotation.x = -Math.PI / 2;
-        ground.position.y = -2;
-        scene.add(ground);
+        if (hour >= 6 && hour < 10) world.style.background = "linear-gradient(#FF9D6C, #FFFB7D)"; // Sunrise
+        else if (hour >= 10 && hour < 17) world.style.background = "#87CEEB"; // Day
+        else if (hour >= 17 && hour < 20) world.style.background = "linear-gradient(#2c3e50, #fd746c)"; // Sunset
+        else world.style.background = "#1a1a2e"; // Night
+    }
 
-        // --- 3. THE CHARACTERS (Toy-like Figures) ---
-        function createCharacter(skinColor) {
-            const group = new THREE.Group();
-            const bodyMat = new THREE.MeshStandardMaterial({ color: 0xffffff });
-            const skinMat = new THREE.MeshStandardMaterial({ color: skinColor });
+    function createRain() {
+        const weatherLayer = document.getElementById("weather-layer");
+        // Simple logic: Change this to true if you want to force rain
+        const isRaining = false; 
 
-            // Head
-            const head = new THREE.Mesh(new THREE.SphereGeometry(0.3, 32, 32), skinMat);
-            head.position.y = 1.6;
-            group.add(head);
-
-            // Body
-            const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.2, 0.8, 32), bodyMat);
-            torso.position.y = 1;
-            group.add(torso);
-
-            // Legs
-            const legGeo = new THREE.CylinderGeometry(0.08, 0.08, 0.7);
-            const legL = new THREE.Mesh(legGeo, bodyMat);
-            legL.position.set(-0.15, 0.35, 0);
-            group.add(legL);
-
-            const legR = new THREE.Mesh(legGeo, bodyMat);
-            legR.position.set(0.15, 0.35, 0);
-            group.add(legR);
-
-            return { group, legL, legR };
-        }
-
-        const male = createCharacter(0x8d5524); // Indian Skin Tone
-        const female = createCharacter(0xc68642); 
-        scene.add(male.group);
-        scene.add(female.group);
-
-        camera.position.z = 5;
-        camera.position.y = 0.5;
-
-        // --- 4. ANIMATION & LOGIC ---
-        const startDate = new Date("May 1, 2024").getTime();
-        const endDate = new Date("March 1, 2026").getTime();
-
-        function animate() {
-            requestAnimationFrame(animate);
-            const now = new Date().getTime();
-            
-            // Progress calculation (0 to 1)
-            const total = endDate - startDate;
-            const current = now - startDate;
-            let progress = Math.min(Math.max(current / total, 0), 1);
-
-            // Position characters (meeting at the center)
-            const startPos = 6;
-            male.group.position.x = -startPos + (startPos * 0.95 * progress);
-            female.group.position.x = startPos - (startPos * 0.95 * progress);
-
-            // Walking limb movement
-            const time = Date.now() * 0.005;
-            const swing = Math.sin(time) * 0.4;
-            male.legL.rotation.x = swing;
-            male.legR.rotation.x = -swing;
-            female.legL.rotation.x = -swing;
-            female.legR.rotation.x = swing;
-
-            // Timer Update
-            const diff = endDate - now;
-            if (diff > 0) {
-                const d = Math.floor(diff / (1000 * 60 * 60 * 24));
-                const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-                const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-                const s = Math.floor((diff % (1000 * 60)) / 1000);
-                document.getElementById("timer").innerHTML = `${d}d ${h}h ${m}m ${s}s`;
-            } else {
-                document.getElementById("timer").innerHTML = "FINALLY HOME ❤️";
+        if(isRaining) {
+            for(let i=0; i<50; i++) {
+                let drop = document.createElement("div");
+                drop.className = "rain";
+                drop.style.left = Math.random() * 100 + "vw";
+                drop.style.animationDuration = (Math.random() * 0.5 + 0.5) + "s";
+                weatherLayer.appendChild(drop);
             }
-
-            renderer.render(scene, camera);
         }
+    }
 
-        window.addEventListener('resize', () => {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        });
+    function playSong() {
+        // Just opens a link for now
+        window.open(songs[0].url, '_blank');
+    }
 
-        animate();
-    </script>
+    document.getElementById("song-name").innerText = songs[0].name;
+    setInterval(updateApp, 1000);
+    createRain();
+    updateApp();
+</script>
+
 </body>
 </html>
