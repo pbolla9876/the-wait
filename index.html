@@ -2,14 +2,16 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>The Journey - Final Cinematic Edition</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Our Countdown Puzzle</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div id="timer"></div>
-    <div id="splash"><h1 class="fade-text">A Story by Us</h1></div>
-    <div id="intro" style="display:none;"><p class="fade-text">For every moment we've waited...<br>and every step we've taken.</p></div>
+    <div id="ui-layer">
+        <h1 id="timer">Calculating Time...</h1>
+        <p id="subtext">Every second, we get a little closer.</p>
+    </div>
+    
     <canvas id="scene"></canvas>
 
     <script src="script.js"></script>
