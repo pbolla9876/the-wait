@@ -1,6 +1,7 @@
 const canvas = document.getElementById('scene');
 const ctx = canvas.getContext('2d');
 const timerElement = document.getElementById('timer');
+const demoBtn = document.getElementById('demo-btn');
 
 const img = new Image();
 img.src = 'image1.png';
@@ -301,6 +302,34 @@ function resize() {
         color: `hsl(220, 10%, ${10 + Math.random() * 10}%)`,
         windows: Array.from({length: 10}, () => ({x: Math.random()*40, y: Math.random()*150}))
     }));
+}
+
+// Demo Mode Logic
+const demoModes = ['Rain', 'Snow', 'Clear'];
+let demoIndex = 0;
+
+if (demoBtn) {
+    demoBtn.addEventListener('click', () => {
+        const mode = demoModes[demoIndex];
+        demoIndex = (demoIndex + 1) % demoModes.length;
+        demoBtn.innerText = `Demo: ${mode}`;
+
+        // Clear existing particles to prevent them from freezing when switching modes
+        particles.left.rain = []; particles.left.snow = []; particles.left.clouds = [];
+        particles.right.rain = []; particles.right.snow = []; particles.right.clouds = [];
+
+        const now = Date.now();
+        // Force "Day" time for visibility (sunrise in past, sunset in future)
+        const dummyData = {
+            main: mode,
+            sunrise: now - 10000, 
+            sunset: now + 10000,
+            dt: now
+        };
+
+        weatherData.left = { ...dummyData };
+        weatherData.right = { ...dummyData };
+    });
 }
 
 init();
