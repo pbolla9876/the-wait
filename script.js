@@ -12,7 +12,7 @@ let w, h, buildings = [], fireflies = [], smokeParticles = [];
 let weatherData = { left: null, right: null };
 let particles = {
     left: { rain: [], snow: [], clouds: [] },
-    right: { rain: [], snow: [], clouds: [] }
+    right: { rain: [], snow: [], clouds: [], birds: [] }
 };
 
 // --- State Machine Variables ---
@@ -28,12 +28,12 @@ const introLines = [
 let introState = { lineIndex: 0, alpha: 0, phase: 'in', lastUpdate: 0 };
 
 // Phase 2: Scene Buildup
-let sceneBuildupState = { sky: 0, ground: 0, chars: 0 };
+let sceneBuildupState = { sky: 0, ground: 0, chars: 0, lock: 0 };
 
 // Phase 4: Puzzle Reveal
 let pieces = [], revealProgress = 0;
 
-const API_KEY = '1c95ffb7528eb9b09fb1d559e5d8465d';
+const API_KEY = CONFIG.WEATHER_API_KEY;
 
 async function fetchWeather() {
     try {
@@ -63,9 +63,8 @@ function processWeatherData(data) {
 }
 
 function init() {
-    gameState = 'INTRO_TEXT';
-    animStartTime = Date.now();
-    introState.lastUpdate = animStartTime;
+    gameState = 'WAITING'; // Wait for splash screen
+    timerElement.style.opacity = '0';
     fetchWeather();
     
     // Initialize Puzzle Pieces
@@ -87,7 +86,12 @@ function init() {
         if (splash) {
             splash.style.opacity = '0';
             // After the fade-out transition ends, remove the element completely.
-            splash.addEventListener('transitionend', () => splash.remove());
+            splash.addEventListener('transitionend', () => {
+                splash.remove();
+                gameState = 'INTRO_TEXT';
+                animStartTime = Date.now();
+                introState = { lineIndex: 0, alpha: 0, phase: 'in', lastUpdate: animStartTime };
+            });
         }
     }, 4000);
 }
@@ -122,6 +126,10 @@ function drawSideEnvironment(side, x, y, width, height) {
             progress = (now - data.sunrise) / (data.sunset - data.sunrise);
             const sunX = x + (width * 0.1) + (width * 0.8 * progress);
             const sunY = celestialY + Math.sin(progress * Math.PI) * -50; // Arc up
+            
+            if (side === 'right') {
+                handleBirds(pSystem, x, width, height, h - 100);
+            }
             
             ctx.fillStyle = "#FDB813";
             ctx.shadowBlur = 20; ctx.shadowColor = "#FDB813";
@@ -191,6 +199,74 @@ function drawSideEnvironment(side, x, y, width, height) {
             });
         }
     }
+}
+
+function handleBirds(pSystem, x, width, height, groundLevel) {
+    const now = Date.now();
+
+    // Add a new bird?
+    if (pSystem.birds.length < 5 && Math.random() < 0.01) {
+        const willLand = Math.random() < 0.4; // 40% chance to be a landing bird
+        pSystem.birds.push({
+            x: x + width + 20, // Start off-screen right
+            y: 50 + Math.random() * 150,
+            vx: -0.5 - Math.random(),
+            vy: 0,
+            state: 'flying',
+            target: willLand ? { x: x + width * 0.3 + Math.random() * (width * 0.4), y: groundLevel - 2 } : null,
+            landed_timer: 0
+        });
+    }
+
+    ctx.strokeStyle = '#222';
+    ctx.lineWidth = 2;
+
+    pSystem.birds.forEach((bird, i) => {
+        if (bird.state === 'flying') {
+            if (bird.target) {
+                // Move towards landing spot
+                const dx = bird.target.x - bird.x;
+                const dy = bird.target.y - bird.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist < 5) {
+                    bird.state = 'landed';
+                    bird.landed_timer = now + 2000 + Math.random() * 4000; // Land for 2-6s
+                } else {
+                    bird.x += (dx / dist) * 1.5;
+                    bird.y += (dy / dist) * 1.5;
+                }
+            } else {
+                // Just fly across
+                bird.x += bird.vx;
+            }
+        } else if (bird.state === 'landed') {
+            if (now > bird.landed_timer) {
+                bird.state = 'taking_off';
+                bird.vy = -1.5; // Fly up
+            }
+        } else if (bird.state === 'taking_off') {
+            bird.x += bird.vx;
+            bird.y += bird.vy;
+        }
+
+        // Remove if off-screen
+        if (bird.x < x - 20 || bird.y < -20) {
+            pSystem.birds.splice(i, 1);
+            return; // continue to next bird
+        }
+
+        // Draw bird
+        const wingFlap = Math.sin(now * 0.03) * 5;
+        ctx.save();
+        ctx.translate(bird.x, bird.y);
+        if (bird.state !== 'landed') ctx.rotate(bird.vy * 0.1); // Tilt when flying up/down
+        ctx.beginPath();
+        ctx.moveTo(-8, wingFlap);
+        ctx.lineTo(0, 0);
+        ctx.lineTo(8, wingFlap);
+        ctx.stroke();
+        ctx.restore();
+    });
 }
 
 function drawSky() {
@@ -440,10 +516,18 @@ function handleIntroText() {
                 introState.alpha = 0;
                 introState.phase = 'in';
             } else {
-                // Last line finished, transition to next phase
-                gameState = 'SCENE_BUILDUP';
-                animStartTime = now; // Reset timer for buildup
+                // Last line finished, fade out text
+                introState.phase = 'fadeout';
+                introState.alpha = 1;
+                introState.lastUpdate = now;
             }
+        }
+    } else if (introState.phase === 'fadeout') {
+        introState.alpha = Math.max(0, introState.alpha - 0.02);
+        if (introState.alpha <= 0) {
+            gameState = 'SCENE_BUILDUP';
+            animStartTime = now;
+            return;
         }
     }
 
@@ -451,16 +535,17 @@ function handleIntroText() {
     ctx.font = "italic 24px 'Georgia', serif";
     ctx.textAlign = 'center';
     for (let i = 0; i <= introState.lineIndex; i++) {
-        ctx.fillStyle = `rgba(255, 255, 255, ${i < introState.lineIndex ? 1 : introState.alpha})`;
+        let alpha = (introState.phase === 'fadeout') ? introState.alpha : (i < introState.lineIndex ? 1 : introState.alpha);
+        ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
         ctx.fillText(introLines[i], w / 2, h / 2 - 30 + (i * 40));
     }
 }
 
-function handleSceneBuildup() {
+function handleSceneBuildup(timeLeft) {
     const now = Date.now();
     const elapsed = now - animStartTime;
 
-    // Animate alphas over 3 seconds
+    // Animate alphas over 4 seconds
     if (elapsed < 1000) { // 0-1s: Sky fades in
         sceneBuildupState.sky = elapsed / 1000;
     } else if (elapsed < 2000) { // 1-2s: Ground fades in
@@ -470,10 +555,16 @@ function handleSceneBuildup() {
         sceneBuildupState.sky = 1;
         sceneBuildupState.ground = 1;
         sceneBuildupState.chars = (elapsed - 2000) / 1000;
+    } else if (elapsed < 4000) { // 3-4s: Lock & Timer fade in
+        sceneBuildupState.sky = 1;
+        sceneBuildupState.ground = 1;
+        sceneBuildupState.chars = 1;
+        sceneBuildupState.lock = (elapsed - 3000) / 1000;
     } else {
         // Buildup complete, transition to journey
         gameState = 'JOURNEY';
         animStartTime = now; // Reset timer for journey
+        timerElement.style.opacity = '1';
         return;
     }
 
@@ -489,6 +580,19 @@ function handleSceneBuildup() {
     ctx.globalAlpha = sceneBuildupState.chars;
     drawCharacters(0); // progress is 0, they are standing still
     ctx.globalAlpha = 1;
+
+    ctx.globalAlpha = sceneBuildupState.lock;
+    drawLockAndTimer(0);
+    ctx.globalAlpha = 1;
+
+    // Update timer text and opacity
+    const d = Math.floor(timeLeft / (1000 * 60 * 60 * 24));
+    const h_ = Math.floor((timeLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const m = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+    const s = Math.floor((timeLeft % (1000 * 60)) / 1000);
+    const pad = (num) => String(num).padStart(2, '0');
+    timerElement.innerText = `${d} : ${pad(h_)} : ${pad(m)} : ${pad(s)}`;
+    timerElement.style.opacity = sceneBuildupState.lock;
 }
 
 function animate() {
@@ -509,7 +613,7 @@ function animate() {
             handleIntroText();
             break;
         case 'SCENE_BUILDUP':
-            handleSceneBuildup();
+            handleSceneBuildup(timeLeft);
             break;
         case 'JOURNEY':
             const totalDuration = targetDate - startDate;
