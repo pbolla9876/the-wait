@@ -8,10 +8,16 @@ img.src = 'image1.png';
 const targetDate = new Date("March 1, 2026 00:00:00 GMT-0600").getTime();
 const startDate = new Date("February 1, 2026 00:00:00 GMT-0600").getTime();
 
-let w, h, buildings = [], stars = [], animStartTime, fireflies = [], smokeParticles = [], timeOfDay;
+let w, h, buildings = [], stars = [], clouds = [], animStartTime, fireflies = [], smokeParticles = [], timeOfDay, rainParticles = [], snowParticles = [], weatherCode = 0;
 
 function getSkyColors() {
-    const hour = new Date().getHours();
+    // Get time specifically for Valparaiso, Indiana (America/Chicago)
+    let hour = new Date().getHours();
+    try {
+        const formatter = new Intl.DateTimeFormat('en-US', { timeZone: 'America/Chicago', hour: 'numeric', hour12: false });
+        hour = parseInt(formatter.format(new Date()));
+    } catch (e) { console.error("Timezone error", e); }
+
     // Default to Night
     let colors = { sky: ['#000033', '#0c0c4a', '#1a1a2e'], showCelestial: true };
 
@@ -25,9 +31,23 @@ function getSkyColors() {
     return colors;
 }
 
+async function fetchWeather() {
+    try {
+        // Fetch weather for Valparaiso, IN (Lat: 41.4731, Long: -87.0611)
+        const res = await fetch('https://api.open-meteo.com/v1/forecast?latitude=41.4731&longitude=-87.0611&current=weather_code&timezone=America%2FChicago');
+        const data = await res.json();
+        if (data.current) {
+            weatherCode = data.current.weather_code;
+        }
+    } catch (e) {
+        console.log("Weather fetch error", e);
+    }
+}
+
 function init() {
     animStartTime = Date.now();
     timeOfDay = getSkyColors();
+    fetchWeather();
     resize(); // Set initial sizes and create dimension-dependent assets
     animate();
 
@@ -51,6 +71,20 @@ function drawCinematicEnvironment(progress) {
     skyGrd.addColorStop(1, timeOfDay.sky[2]);
     ctx.fillStyle = skyGrd;
     ctx.fillRect(0, 0, w, h);
+
+    // 1.5 Clouds (Daytime only)
+    if (!timeOfDay.showCelestial) {
+        ctx.fillStyle = "rgba(255, 255, 255, 0.7)";
+        clouds.forEach(c => {
+            ctx.beginPath();
+            ctx.arc(c.x, c.y, c.size, 0, Math.PI * 2);
+            ctx.arc(c.x + c.size * 0.7, c.y - c.size * 0.4, c.size * 0.8, 0, Math.PI * 2);
+            ctx.arc(c.x + c.size * 1.4, c.y, c.size * 0.6, 0, Math.PI * 2);
+            ctx.fill();
+            c.x += c.speed;
+            if (c.x > w + 100) c.x = -100;
+        });
+    }
 
     // 2. Stars
     if (timeOfDay.showCelestial) {
@@ -167,6 +201,60 @@ function drawCinematicEnvironment(progress) {
             ctx.beginPath(); ctx.arc(fx, fy, 2, 0, Math.PI*2); ctx.fill();
         });
         ctx.globalAlpha = 1;
+    }
+
+    // Rain Effect (Only on Female Side / Right Side)
+    // WMO Weather Codes for Rain: 51-67, 80-82, 95-99
+    const isRaining = (weatherCode >= 51 && weatherCode <= 67) || (weatherCode >= 80 && weatherCode <= 82) || (weatherCode >= 95 && weatherCode <= 99);
+    
+    if (isRaining) {
+        ctx.strokeStyle = "rgba(174, 194, 224, 0.6)";
+        ctx.lineWidth = 1.5;
+        
+        // Maintain rain particles
+        if (rainParticles.length < 150) {
+            rainParticles.push({
+                x: dividerX + Math.random() * (w - dividerX), // Constrain to right side
+                y: Math.random() * h,
+                speed: 15 + Math.random() * 10,
+                len: 10 + Math.random() * 15
+            });
+        }
+
+        rainParticles.forEach(p => {
+            ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p.x, p.y + p.len); ctx.stroke();
+            p.y += p.speed;
+            // Reset to top if it falls off screen
+            if (p.y > h) {
+                p.y = -p.len;
+                p.x = dividerX + Math.random() * (w - dividerX);
+            }
+        });
+    }
+
+    // Snow Effect (Only on Female Side / Right Side)
+    // WMO Weather Codes for Snow: 71, 73, 75, 77, 85, 86
+    const isSnowing = (weatherCode >= 71 && weatherCode <= 77) || (weatherCode >= 85 && weatherCode <= 86);
+
+    if (isSnowing) {
+        ctx.fillStyle = "rgba(255, 255, 255, 0.8)";
+        
+        if (snowParticles.length < 100) {
+            snowParticles.push({
+                x: dividerX + Math.random() * (w - dividerX),
+                y: Math.random() * h,
+                vx: (Math.random() - 0.5) * 1,
+                vy: 1 + Math.random() * 2,
+                size: 1 + Math.random() * 2
+            });
+        }
+
+        snowParticles.forEach(p => {
+            ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI*2); ctx.fill();
+            p.x += p.vx; p.y += p.vy;
+            if (p.y > h) { p.y = -5; p.x = dividerX + Math.random() * (w - dividerX); }
+            if (p.x > w) p.x = dividerX; if (p.x < dividerX) p.x = w;
+        });
     }
 
     ctx.restore();
@@ -307,5 +395,13 @@ function resize() {
         offsetY: -100 + (Math.random() - 0.5) * 50,
         phase: Math.random() * Math.PI * 2,
         speed: 0.002 + Math.random() * 0.002
+    }));
+
+    // Clouds
+    clouds = Array.from({ length: 8 }, () => ({
+        x: Math.random() * w,
+        y: Math.random() * (h * 0.3),
+        size: 20 + Math.random() * 30,
+        speed: 0.2 + Math.random() * 0.3
     }));
 }
