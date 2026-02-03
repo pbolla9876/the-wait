@@ -104,8 +104,17 @@ function drawSky() {
 function drawGroundElements() {
     const divX = w / 2;
     const groundY = h - 100;
-    const isNight = (new Date().getHours() < 6 || new Date().getHours() >= 18);
-
+    
+    // Sync day/night logic with the sky for consistency
+    const data = weatherData.left; // Buildings on left use left-side data
+    const now = Date.now();
+    const currentHour = new Date().getHours();
+    let isDay = (currentHour >= 6 && currentHour < 18);
+    if (data && data.sunrise && data.sunset) {
+        isDay = (now > data.sunrise && now < data.sunset);
+    }
+    const isNight = !isDay;
+    
     ctx.save();
     ctx.beginPath(); ctx.rect(0, 0, divX, h); ctx.clip();
     buildings.forEach(b => {
