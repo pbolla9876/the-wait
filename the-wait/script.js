@@ -33,16 +33,15 @@ let sceneBuildupState = { sky: 0, ground: 0, chars: 0 };
 // Phase 4: Puzzle Reveal
 let pieces = [], revealProgress = 0;
 
-// Weather API Key
-const API_KEY = 'YOUR_API_KEY_GOES_HERE';
+// SAFE API CONFIGURATION
+// Loads from config.js locally. On GitHub, this defaults to an empty string to avoid errors.
+const API_KEY = typeof CONFIG !== 'undefined' ? CONFIG.WEATHER_API_KEY : '';
 
 async function fetchWeather() {
     // If GitHub is running this, it won't have the API_KEY
     if (!API_KEY) {
         console.warn("GitHub Environment: API Key missing. Switching to Fallback Mode.");
         // ALTERNATIVE: Hardcode 'Clouds' or 'Clear' for the public version
-        weatherData.left = { main: 'Clear', sunrise: 0, sunset: 0 }; 
-        weatherData.right = { main: 'Clear', sunrise: 0, sunset: 0 };
         return;
     }
     try {
