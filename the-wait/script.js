@@ -103,9 +103,11 @@ function drawSideEnvironment(side, x, y, width, height) {
     const pSystem = particles[side];
     const now = Date.now();
     
-    // FALLBACK LOGIC: If API fails, use system clock (6am-6pm is Day)
-    const currentHour = new Date().getHours();
-    const isDay = data ? (now > data.sunrise && now < data.sunset) : (currentHour >= 6 && currentHour < 18);
+    // This uses your computer's clock if the API fails
+    const currentHour = new Date().getHours(); 
+    const isDay = data 
+        ? (now > data.sunrise && now < data.sunset) 
+        : (currentHour >= 6 && currentHour < 18); // 6 AM to 6 PM
     
     // 1. Sky Gradient
     const skyGrd = ctx.createLinearGradient(x, y, x, y + height);
