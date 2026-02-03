@@ -33,9 +33,8 @@ let sceneBuildupState = { sky: 0, ground: 0, chars: 0 };
 // Phase 4: Puzzle Reveal
 let pieces = [], revealProgress = 0;
 
-// SAFE API CONFIGURATION
-// Loads from config.js locally. On GitHub, this defaults to an empty string to avoid errors.
-const API_KEY = typeof CONFIG !== 'undefined' ? CONFIG.WEATHER_API_KEY : '';
+// Weather API Key
+const API_KEY = 'YOUR_API_KEY_GOES_HERE';
 
 async function fetchWeather() {
     // If GitHub is running this, it won't have the API_KEY
