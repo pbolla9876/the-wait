@@ -182,10 +182,21 @@ function drawCinematicEnvironment(progress) {
     // Draw Left Environment (Atlanta)
     drawSideEnvironment('left', 0, 0, dividerX, h);
 
+    const dataLeft = weatherData.left;
+    const isNightLeft = dataLeft ? (Date.now() < dataLeft.sunrise || Date.now() > dataLeft.sunset) : true;
+
     buildings.forEach(b => {
-        ctx.fillStyle = "#08080a";
+        ctx.fillStyle = b.color;
         ctx.fillRect(b.x, h - b.h, b.w, b.h);
-        // Draw Windows
+        
+        // Draw Windows if it's night
+        if (isNightLeft) {
+            ctx.fillStyle = "rgba(255, 220, 150, 0.7)"; // Warm yellow glow
+            b.windows.forEach(win => {
+                ctx.fillRect(b.x + win.x, h - b.h + win.y, 4, 6);
+            });
+        }
+
         b.x -= 0.5; // Parallax speed
         if (b.x + b.w < 0) b.x = w;
     });
@@ -408,7 +419,8 @@ function resize() {
                 if(Math.random() > 0.7) wins.push({x, y});
             }
         }
-        return { x: Math.random() * w, h: bH, w: bW, windows: wins };
+        const color = `hsl(230, 20%, ${10 + Math.random() * 15}%)`; // Dark blue/purple/grey tones
+        return { x: Math.random() * w, h: bH, w: bW, windows: wins, color: color };
     });
 
     // Fireflies
