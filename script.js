@@ -187,13 +187,35 @@ function drawCinematicEnvironment(progress) {
 
     buildings.forEach(b => {
         ctx.fillStyle = b.color;
-        ctx.fillRect(b.x, h - b.h, b.w, b.h);
+        const groundY = h - b.h;
+
+        // Draw building based on its type
+        switch (b.type) {
+            case 'stepped':
+                ctx.fillRect(b.x, groundY, b.w, b.h);
+                const topHeight = b.h * 0.4;
+                const topWidth = b.w * 0.6;
+                ctx.fillRect(b.x + (b.w - topWidth) / 2, groundY - topHeight, topWidth, topHeight);
+                break;
+            case 'spire':
+                ctx.fillRect(b.x, groundY, b.w, b.h);
+                ctx.beginPath();
+                ctx.moveTo(b.x, groundY);
+                ctx.lineTo(b.x + b.w / 2, groundY - 50);
+                ctx.lineTo(b.x + b.w, groundY);
+                ctx.closePath();
+                ctx.fill();
+                break;
+            default: // 'rect'
+                ctx.fillRect(b.x, groundY, b.w, b.h);
+                break;
+        }
         
         // Draw Windows if it's night
         if (isNightLeft) {
             ctx.fillStyle = "rgba(255, 220, 150, 0.7)"; // Warm yellow glow
             b.windows.forEach(win => {
-                ctx.fillRect(b.x + win.x, h - b.h + win.y, 4, 6);
+                ctx.fillRect(b.x + win.x, groundY + win.y, 4, 6);
             });
         }
 
@@ -420,7 +442,18 @@ function resize() {
             }
         }
         const color = `hsl(230, 20%, ${10 + Math.random() * 15}%)`; // Dark blue/purple/grey tones
-        return { x: Math.random() * w, h: bH, w: bW, windows: wins, color: color };
+
+        const typeRoll = Math.random();
+        let type;
+        if (typeRoll < 0.6) {
+            type = 'rect'; // 60% chance for a standard rectangle
+        } else if (typeRoll < 0.85) {
+            type = 'stepped'; // 25% chance for a stepped building
+        } else {
+            type = 'spire'; // 15% chance for a building with a spire
+        }
+
+        return { x: Math.random() * w, h: bH, w: bW, windows: wins, color: color, type: type };
     });
 
     // Fireflies
