@@ -86,7 +86,6 @@ function init() {
     animate();
 
     // Start a smooth fade-out for the splash screen.
-    // This is better than just hiding it, as it ensures the animation is ready.
     setTimeout(() => {
         const splash = document.getElementById('splash');
         if (splash) {
@@ -411,11 +410,11 @@ function drawLockAndTimer(progress) {
     const isLocked = progress < 1;
 
     ctx.save();
-    ctx.strokeStyle = '#FFD700'; // Gold color
-    ctx.fillStyle = '#FFD700';
+    ctx.strokeStyle = 'white'; // White color
+    ctx.fillStyle = 'white';
     ctx.lineWidth = 4;
     ctx.shadowBlur = 15;
-    ctx.shadowColor = "rgba(255, 215, 0, 0.5)";
+    ctx.shadowColor = "white"; // White glow
 
     // Shackle
     ctx.beginPath();
@@ -533,12 +532,15 @@ function animate() {
 
     switch (gameState) {
         case 'INTRO_TEXT':
+            timerElement.style.opacity = '0'; // Ensure hidden
             handleIntroText();
             break;
         case 'SCENE_BUILDUP':
+            timerElement.style.opacity = '0'; // Ensure hidden
             handleSceneBuildup();
             break;
         case 'JOURNEY':
+            timerElement.style.opacity = '1'; // Show
             const totalDuration = targetDate - startDate;
             const progress = Math.min(1, Math.max(0, 1 - (timeLeft / totalDuration)));
             

@@ -43,6 +43,7 @@ canvas {
     color: white; font-size: 3.5rem;
     text-shadow: 0 0 20px rgba(255,255,255,0.4);
     transition: opacity 1s ease-out;
+    opacity: 0;
 }
 
 @keyframes fadeInOut {
