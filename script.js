@@ -1,108 +1,193 @@
 const canvas = document.getElementById('scene');
-const ctx = canvas.getContext('2d', { alpha: false }); // Optimized for performance
+const ctx = canvas.getContext('2d');
 const timerElement = document.getElementById('timer');
 
 const img = new Image();
-img.src = 'image1.png'; // Make sure your image is named exactly this
+img.src = 'image1.png';
 
-// --- CONFIGURATION ---
-// Set target to March 1st, 2026 00:00:00 CST
 const targetDate = new Date("March 1, 2026 00:00:00 GMT-0600").getTime();
-// The "Now" moment when the puzzle logic begins
-const startTime = Date.now();
-const totalSecondsInPuzzle = Math.floor((targetDate - startTime) / 1000);
+const startDate = new Date("February 1, 2026 00:00:00 GMT-0600").getTime();
 
-let w, h;
-let pieces = [];
-let isReady = false;
+let w, h, buildings = [], stars = [];
 
 function init() {
-    resize();
-    
-    // Create an array representing every second as a unique piece index
-    pieces = Array.from({ length: totalSecondsInPuzzle }, (_, i) => i);
-    
-    // Shuffle the pieces array so they appear randomly across the photo
-    for (let i = pieces.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [pieces[i], pieces[j]] = [pieces[j], pieces[i]];
-    }
-    
-    isReady = true;
+    resize(); // Set initial sizes and create dimension-dependent assets
     animate();
+
+    // Start a smooth fade-out for the splash screen.
+    // This is better than just hiding it, as it ensures the animation is ready.
+    setTimeout(() => {
+        const splash = document.getElementById('splash');
+        if (splash) {
+            splash.style.opacity = '0';
+            // After the fade-out transition ends, remove the element completely.
+            splash.addEventListener('transitionend', () => splash.remove());
+        }
+    }, 4000);
+}
+
+function drawCinematicEnvironment(progress) {
+    // 1. Sky
+    const skyGrd = ctx.createLinearGradient(0, 0, 0, h);
+    skyGrd.addColorStop(0, '#1a1a2e');
+    skyGrd.addColorStop(0.5, '#4a1e4d');
+    skyGrd.addColorStop(1, '#ff85a2');
+    ctx.fillStyle = skyGrd;
+    ctx.fillRect(0, 0, w, h);
+
+    // 2. Stars
+    ctx.fillStyle = "white";
+    stars.forEach(s => {
+        ctx.globalAlpha = 0.5 + Math.sin(Date.now() * 0.001 + s.x) * 0.5;
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
+        ctx.fill();
+        s.x -= s.speed;
+        if (s.x < 0) s.x = w;
+    });
+    ctx.globalAlpha = 1;
+
+    const dividerX = w / 2;
+    const groundLevel = h - 100;
+
+    // 4. Moving City (Left Side)
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(0, 0, dividerX, h);
+    ctx.clip();
+    buildings.forEach(b => {
+        ctx.fillStyle = "#08080a";
+        ctx.fillRect(b.x, h - b.h, b.w, b.h);
+        // Draw Windows
+        ctx.fillStyle = "rgba(255, 255, 200, 0.1)"; // Faint yellow light
+        b.windows.forEach(win => ctx.fillRect(b.x + win.x, h - b.h + win.y, 6, 8));
+        b.x -= 0.5; // Parallax speed
+        if (b.x + b.w < 0) b.x = w;
+    });
+    ctx.restore();
+
+    // 5. Ground Gradient
+    const groundGrd = ctx.createLinearGradient(0, groundLevel, 0, h);
+    groundGrd.addColorStop(0, '#050508');
+    groundGrd.addColorStop(1, '#000');
+    ctx.fillStyle = groundGrd;
+    ctx.fillRect(0, groundLevel, w, h);
+
+    // 6. Divider Line
+    ctx.strokeStyle = "rgba(255,255,255,0.2)";
+    ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(dividerX, 0); ctx.lineTo(dividerX, h); ctx.stroke();
+
+    // 7. Characters
+    const walkCycle = Date.now() * 0.006; // Slightly faster for better rhythm
+    const startGap = w * 0.4, endGap = 80;
+    const currentGap = startGap - (startGap - endGap) * progress;
+    drawCharacterSilhouette(dividerX - currentGap / 2, groundLevel, 1.6, true, walkCycle);
+    drawCharacterSilhouette(dividerX + currentGap / 2, groundLevel, 1.6, false, walkCycle);
 }
 
 function animate() {
-    if (!isReady) return;
-
-    // Background stays black
-    ctx.fillStyle = "#000";
-    ctx.fillRect(0, 0, w, h);
-    
     const now = Date.now();
     const timeLeft = targetDate - now;
-    const secondsPassed = Math.floor((now - startTime) / 1000);
 
-    // Update Countdown Text
+    // Safeguard: Always clear the canvas to black first.
+    ctx.fillStyle = 'black';
+    ctx.fillRect(0, 0, w, h);
+
     if (timeLeft > 0) {
+        // --- PHASE 1: CINEMATIC SCENE ---
+        const totalDuration = targetDate - startDate;
+        const progress = Math.min(1, Math.max(0, 1 - (timeLeft / totalDuration)));
+        drawCinematicEnvironment(progress);
+
         const d = Math.floor(timeLeft / (1000 * 60 * 60 * 24));
         const h_ = Math.floor((timeLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
         const m = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
         const s = Math.floor((timeLeft % (1000 * 60)) / 1000);
-        timerElement.innerText = `${d}D ${h_}H ${m}M ${s}S`;
+        const pad = (num) => String(num).padStart(2, '0');
+        timerElement.innerText = `${d} : ${pad(h_)} : ${pad(m)} : ${pad(s)}`;
+
     } else {
-        timerElement.innerText = "0D 0H 0M 0S";
+        // --- PHASE 2: PHOTO REVEAL ---
+        if (timerElement.style.opacity !== "0") {
+            timerElement.style.opacity = "0";
+        }
+        ctx.drawImage(img, 0, 0, w, h);
     }
-
-    // Puzzle Grid Math
-    // We create a grid where the number of cells = totalSecondsInPuzzle
-    const aspectRatio = w / h;
-    const cols = Math.ceil(Math.sqrt(totalSecondsInPuzzle * aspectRatio));
-    const rows = Math.ceil(totalSecondsInPuzzle / cols);
-    
-    const pW = w / cols;
-    const pH = h / rows;
-
-    // Draw pieces that have been "earned" by passing seconds
-    const piecesToDraw = Math.min(secondsPassed, pieces.length);
-    
-    for (let i = 0; i < piecesToDraw; i++) {
-        const idx = pieces[i];
-        
-        // Target coordinates on screen
-        const dx = (idx % cols) * pW;
-        const dy = Math.floor(idx / cols) * pH;
-
-        // Source coordinates from the image
-        const sx = (idx % cols) * (img.width / cols);
-        const sy = Math.floor(idx / cols) * (img.height / rows);
-        const sW = img.width / cols;
-        const sH = img.height / rows;
-
-        ctx.drawImage(img, sx, sy, sW, sH, dx, dy, pW, pH);
-    }
-
-    // Optional: Extremely faint "ghost" image (3% opacity) 
-    // This helps visualize the framing before it fills in
-    ctx.save();
-    ctx.globalAlpha = 0.03;
-    ctx.drawImage(img, 0, 0, w, h);
-    ctx.restore();
-
     requestAnimationFrame(animate);
 }
 
-// Ensure image loads before starting
+function drawCharacterSilhouette(x, y, scale, isMale, walkCycle) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.scale(scale * (isMale ? 1 : -1), scale);
+
+    // Animation Math
+    const legSwing = Math.sin(walkCycle) * 0.5;
+    const armSwing = Math.sin(walkCycle + Math.PI) * 0.5;
+    const bob = Math.abs(Math.sin(walkCycle * 2)) * 2;
+
+    ctx.translate(0, -bob);
+    ctx.fillStyle = 'black';
+
+    // Helper to draw a simple limb
+    const drawLimb = (angle, w, h, x, y) => {
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(angle);
+        ctx.fillRect(-w / 2, 0, w, h);
+        ctx.restore();
+    };
+
+    // Back Limbs
+    drawLimb(-legSwing, 8, 45, 0, -45); // Back Leg
+    drawLimb(-armSwing, 7, 38, 0, -85); // Back Arm
+
+    // Torso
+    if (isMale) {
+        ctx.fillRect(-12, -90, 24, 50);
+    } else {
+        ctx.beginPath();
+        ctx.moveTo(-10, -90); ctx.lineTo(10, -90);
+        ctx.lineTo(15, -45); ctx.lineTo(-15, -45);
+        ctx.fill();
+    }
+
+    // Head
+    ctx.beginPath();
+    ctx.arc(0, -100, 12, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Front Limbs
+    drawLimb(legSwing, 8, 45, 0, -45); // Front Leg
+    drawLimb(armSwing, 7, 38, 0, -85); // Front Arm
+
+    ctx.restore();
+}
+
 img.onload = init;
-img.onerror = () => {
-    timerElement.innerText = "Error: File Not Found";
-};
+window.addEventListener('resize', resize);
+function resize() { 
+    w = canvas.width = window.innerWidth; 
+    h = canvas.height = window.innerHeight; 
 
-window.addEventListener('resize', () => {
-    resize();
-});
-
-function resize() {
-    w = canvas.width = window.innerWidth;
-    h = canvas.height = window.innerHeight;
+    // Re-create dimension-dependent assets
+    stars = Array.from({ length: 200 }, () => ({
+        x: Math.random() * w,
+        y: Math.random() * h * 0.7,
+        size: Math.random() * 1.5,
+        speed: 0.1 + Math.random() * 0.2
+    }));
+    buildings = Array.from({ length: 100 }, () => {
+        const bH = 100 + Math.random() * (h * 0.4);
+        const bW = 40 + Math.random() * 80;
+        const wins = [];
+        // Generate windows
+        for(let y = 20; y < bH - 20; y += 20) {
+            for(let x = 10; x < bW - 10; x += 15) {
+                if(Math.random() > 0.7) wins.push({x, y});
+            }
+        }
+        return { x: Math.random() * w, h: bH, w: bW, windows: wins };
+    });
 }
