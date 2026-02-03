@@ -11,17 +11,10 @@
 
     <div id="ui-layer">
         <h1 id="timer">--:--:--:--</h1>
+        <button id="demo-btn" style="position: absolute; top: 20px; right: 20px; z-index: 100; padding: 8px 16px; background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.5); border-radius: 4px; cursor: pointer; font-family: sans-serif;">Demo Mode</button>
     </div>
 
     <canvas id="scene"></canvas>
-
-    <script>
-        const loadConfig = document.createElement('script');
-        loadConfig.src = 'config.js';
-        loadConfig.onerror = () => console.log("GitHub mode: config.js not found, using system clock for sky.");
-        document.head.appendChild(loadConfig);
-    </script>
-
     <script src="script.js"></script>
 </body>
 </html>
