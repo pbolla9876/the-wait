@@ -8,46 +8,57 @@ img.src = 'image1.png';
 const targetDate = new Date("March 1, 2026 00:00:00 GMT-0600").getTime();
 const startDate = new Date("February 1, 2026 00:00:00 GMT-0600").getTime();
 
-let w, h, buildings = [], stars = [], clouds = [], animStartTime, fireflies = [], smokeParticles = [], timeOfDay, rainParticles = [], snowParticles = [], weatherCode = 0;
+let w, h, buildings = [], animStartTime, fireflies = [], smokeParticles = [];
+let weatherData = { left: null, right: null };
+let particles = {
+    left: { rain: [], snow: [], clouds: [] },
+    right: { rain: [], snow: [], clouds: [] }
+};
+// Puzzle variables
+let pieces = [], revealProgress = 0;
 
-function getSkyColors() {
-    // Get time specifically for Valparaiso, Indiana (America/Chicago)
-    let hour = new Date().getHours();
-    try {
-        const formatter = new Intl.DateTimeFormat('en-US', { timeZone: 'America/Chicago', hour: 'numeric', hour12: false });
-        hour = parseInt(formatter.format(new Date()));
-    } catch (e) { console.error("Timezone error", e); }
-
-    // Default to Night
-    let colors = { sky: ['#000033', '#0c0c4a', '#1a1a2e'], showCelestial: true };
-
-    if (hour >= 5 && hour < 10) { // Morning
-        colors = { sky: ['#87CEEB', '#f0e68c', '#FFFFFF'], showCelestial: false };
-    } else if (hour >= 10 && hour < 17) { // Afternoon
-        colors = { sky: ['#00BFFF', '#87CEFA', '#FFFFFF'], showCelestial: false };
-    } else if (hour >= 17 && hour < 21) { // Evening/Sunset
-        colors = { sky: ['#1a1a2e', '#4a1e4d', '#ff85a2'], showCelestial: true };
-    }
-    return colors;
-}
+const API_KEY = '1c95ffb7528eb9b09fb1d559e5d8465d';
 
 async function fetchWeather() {
     try {
-        // Fetch weather for Valparaiso, IN (Lat: 41.4731, Long: -87.0611)
-        const res = await fetch('https://api.open-meteo.com/v1/forecast?latitude=41.4731&longitude=-87.0611&current=weather_code&timezone=America%2FChicago');
-        const data = await res.json();
-        if (data.current) {
-            weatherCode = data.current.weather_code;
-        }
+        // Left: Atlanta, GA
+        const resLeft = await fetch(`https://api.openweathermap.org/data/2.5/weather?lat=33.7490&lon=-84.3880&appid=${API_KEY}`);
+        const dataLeft = await resLeft.json();
+        weatherData.left = processWeatherData(dataLeft);
+
+        // Right: Valparaiso, IN
+        const resRight = await fetch(`https://api.openweathermap.org/data/2.5/weather?lat=41.4731&lon=-87.0611&appid=${API_KEY}`);
+        const dataRight = await resRight.json();
+        weatherData.right = processWeatherData(dataRight);
+
     } catch (e) {
         console.log("Weather fetch error", e);
     }
 }
 
+function processWeatherData(data) {
+    if (!data || !data.sys) return null;
+    return {
+        main: data.weather[0].main, // 'Rain', 'Snow', 'Clouds', 'Clear'
+        sunrise: data.sys.sunrise * 1000,
+        sunset: data.sys.sunset * 1000,
+        dt: Date.now() // Current time for animation sync
+    };
+}
+
 function init() {
     animStartTime = Date.now();
-    timeOfDay = getSkyColors();
     fetchWeather();
+    
+    // Initialize Puzzle Pieces
+    const grid = 10; // 10x10 grid for puzzle
+    pieces = Array.from({ length: grid * grid }, (_, i) => i);
+    // Shuffle pieces
+    for (let i = pieces.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [pieces[i], pieces[j]] = [pieces[j], pieces[i]];
+    }
+
     resize(); // Set initial sizes and create dimension-dependent assets
     animate();
 
@@ -63,43 +74,102 @@ function init() {
     }, 4000);
 }
 
-function drawCinematicEnvironment(progress) {
-    // 1. Sky
-    const skyGrd = ctx.createLinearGradient(0, 0, 0, h);
-    skyGrd.addColorStop(0, timeOfDay.sky[0]);
-    skyGrd.addColorStop(0.5, timeOfDay.sky[1]);
-    skyGrd.addColorStop(1, timeOfDay.sky[2]);
+function drawSideEnvironment(side, x, y, width, height) {
+    const data = weatherData[side];
+    const pSystem = particles[side];
+    
+    // Default to night if no data yet
+    const now = Date.now();
+    const isDay = data ? (now > data.sunrise && now < data.sunset) : false;
+    
+    // 1. Sky Gradient
+    const skyGrd = ctx.createLinearGradient(x, y, x, y + height);
+    if (isDay) {
+        skyGrd.addColorStop(0, '#87CEEB'); // Light Blue
+        skyGrd.addColorStop(1, '#FFD700'); // Golden
+    } else {
+        skyGrd.addColorStop(0, '#000033'); // Navy
+        skyGrd.addColorStop(1, '#000000'); // Black
+    }
     ctx.fillStyle = skyGrd;
-    ctx.fillRect(0, 0, w, h);
+    ctx.fillRect(x, y, width, height);
 
-    // 1.5 Clouds (Daytime only)
-    if (!timeOfDay.showCelestial) {
-        ctx.fillStyle = "rgba(255, 255, 255, 0.7)";
-        clouds.forEach(c => {
+    // 2. Celestial Body (Sun/Moon)
+    if (data) {
+        const celestialY = y + height * 0.2;
+        let progress = 0;
+        
+        if (isDay) {
+            // Sun Arc
+            progress = (now - data.sunrise) / (data.sunset - data.sunrise);
+            const sunX = x + (width * 0.1) + (width * 0.8 * progress);
+            const sunY = celestialY + Math.sin(progress * Math.PI) * -50; // Arc up
+            
+            ctx.fillStyle = "#FDB813";
+            ctx.shadowBlur = 20; ctx.shadowColor = "#FDB813";
             ctx.beginPath();
-            ctx.arc(c.x, c.y, c.size, 0, Math.PI * 2);
-            ctx.arc(c.x + c.size * 0.7, c.y - c.size * 0.4, c.size * 0.8, 0, Math.PI * 2);
-            ctx.arc(c.x + c.size * 1.4, c.y, c.size * 0.6, 0, Math.PI * 2);
+            ctx.arc(sunX, sunY, 30, 0, Math.PI * 2);
             ctx.fill();
-            c.x += c.speed;
-            if (c.x > w + 100) c.x = -100;
-        });
-    }
+            ctx.shadowBlur = 0;
+        } else {
+            // Moon & Stars
+            // Draw Stars
+            ctx.fillStyle = "white";
+            for(let i=0; i<50; i++) {
+                const sx = x + Math.random() * width;
+                const sy = y + Math.random() * (height * 0.6);
+                ctx.globalAlpha = Math.random();
+                ctx.beginPath(); ctx.arc(sx, sy, Math.random() * 1.5, 0, Math.PI*2); ctx.fill();
+            }
+            ctx.globalAlpha = 1;
 
-    // 2. Stars
-    if (timeOfDay.showCelestial) {
-        ctx.fillStyle = "white";
-        stars.forEach(s => {
-            ctx.globalAlpha = 0.5 + Math.sin(Date.now() * 0.001 + s.x) * 0.5;
-            ctx.beginPath();
-            ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
-            ctx.fill();
-            s.x -= s.speed;
-            if (s.x < 0) s.x = w;
-        });
-        ctx.globalAlpha = 1;
-    }
+            // Moon
+            const moonX = x + width * 0.8;
+            ctx.fillStyle = "#FEFCD7";
+            ctx.shadowBlur = 15; ctx.shadowColor = "#FEFCD7";
+            ctx.beginPath(); ctx.arc(moonX, celestialY, 25, 0, Math.PI*2); ctx.fill();
+            ctx.shadowBlur = 0;
+        }
 
+        // 3. Weather Effects
+        // Clouds
+        if (data.main === 'Clouds' || data.main === 'Rain' || data.main === 'Snow') {
+            if (pSystem.clouds.length < 5) {
+                pSystem.clouds.push({ x: x - 50, y: y + Math.random() * 100, w: 60 + Math.random()*40, speed: 0.5 + Math.random() });
+            }
+            ctx.fillStyle = "rgba(200, 200, 200, 0.4)";
+            pSystem.clouds.forEach((c, i) => {
+                c.x += c.speed;
+                if (c.x > x + width) c.x = x - 100;
+                ctx.beginPath(); ctx.arc(c.x, c.y, c.w/2, 0, Math.PI*2); ctx.fill();
+                ctx.beginPath(); ctx.arc(c.x + 20, c.y - 10, c.w/2, 0, Math.PI*2); ctx.fill();
+            });
+        }
+
+        // Rain
+        if (data.main === 'Rain') {
+            if (pSystem.rain.length < 100) pSystem.rain.push({ x: x + Math.random()*width, y: y + Math.random()*height, l: 10+Math.random()*10, v: 10+Math.random()*5 });
+            ctx.strokeStyle = "rgba(174, 194, 224, 0.6)"; ctx.lineWidth = 1;
+            pSystem.rain.forEach(r => {
+                r.y += r.v; if (r.y > y + height) r.y = y - 20;
+                ctx.beginPath(); ctx.moveTo(r.x, r.y); ctx.lineTo(r.x, r.y + r.l); ctx.stroke();
+            });
+        }
+
+        // Snow
+        if (data.main === 'Snow') {
+            if (pSystem.snow.length < 50) pSystem.snow.push({ x: x + Math.random()*width, y: y + Math.random()*height, r: 2+Math.random()*2, v: 1+Math.random() });
+            ctx.fillStyle = "rgba(255, 255, 255, 0.8)";
+            pSystem.snow.forEach(s => {
+                s.y += s.v; s.x += Math.sin(Date.now()*0.001)*0.5;
+                if (s.y > y + height) s.y = y - 10;
+                ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI*2); ctx.fill();
+            });
+        }
+    }
+}
+
+function drawCinematicEnvironment(progress) {
     const dividerX = w / 2;
     const groundLevel = h - 100;
 
@@ -108,14 +178,14 @@ function drawCinematicEnvironment(progress) {
     ctx.beginPath();
     ctx.rect(0, 0, dividerX, h);
     ctx.clip();
+    
+    // Draw Left Environment (Atlanta)
+    drawSideEnvironment('left', 0, 0, dividerX, h);
+
     buildings.forEach(b => {
         ctx.fillStyle = "#08080a";
         ctx.fillRect(b.x, h - b.h, b.w, b.h);
         // Draw Windows
-        if (timeOfDay.showCelestial) {
-            ctx.fillStyle = "rgba(255, 255, 200, 0.1)"; // Faint yellow light
-            b.windows.forEach(win => ctx.fillRect(b.x + win.x, h - b.h + win.y, 6, 8));
-        }
         b.x -= 0.5; // Parallax speed
         if (b.x + b.w < 0) b.x = w;
     });
@@ -126,6 +196,9 @@ function drawCinematicEnvironment(progress) {
     ctx.beginPath();
     ctx.rect(dividerX, 0, w - dividerX, h);
     ctx.clip();
+
+    // Draw Right Environment (Valparaiso)
+    drawSideEnvironment('right', dividerX, 0, w - dividerX, h);
 
     // Draw House
     const houseX = w * 0.65;
@@ -161,10 +234,8 @@ function drawCinematicEnvironment(progress) {
     ctx.fillStyle = "#37474f"; 
     ctx.fill();
     // Lit Window
-    if (timeOfDay.showCelestial) {
-        ctx.fillStyle = "rgba(255, 235, 59, 0.5)"; 
-        ctx.fillRect(houseX + 40, houseY - 70, 25, 25); // Bigger, repositioned window
-    }
+    ctx.fillStyle = "rgba(255, 235, 59, 0.5)"; 
+    ctx.fillRect(houseX + 40, houseY - 70, 25, 25);
 
     // Draw Tree
     const treeX = w * 0.85;
@@ -190,72 +261,16 @@ function drawCinematicEnvironment(progress) {
     });
 
     // Fireflies
-    if (timeOfDay.showCelestial) {
-        ctx.fillStyle = "#ffeb3b";
-        const time = Date.now();
-        fireflies.forEach(f => {
-            const fx = treeX + f.offsetX + Math.sin(time * f.speed + f.phase) * 20;
-            const fy = treeY + f.offsetY + Math.cos(time * f.speed + f.phase) * 10;
-            const alpha = 0.5 + Math.sin(time * 0.005 + f.phase) * 0.5;
-            ctx.globalAlpha = alpha;
-            ctx.beginPath(); ctx.arc(fx, fy, 2, 0, Math.PI*2); ctx.fill();
-        });
-        ctx.globalAlpha = 1;
-    }
-
-    // Rain Effect (Only on Female Side / Right Side)
-    // WMO Weather Codes for Rain: 51-67, 80-82, 95-99
-    const isRaining = (weatherCode >= 51 && weatherCode <= 67) || (weatherCode >= 80 && weatherCode <= 82) || (weatherCode >= 95 && weatherCode <= 99);
-    
-    if (isRaining) {
-        ctx.strokeStyle = "rgba(174, 194, 224, 0.6)";
-        ctx.lineWidth = 1.5;
-        
-        // Maintain rain particles
-        if (rainParticles.length < 150) {
-            rainParticles.push({
-                x: dividerX + Math.random() * (w - dividerX), // Constrain to right side
-                y: Math.random() * h,
-                speed: 15 + Math.random() * 10,
-                len: 10 + Math.random() * 15
-            });
-        }
-
-        rainParticles.forEach(p => {
-            ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p.x, p.y + p.len); ctx.stroke();
-            p.y += p.speed;
-            // Reset to top if it falls off screen
-            if (p.y > h) {
-                p.y = -p.len;
-                p.x = dividerX + Math.random() * (w - dividerX);
-            }
-        });
-    }
-
-    // Snow Effect (Only on Female Side / Right Side)
-    // WMO Weather Codes for Snow: 71, 73, 75, 77, 85, 86
-    const isSnowing = (weatherCode >= 71 && weatherCode <= 77) || (weatherCode >= 85 && weatherCode <= 86);
-
-    if (isSnowing) {
-        ctx.fillStyle = "rgba(255, 255, 255, 0.8)";
-        
-        if (snowParticles.length < 100) {
-            snowParticles.push({
-                x: dividerX + Math.random() * (w - dividerX),
-                y: Math.random() * h,
-                vx: (Math.random() - 0.5) * 1,
-                vy: 1 + Math.random() * 2,
-                size: 1 + Math.random() * 2
-            });
-        }
-
-        snowParticles.forEach(p => {
-            ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI*2); ctx.fill();
-            p.x += p.vx; p.y += p.vy;
-            if (p.y > h) { p.y = -5; p.x = dividerX + Math.random() * (w - dividerX); }
-            if (p.x > w) p.x = dividerX; if (p.x < dividerX) p.x = w;
-        });
-    }
+    ctx.fillStyle = "#ffeb3b";
+    const time = Date.now();
+    fireflies.forEach(f => {
+        const fx = treeX + f.offsetX + Math.sin(time * f.speed + f.phase) * 20;
+        const fy = treeY + f.offsetY + Math.cos(time * f.speed + f.phase) * 10;
+        const alpha = 0.5 + Math.sin(time * 0.005 + f.phase) * 0.5;
+        ctx.globalAlpha = alpha;
+        ctx.beginPath(); ctx.arc(fx, fy, 2, 0, Math.PI*2); ctx.fill();
+    });
+    ctx.globalAlpha = 1;
 
     ctx.restore();
 
@@ -306,11 +321,24 @@ function animate() {
         timerElement.innerText = `${d} : ${pad(h_)} : ${pad(m)} : ${pad(s)}`;
 
     } else {
-        // --- PHASE 2: PHOTO REVEAL ---
+        // --- PHASE 2: PUZZLE REVEAL ---
         if (timerElement.style.opacity !== "0") {
             timerElement.style.opacity = "0";
         }
-        ctx.drawImage(img, 0, 0, w, h);
+        
+        // Random Puzzle Reveal
+        const grid = 10;
+        revealProgress += 0.5; // Speed of reveal
+        const limit = Math.min(Math.floor(revealProgress), pieces.length);
+
+        for (let i = 0; i < limit; i++) {
+            const idx = pieces[i];
+            const sx = (idx % grid) * (img.width / grid);
+            const sy = Math.floor(idx / grid) * (img.height / grid);
+            const dx = (idx % grid) * (w / grid);
+            const dy = Math.floor(idx / grid) * (h / grid);
+            ctx.drawImage(img, sx, sy, img.width/grid, img.height/grid, dx, dy, w/grid, h/grid);
+        }
     }
     requestAnimationFrame(animate);
 }
@@ -370,12 +398,6 @@ function resize() {
     h = canvas.height = window.innerHeight; 
 
     // Re-create dimension-dependent assets
-    stars = Array.from({ length: 200 }, () => ({
-        x: Math.random() * w,
-        y: Math.random() * h * 0.7,
-        size: Math.random() * 1.5,
-        speed: 0.1 + Math.random() * 0.2
-    }));
     buildings = Array.from({ length: 100 }, () => {
         const bH = 100 + Math.random() * (h * 0.4);
         const bW = 40 + Math.random() * 80;
@@ -395,13 +417,5 @@ function resize() {
         offsetY: -100 + (Math.random() - 0.5) * 50,
         phase: Math.random() * Math.PI * 2,
         speed: 0.002 + Math.random() * 0.002
-    }));
-
-    // Clouds
-    clouds = Array.from({ length: 8 }, () => ({
-        x: Math.random() * w,
-        y: Math.random() * (h * 0.3),
-        size: 20 + Math.random() * 30,
-        speed: 0.2 + Math.random() * 0.3
     }));
 }
