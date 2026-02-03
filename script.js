@@ -234,7 +234,7 @@ function drawCinematicEnvironment(progress) {
     drawSideEnvironment('right', dividerX, 0, w - dividerX, h);
 
     // Draw House
-    const houseX = w * 0.65;
+    const houseX = w * 0.75;
     const houseY = groundLevel;
     
     // House Body
@@ -271,7 +271,7 @@ function drawCinematicEnvironment(progress) {
     ctx.fillRect(houseX + 40, houseY - 70, 25, 25);
 
     // Draw Tree
-    const treeX = w * 0.85;
+    const treeX = w * 0.9;
     const treeY = groundLevel;
     
     // Trunk
@@ -326,7 +326,7 @@ function drawCinematicEnvironment(progress) {
         maleWalkCycle = (now - (animStartTime + 2000)) * 0.006;
     }
 
-    const startGap = w * 0.4, endGap = 80;
+    const startGap = w * 0.8, endGap = 80;
     const currentGap = startGap - (startGap - endGap) * progress;
     drawCharacterSilhouette(dividerX - currentGap / 2, groundLevel, 0.8, true, maleWalkCycle);
     drawCharacterSilhouette(dividerX + currentGap / 2, groundLevel, 0.8, false, 0);
