@@ -106,7 +106,7 @@ function drawSideEnvironment(side, x, y, width, height) {
         skyGrd.addColorStop(0, '#87CEEB'); // Light Blue
         skyGrd.addColorStop(1, '#FFD700'); // Golden
     } else {
-        skyGrd.addColorStop(0, '#000033'); // Navy
+        skyGrd.addColorStop(0, '#000000'); // Black
         skyGrd.addColorStop(1, '#000000'); // Black
     }
     ctx.fillStyle = skyGrd;
@@ -131,13 +131,15 @@ function drawSideEnvironment(side, x, y, width, height) {
             ctx.shadowBlur = 0;
         } else {
             // Moon & Stars
-            // Draw Stars
-            ctx.fillStyle = "white";
-            for(let i=0; i<50; i++) {
-                const sx = x + Math.random() * width;
-                const sy = y + Math.random() * (height * 0.6);
-                ctx.globalAlpha = Math.random();
-                ctx.beginPath(); ctx.arc(sx, sy, Math.random() * 1.5, 0, Math.PI*2); ctx.fill();
+            // Draw Stars only if the sky is clear
+            if (data.main === 'Clear') {
+                ctx.fillStyle = "white";
+                for(let i=0; i<50; i++) {
+                    const sx = x + Math.random() * width;
+                    const sy = y + Math.random() * (height * 0.6);
+                    ctx.globalAlpha = Math.random();
+                    ctx.beginPath(); ctx.arc(sx, sy, Math.random() * 1.5, 0, Math.PI*2); ctx.fill();
+                }
             }
             ctx.globalAlpha = 1;
 
@@ -152,15 +154,19 @@ function drawSideEnvironment(side, x, y, width, height) {
         // 3. Weather Effects
         // Clouds
         if (data.main === 'Clouds' || data.main === 'Rain' || data.main === 'Snow') {
-            if (pSystem.clouds.length < 5) {
-                pSystem.clouds.push({ x: x - 50, y: y + Math.random() * 100, w: 60 + Math.random()*40, speed: 0.5 + Math.random() });
+            if (pSystem.clouds.length < 4) { // Fewer, more distinct clouds
+                pSystem.clouds.push({ x: x - 100, y: y + Math.random() * 100, w: 80 + Math.random()*50, speed: 0.1 + Math.random() * 0.2 });
             }
             ctx.fillStyle = "rgba(200, 200, 200, 0.4)";
             pSystem.clouds.forEach((c, i) => {
                 c.x += c.speed;
-                if (c.x > x + width) c.x = x - 100;
-                ctx.beginPath(); ctx.arc(c.x, c.y, c.w/2, 0, Math.PI*2); ctx.fill();
-                ctx.beginPath(); ctx.arc(c.x + 20, c.y - 10, c.w/2, 0, Math.PI*2); ctx.fill();
+                if (c.x - c.w > x + width) c.x = x - c.w;
+                ctx.beginPath();
+                ctx.arc(c.x, c.y, c.w * 0.4, 0, Math.PI * 2); // Center
+                ctx.arc(c.x + c.w * 0.3, c.y + c.w * 0.1, c.w * 0.3, 0, Math.PI * 2); // Right
+                ctx.arc(c.x - c.w * 0.3, c.y + c.w * 0.1, c.w * 0.3, 0, Math.PI * 2); // Left
+                ctx.arc(c.x, c.y - c.w * 0.2, c.w * 0.3, 0, Math.PI * 2); // Top
+                ctx.fill();
             });
         }
 
@@ -297,6 +303,21 @@ function drawGroundElements() {
     // Lit Window
     ctx.fillStyle = "rgba(255, 235, 59, 0.5)"; 
     ctx.fillRect(houseX + 40, houseY - 70, 25, 25);
+
+    // Garden with White Flowers
+    ctx.fillStyle = "#2e7d32"; // Green bed
+    ctx.beginPath();
+    ctx.ellipse(houseX + 60, houseY + 5, 70, 10, 0, 0, Math.PI*2);
+    ctx.fill();
+
+    for(let i=0; i<12; i++) {
+        const fx = houseX + 10 + (i * 9) + Math.sin(i*99)*5;
+        const fy = houseY + 2 + Math.cos(i*50)*3;
+        ctx.fillStyle = "#ffffff";
+        ctx.beginPath(); ctx.arc(fx, fy, 3, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = "#ffd700"; 
+        ctx.beginPath(); ctx.arc(fx, fy, 1, 0, Math.PI*2); ctx.fill();
+    }
 
     // Draw Tree
     const treeX = w * 0.9;
