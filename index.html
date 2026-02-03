@@ -14,7 +14,14 @@
     </div>
 
     <canvas id="scene"></canvas>
-    <script src="config.js"></script>
+
+    <script>
+        const loadConfig = document.createElement('script');
+        loadConfig.src = 'config.js';
+        loadConfig.onerror = () => console.log("GitHub mode: config.js not found, using system clock for sky.");
+        document.head.appendChild(loadConfig);
+    </script>
+
     <script src="script.js"></script>
 </body>
 </html>
