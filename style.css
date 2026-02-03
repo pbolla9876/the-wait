@@ -1,53 +1,39 @@
-* {
+body, html {
     margin: 0;
     padding: 0;
-    box-sizing: border-box;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+   body { background-color: #0a0a0a; color: white; margin: 0; }
 }
 
-body {
-    overflow: hidden;
-    font-family: 'Segoe UI', sans-serif;
-    background: #000;
+#ui-layer {
+    position: absolute;
+    top: 10%;
+    width: 100%;
+    text-align: center;
+    z-index: 10; /* Keeps text above the puzzle */
+    pointer-events: none; /* Allows clicks to pass through if needed */
+}
+
+#timer {
+    font-family: 'Courier New', Courier, monospace;
+    color: white;
+    font-size: 3rem;
+    text-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+    margin: 0;
+}
+
+#subtext {
+    color: rgba(255, 255, 255, 0.7);
+    font-family: Arial, sans-serif;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    font-size: 0.9rem;
 }
 
 canvas {
     display: block;
-}
-
-#timer {
-    position: absolute;
-    top: 40px;
-    width: 100%;
-    text-align: center;
-    color: white;
-    font-size: 32px;
-    font-weight: 300;
-    letter-spacing: 6px;
-    z-index: 5;
-    text-shadow: 0 0 20px rgba(255, 255, 255, 0.6);
-}
-
-#splash, #intro {
-    position: fixed;
-    inset: 0;
-    background: black;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    z-index: 20;
-}
-
-.fade-text {
-    opacity: 0;
-    animation: fadeInOut 4s forwards;
-    text-align: center;
-    font-weight: 300;
-    line-height: 1.6;
-}
-
-@keyframes fadeInOut {
-    0% { opacity: 0; transform: translateY(10px); }
-    50% { opacity: 1; transform: translateY(0); }
-    100% { opacity: 0; transform: translateY(-10px); }
+    width: 100vw;
+    height: 100vh;
 }
