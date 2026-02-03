@@ -38,8 +38,12 @@ let pieces = [], revealProgress = 0;
 const API_KEY = typeof CONFIG !== 'undefined' ? CONFIG.WEATHER_API_KEY : '';
 
 async function fetchWeather() {
+    // If GitHub is running this, it won't have the API_KEY
     if (!API_KEY) {
-        console.warn("Weather API Key missing. Using local time fallback for visuals.");
+        console.warn("GitHub Environment: API Key missing. Switching to Fallback Mode.");
+        // ALTERNATIVE: Hardcode 'Clouds' or 'Clear' for the public version
+        weatherData.left = { main: 'Clear', sunrise: 0, sunset: 0 }; 
+        weatherData.right = { main: 'Clear', sunrise: 0, sunset: 0 };
         return;
     }
     try {
