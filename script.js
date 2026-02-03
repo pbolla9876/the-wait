@@ -8,13 +8,29 @@ img.src = 'image1.png';
 const targetDate = new Date("March 1, 2026 00:00:00 GMT-0600").getTime();
 const startDate = new Date("February 1, 2026 00:00:00 GMT-0600").getTime();
 
-let w, h, buildings = [], animStartTime, fireflies = [], smokeParticles = [];
+let w, h, buildings = [], fireflies = [], smokeParticles = [];
 let weatherData = { left: null, right: null };
 let particles = {
     left: { rain: [], snow: [], clouds: [] },
     right: { rain: [], snow: [], clouds: [] }
 };
-// Puzzle variables
+
+// --- State Machine Variables ---
+let gameState = 'INTRO_TEXT';
+let animStartTime;
+
+// Phase 1: Text Reveal
+const introLines = [
+    "Miles apart, but heart to heart...",
+    "Two souls, two cities, one journey.",
+    "A countdown to the moment we meet."
+];
+let introState = { lineIndex: 0, alpha: 0, phase: 'in', lastUpdate: 0 };
+
+// Phase 2: Scene Buildup
+let sceneBuildupState = { sky: 0, ground: 0, chars: 0 };
+
+// Phase 4: Puzzle Reveal
 let pieces = [], revealProgress = 0;
 
 const API_KEY = '1c95ffb7528eb9b09fb1d559e5d8465d';
@@ -47,7 +63,9 @@ function processWeatherData(data) {
 }
 
 function init() {
+    gameState = 'INTRO_TEXT';
     animStartTime = Date.now();
+    introState.lastUpdate = animStartTime;
     fetchWeather();
     
     // Initialize Puzzle Pieces
@@ -169,11 +187,8 @@ function drawSideEnvironment(side, x, y, width, height) {
     }
 }
 
-function drawCinematicEnvironment(progress) {
-    const dividerX = w / 2;
-    const groundLevel = h - 100;
-
-    // 4. Moving City (Left Side)
+function drawSky() {
+    const dividerX = w/2;
     ctx.save();
     ctx.beginPath();
     ctx.rect(0, 0, dividerX, h);
@@ -182,8 +197,29 @@ function drawCinematicEnvironment(progress) {
     // Draw Left Environment (Atlanta)
     drawSideEnvironment('left', 0, 0, dividerX, h);
 
+    ctx.restore();
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(dividerX, 0, w - dividerX, h);
+    ctx.clip();
+    // Draw Right Environment (Valparaiso)
+    drawSideEnvironment('right', dividerX, 0, w - dividerX, h);
+    ctx.restore();
+}
+
+function drawGroundElements() {
+    const dividerX = w / 2;
+    const groundLevel = h - 100;
+
     const dataLeft = weatherData.left;
     const isNightLeft = dataLeft ? (Date.now() < dataLeft.sunrise || Date.now() > dataLeft.sunset) : true;
+
+    // Clip building drawing to the left side
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(0, 0, dividerX, h);
+    ctx.clip();
 
     buildings.forEach(b => {
         ctx.fillStyle = b.color;
@@ -222,16 +258,8 @@ function drawCinematicEnvironment(progress) {
         b.x -= 0.5; // Parallax speed
         if (b.x + b.w < 0) b.x = w;
     });
-    ctx.restore();
 
-    // 4.5 Static Countryside (Right Side)
-    ctx.save();
-    ctx.beginPath();
-    ctx.rect(dividerX, 0, w - dividerX, h);
-    ctx.clip();
-
-    // Draw Right Environment (Valparaiso)
-    drawSideEnvironment('right', dividerX, 0, w - dividerX, h);
+    ctx.restore(); // End clipping for buildings
 
     // Draw House
     const houseX = w * 0.75;
@@ -305,8 +333,6 @@ function drawCinematicEnvironment(progress) {
     });
     ctx.globalAlpha = 1;
 
-    ctx.restore();
-
     // 5. Ground Gradient
     const groundGrd = ctx.createLinearGradient(0, groundLevel, 0, h);
     groundGrd.addColorStop(0, '#050508');
@@ -319,7 +345,11 @@ function drawCinematicEnvironment(progress) {
     ctx.lineWidth = 2;
     ctx.beginPath(); ctx.moveTo(dividerX, 0); ctx.lineTo(dividerX, h); ctx.stroke();
 
-    // 7. Characters
+}
+
+function drawCharacters(progress) {
+    const dividerX = w / 2;
+    const groundLevel = h - 100;
     const now = Date.now();
     let maleWalkCycle = 0;
     if (now - animStartTime > 2000) {
@@ -332,6 +362,114 @@ function drawCinematicEnvironment(progress) {
     drawCharacterSilhouette(dividerX + currentGap / 2, groundLevel, 0.8, false, 0);
 }
 
+function drawLockAndTimer(progress) {
+    const lockX = w / 2;
+    const lockY = 50;
+    const isLocked = progress < 1;
+
+    ctx.strokeStyle = 'white';
+    ctx.fillStyle = 'white';
+    ctx.lineWidth = 3;
+
+    // Shackle
+    ctx.beginPath();
+    if (isLocked) {
+        ctx.arc(lockX, lockY, 12, Math.PI, 0);
+    } else {
+        // Unlocked animation
+        ctx.save();
+        ctx.translate(lockX - 12, lockY);
+        ctx.rotate(-Math.PI / 4);
+        ctx.arc(12, 0, 12, Math.PI, 0);
+        ctx.restore();
+    }
+    ctx.stroke();
+
+    // Body
+    ctx.beginPath();
+    const bodyPath = new Path2D();
+    bodyPath.roundRect(lockX - 18, lockY, 36, 25, 5);
+    ctx.fill(bodyPath);
+
+    // Keyhole
+    ctx.fillStyle = 'black';
+    ctx.beginPath();
+    ctx.arc(lockX, lockY + 12, 3, 0, Math.PI * 2);
+    ctx.fill();
+}
+
+function handleIntroText() {
+    const now = Date.now();
+    const elapsed = now - introState.lastUpdate;
+
+    ctx.fillStyle = 'black';
+    ctx.fillRect(0, 0, w, h);
+
+    // Logic for fade-in, pause, next line
+    if (introState.phase === 'in') {
+        introState.alpha = Math.min(1, introState.alpha + 0.02);
+        if (introState.alpha >= 1) {
+            introState.phase = 'pause';
+            introState.lastUpdate = now;
+        }
+    } else if (introState.phase === 'pause') {
+        if (elapsed > 2000) { // 2 second pause
+            if (introState.lineIndex < introLines.length - 1) {
+                introState.lineIndex++;
+                introState.alpha = 0;
+                introState.phase = 'in';
+            } else {
+                // Last line finished, transition to next phase
+                gameState = 'SCENE_BUILDUP';
+                animStartTime = now; // Reset timer for buildup
+            }
+        }
+    }
+
+    // Draw the lines
+    ctx.font = "italic 24px 'Georgia', serif";
+    ctx.textAlign = 'center';
+    for (let i = 0; i <= introState.lineIndex; i++) {
+        ctx.fillStyle = `rgba(255, 255, 255, ${i < introState.lineIndex ? 1 : introState.alpha})`;
+        ctx.fillText(introLines[i], w / 2, h / 2 - 30 + (i * 40));
+    }
+}
+
+function handleSceneBuildup() {
+    const now = Date.now();
+    const elapsed = now - animStartTime;
+
+    // Animate alphas over 3 seconds
+    if (elapsed < 1000) { // 0-1s: Sky fades in
+        sceneBuildupState.sky = elapsed / 1000;
+    } else if (elapsed < 2000) { // 1-2s: Ground fades in
+        sceneBuildupState.sky = 1;
+        sceneBuildupState.ground = (elapsed - 1000) / 1000;
+    } else if (elapsed < 3000) { // 2-3s: Chars fade in
+        sceneBuildupState.sky = 1;
+        sceneBuildupState.ground = 1;
+        sceneBuildupState.chars = (elapsed - 2000) / 1000;
+    } else {
+        // Buildup complete, transition to journey
+        gameState = 'JOURNEY';
+        animStartTime = now; // Reset timer for journey
+        return;
+    }
+
+    // Draw components with their current alpha
+    ctx.globalAlpha = sceneBuildupState.sky;
+    drawSky();
+    ctx.globalAlpha = 1;
+    
+    ctx.globalAlpha = sceneBuildupState.ground;
+    drawGroundElements();
+    ctx.globalAlpha = 1;
+
+    ctx.globalAlpha = sceneBuildupState.chars;
+    drawCharacters(0); // progress is 0, they are standing still
+    ctx.globalAlpha = 1;
+}
+
 function animate() {
     const now = Date.now();
     const timeLeft = targetDate - now;
@@ -340,38 +478,53 @@ function animate() {
     ctx.fillStyle = 'black';
     ctx.fillRect(0, 0, w, h);
 
-    if (timeLeft > 0) {
-        // --- PHASE 1: CINEMATIC SCENE ---
-        const totalDuration = targetDate - startDate;
-        const progress = Math.min(1, Math.max(0, 1 - (timeLeft / totalDuration)));
-        drawCinematicEnvironment(progress);
+    if (timeLeft <= 0 && gameState !== 'REVEAL') {
+        gameState = 'REVEAL';
+        animStartTime = now;
+    }
 
-        const d = Math.floor(timeLeft / (1000 * 60 * 60 * 24));
-        const h_ = Math.floor((timeLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-        const m = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
-        const s = Math.floor((timeLeft % (1000 * 60)) / 1000);
-        const pad = (num) => String(num).padStart(2, '0');
-        timerElement.innerText = `${d} : ${pad(h_)} : ${pad(m)} : ${pad(s)}`;
+    switch (gameState) {
+        case 'INTRO_TEXT':
+            handleIntroText();
+            break;
+        case 'SCENE_BUILDUP':
+            handleSceneBuildup();
+            break;
+        case 'JOURNEY':
+            const totalDuration = targetDate - startDate;
+            const progress = Math.min(1, Math.max(0, 1 - (timeLeft / totalDuration)));
+            
+            drawSky();
+            drawGroundElements();
+            drawCharacters(progress);
+            drawLockAndTimer(progress);
 
-    } else {
-        // --- PHASE 2: PUZZLE REVEAL ---
-        if (timerElement.style.opacity !== "0") {
-            timerElement.style.opacity = "0";
-        }
-        
-        // Random Puzzle Reveal
-        const grid = 10;
-        revealProgress += 0.5; // Speed of reveal
-        const limit = Math.min(Math.floor(revealProgress), pieces.length);
+            const d = Math.floor(timeLeft / (1000 * 60 * 60 * 24));
+            const h_ = Math.floor((timeLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const m = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+            const s = Math.floor((timeLeft % (1000 * 60)) / 1000);
+            const pad = (num) => String(num).padStart(2, '0');
+            timerElement.innerText = `${d} : ${pad(h_)} : ${pad(m)} : ${pad(s)}`;
+            break;
+        case 'REVEAL':
+            if (timerElement.style.opacity !== "0") timerElement.style.opacity = "0";
+            
+            const grid = 10;
+            revealProgress += 0.5;
+            const limit = Math.min(Math.floor(revealProgress), pieces.length);
 
-        for (let i = 0; i < limit; i++) {
-            const idx = pieces[i];
-            const sx = (idx % grid) * (img.width / grid);
-            const sy = Math.floor(idx / grid) * (img.height / grid);
-            const dx = (idx % grid) * (w / grid);
-            const dy = Math.floor(idx / grid) * (h / grid);
-            ctx.drawImage(img, sx, sy, img.width/grid, img.height/grid, dx, dy, w/grid, h/grid);
-        }
+            for (let i = 0; i < limit; i++) {
+                const idx = pieces[i];
+                const sx = (idx % grid) * (img.width / grid);
+                const sy = Math.floor(idx / grid) * (img.height / grid);
+                const dx = (idx % grid) * (w / grid);
+                const dy = Math.floor(idx / grid) * (h / grid);
+                ctx.drawImage(img, sx, sy, img.width/grid, img.height/grid, dx, dy, w/grid, h/grid);
+            }
+            if (limit >= pieces.length) {
+                drawLockAndTimer(1.1); // Draw unlocked lock on top of finished image
+            }
+            break;
     }
     requestAnimationFrame(animate);
 }
@@ -424,7 +577,7 @@ function drawCharacterSilhouette(x, y, scale, isMale, walkCycle) {
     ctx.restore();
 }
 
-img.onload = init;
+init(); // Start animation logic immediately
 window.addEventListener('resize', resize);
 function resize() { 
     w = canvas.width = window.innerWidth; 
