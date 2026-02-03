@@ -33,9 +33,14 @@ let sceneBuildupState = { sky: 0, ground: 0, chars: 0, lock: 0 };
 // Phase 4: Puzzle Reveal
 let pieces = [], revealProgress = 0;
 
-const API_KEY = CONFIG.WEATHER_API_KEY;
+// This tells the script: Use the key from config.js, but don't crash if it's missing.
+const API_KEY = typeof CONFIG !== 'undefined' ? CONFIG.WEATHER_API_KEY : '';
 
 async function fetchWeather() {
+    if (!API_KEY) {
+        console.warn("Weather API Key missing. Skipping fetch.");
+        return;
+    }
     try {
         // Left: Atlanta, GA
         const resLeft = await fetch(`https://api.openweathermap.org/data/2.5/weather?lat=33.7490&lon=-84.3880&appid=${API_KEY}`);
