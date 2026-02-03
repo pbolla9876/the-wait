@@ -225,7 +225,7 @@ function drawGroundElements() {
     const groundLevel = h - 100;
 
     const dataLeft = weatherData.left;
-    const isNightLeft = dataLeft ? (Date.now() < dataLeft.sunrise || Date.now() > dataLeft.sunset) : true;
+    const isNightLeft = dataLeft ? (Date.now() < dataLeft.sunrise || Date.now() > dataLeft.sunset) : false;
 
     // Clip building drawing to the left side
     ctx.save();
