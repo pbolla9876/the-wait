@@ -18,7 +18,6 @@ const introText = "Hey Jaan, sorry it took almost more than a couple of days to 
 
 async function fetchWeather() { if (!API_KEY) { console.warn("Weather API Key missing. Skipping fetch."); return; } try { // Left: Atlanta, GA const resLeft = await fetch(https://api.openweathermap.org/data/2.5/weather?lat=33.7490&lon=-84.3880&appid=${API_KEY}); const dataLeft = await resLeft.json(); weatherData.left = processWeatherData(dataLeft);
 
-script.js: 8 lines selected
     // Right: Valparaiso, IN
     const resRight = await fetch(`https://api.openweathermap.org/data/2.5/weather?lat=41.4731&lon=-87.0611&appid=${API_KEY}`);
     const dataRight = await resRight.json();
@@ -33,7 +32,6 @@ function processWeatherData(data) { if (!data || !data.sys) return null; return 
 
 function init() { gameState = 'INTRO_TEXT'; animStartTime = Date.now(); introState.lastUpdate = animStartTime; introState.charIndex = 0; introState.phase = 'typing'; fetchWeather();
 
-script.js: 21 lines selected
 // Initialize Puzzle Pieces
 const grid = 10; // 10x10 grid for puzzle
 pieces = Array.from({ length: grid * grid }, (_, i) =&gt; i);
@@ -59,7 +57,6 @@ setTimeout(() =&gt; {
 
 function drawSideEnvironment(side, x, y, width, height) { const data = weatherData[side]; const pSystem = particles[side]; const now = Date.now(); const currentHour = new Date().getHours();
 
-script.js: 101 lines selected
 // Logic: Use API data if available, otherwise fallback to system time (6am - 6pm is Day)
 let isDay = (currentHour &gt;= 6 && currentHour &lt; 18);
 if (data && data.sunrise && data.sunset) {
@@ -165,7 +162,6 @@ if (data) {
 
 function drawSky() { const dividerX = w/2; ctx.save(); ctx.beginPath(); ctx.rect(0, 0, dividerX, h); ctx.clip();
 
-script.js: 12 lines selected
 // Draw Left Environment (Atlanta)
 drawSideEnvironment('left', 0, 0, dividerX, h);
 
@@ -184,7 +180,6 @@ function updateSmoke(x, y) { if (Math.random() < 0.03) { smokeParticles.push({ x
 
 function updateBirds() { const treeX = w * 0.9; const treeY = h - 100; // Landing spots relative to tree center const spots = [ {x: 12, y: -160}, {x: -30, y: -140}, {x: 50, y: -130}, {x: 15, y: -110} ];
 
-script.js: 68 lines selected
 ctx.strokeStyle = 'black';
 ctx.lineWidth = 1.5;
 ctx.fillStyle = 'black';
@@ -259,7 +254,6 @@ function updateFireflies(baseX, baseY) { ctx.fillStyle = "#ffeb3b"; const time =
 
 function drawGroundElements() { const dividerX = w / 2; const groundLevel = h - 100;
 
-script.js: 133 lines selected
 const dataLeft = weatherData.left;
 const now = Date.now();
 const currentHour = new Date().getHours();
@@ -397,7 +391,6 @@ ctx.beginPath(); ctx.moveTo(dividerX, 0); ctx.lineTo(dividerX, h); ctx.stroke();
 
 function drawCharacters(progress) { const dividerX = w / 2; const groundLevel = h - 100; const now = Date.now(); let maleWalkCycle = 0; if (now - animStartTime > 2000) { maleWalkCycle = (now - (animStartTime + 2000)) * 0.006; }
 
-script.js: 4 lines selected
 const startGap = w * 0.8, endGap = 80;
 const currentGap = startGap - (startGap - endGap) * progress;
 drawCharacterSilhouette(dividerX - currentGap / 2, groundLevel, 0.8, true, maleWalkCycle);
@@ -406,7 +399,6 @@ drawCharacterSilhouette(dividerX + currentGap / 2, groundLevel, 0.8, false, 0);
 
 function drawLockAndTimer(progress) { const lockX = w / 2; const lockY = 100; // Moved down to avoid overlap with timer text const isLocked = progress < 1;
 
-script.js: 34 lines selected
 ctx.save();
 ctx.strokeStyle = 'white'; // White color
 ctx.fillStyle = 'white';
@@ -445,7 +437,6 @@ ctx.restore();
 
 function handleIntroText() { const now = Date.now(); ctx.fillStyle = 'black'; ctx.fillRect(0, 0, w, h);
 
-script.js: 58 lines selected
 // Wrap text logic
 ctx.font = "22px 'Georgia', serif";
 const maxWidth = w * 0.8;
@@ -508,7 +499,6 @@ for (let i = 0; i &lt; lines.length; i++) {
 
 function handleSceneBuildup() { const now = Date.now(); const elapsed = now - animStartTime;
 
-script.js: 29 lines selected
 // Animate alphas over 3 seconds
 if (elapsed &lt; 1000) { // 0-1s: Sky fades in
     sceneBuildupState.sky = elapsed / 1000;
@@ -542,7 +532,6 @@ ctx.globalAlpha = 1;
 
 function animate() { const now = Date.now(); const timeLeft = targetDate - now;
 
-script.js: 62 lines selected
 // Safeguard: Always clear the canvas to black first.
 ctx.fillStyle = 'black';
 ctx.fillRect(0, 0, w, h);
@@ -609,7 +598,6 @@ requestAnimationFrame(animate);
 
 function drawCharacterSilhouette(x, y, scale, isMale, walkCycle) { ctx.save(); ctx.translate(x, y); ctx.scale(scale * (isMale ? 1 : -1), scale);
 
-script.js: 41 lines selected
 // Animation Math
 const legSwing = Math.sin(walkCycle) * 0.5;
 const armSwing = Math.sin(walkCycle + Math.PI) * 0.5;
@@ -655,7 +643,7 @@ ctx.restore();
 
 init(); // Start animation logic immediately window.addEventListener('resize', resize); function resize() { w = canvas.width = window.innerWidth; h = canvas.height = window.innerHeight;
 
-script.js: 44 lines selected
+
 // Re-create dimension-dependent assets
 buildings = Array.from({ length: 100 }, () =&gt; {
     const bH = 100 + Math.random() * (h * 0.4);
