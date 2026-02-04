@@ -214,6 +214,26 @@ function drawGroundElements() {
     // Draw House & Tree (Right Side)
     const houseX = w * 0.75;
     ctx.fillStyle = "#263238"; ctx.fillRect(houseX, groundLevel - 120, 120, 120);
+    
+    // Street Lamp
+    const lampX = houseX - 50;
+    ctx.fillStyle = "#1c2327"; ctx.fillRect(lampX, groundLevel - 140, 4, 140); // Pole
+    ctx.beginPath(); ctx.moveTo(lampX-10, groundLevel-140); ctx.lineTo(lampX+14, groundLevel-140); 
+    ctx.lineTo(lampX+18, groundLevel-130); ctx.lineTo(lampX-6, groundLevel-130); ctx.fill(); // Lamp head
+    
+    if (isNight) {
+        ctx.save();
+        ctx.shadowColor = "#FFD700"; ctx.shadowBlur = 20; ctx.fillStyle = "#FFFFE0";
+        ctx.beginPath(); ctx.arc(lampX+4, groundLevel-132, 6, 0, Math.PI*2); ctx.fill();
+        ctx.restore();
+        const grad = ctx.createRadialGradient(lampX+4, groundLevel-132, 0, lampX+4, groundLevel, 120);
+        grad.addColorStop(0, "rgba(255, 215, 0, 0.2)"); grad.addColorStop(1, "rgba(0,0,0,0)");
+        ctx.fillStyle = grad;
+        ctx.beginPath(); ctx.moveTo(lampX+4, groundLevel-132); ctx.lineTo(lampX-40, groundLevel); ctx.lineTo(lampX+50, groundLevel); ctx.fill();
+    } else {
+        ctx.fillStyle = "#CCCCCC"; ctx.beginPath(); ctx.arc(lampX+4, groundLevel-132, 5, 0, Math.PI*2); ctx.fill();
+    }
+
     ctx.fillStyle = "#1c2327"; ctx.fillRect(houseX + 85, groundLevel - 160, 15, 40);
     updateSmoke(houseX + 92, groundLevel - 160);
     ctx.beginPath(); ctx.moveTo(houseX-10, groundLevel-120); ctx.lineTo(houseX+60, groundLevel-170); ctx.lineTo(houseX+130, groundLevel-120);
@@ -233,7 +253,16 @@ function drawCharacterSilhouette(x, y, scale, isMale, walkCycle) {
     ctx.save(); ctx.translate(x, y); ctx.scale(scale * (isMale ? 1 : -1), scale);
     const legSwing = Math.sin(walkCycle) * 0.5;
     const bob = Math.abs(Math.sin(walkCycle * 2)) * 2;
-    ctx.translate(0, -bob); ctx.fillStyle = 'black';
+    ctx.translate(0, -bob); 
+    
+    const currentHour = new Date().getHours();
+    const isNight = (currentHour < 6 || currentHour >= 18);
+    if (isNight && !isMale) {
+        ctx.fillStyle = "#333"; 
+        ctx.shadowColor = "rgba(255, 255, 200, 0.5)"; ctx.shadowBlur = 10;
+    } else {
+        ctx.fillStyle = 'black';
+    }
     
     // Draw Legs
     ctx.save(); ctx.translate(0, -45); ctx.rotate(legSwing); ctx.fillRect(-4, 0, 8, 45); ctx.restore();

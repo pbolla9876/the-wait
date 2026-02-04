@@ -8,7 +8,7 @@ img.src = 'image1.png';
 const targetDate = new Date("March 1, 2026 00:00:00 GMT-0600").getTime();
 const startDate = new Date("February 1, 2026 00:00:00 GMT-0600").getTime();
 
-let w, h, buildings = [], fireflies = [], smokeParticles = [], birds = [], fireworks = [];
+let w, h, buildings = [], fireflies = [], smokeParticles = [], birds = [], fireworks = [], stars = [];
 let weatherData = { left: null, right: null };
 let particles = {
     left: { rain: [], snow: [], clouds: [] },
@@ -19,13 +19,8 @@ let particles = {
 let gameState = 'INTRO_TEXT';
 let animStartTime;
 
-// Phase 1: Text Reveal
-const introLines = [
-    "Though oceans may divide us, our souls are intertwined forever...",
-    "Every sunset brings me closer to the sunrise I'll share with you.",
-    "Counting the heartbeats until the distance disappears and I'm home in your arms."
-];
-let introState = { lineIndex: 0, alpha: 0, phase: 'in', lastUpdate: 0 };
+const introText = "Hey Jaan, sorry it took almost more than a couple of days to build this... I thought it was easy, but every time I get an idea, it’s getting even more difficult to implement. But yeah, here is the output—hope it works well on your side. Coming to the no communication thing, it’s so tough. More than the timer, I am counting each and every second in my mind, wishing the timer would become zero... For the first time, I am wishing maybe I could be Thanos, so I could snap my fingers and make the timer zero, but in real life, I am not a Marvel character. I'm just a character in real life who is 678 miles away from the person whom I love and admire so much. Previously, only the distance used to affect me, now the time as well... but I am missing you so much... I want to say more, but I will save it for that day—hope we will be back and with lots of affection. Miss you so much.........";
+let introState = { charIndex: 0, phase: 'typing', lastUpdate: 0, completeTime: 0 };
 
 // Phase 2: Scene Buildup
 let sceneBuildupState = { sky: 0, ground: 0, chars: 0 };
@@ -71,6 +66,8 @@ function init() {
     gameState = 'INTRO_TEXT';
     animStartTime = Date.now();
     introState.lastUpdate = animStartTime;
+    introState.charIndex = 0;
+    introState.phase = 'typing';
     fetchWeather();
     
     // Initialize Puzzle Pieces
@@ -528,38 +525,66 @@ function drawLockAndTimer(progress) {
 
 function handleIntroText() {
     const now = Date.now();
-    const elapsed = now - introState.lastUpdate;
-
     ctx.fillStyle = 'black';
     ctx.fillRect(0, 0, w, h);
 
-    // Logic for fade-in, pause, next line
-    if (introState.phase === 'in') {
-        introState.alpha = Math.min(1, introState.alpha + 0.02);
-        if (introState.alpha >= 1) {
-            introState.phase = 'pause';
+    // Wrap text logic
+    ctx.font = "22px 'Georgia', serif";
+    const maxWidth = w * 0.8;
+    const words = introText.split(' ');
+    let lines = [];
+    let currentLine = words[0];
+
+    for (let i = 1; i < words.length; i++) {
+        let word = words[i];
+        let width = ctx.measureText(currentLine + " " + word).width;
+        if (width < maxWidth) {
+            currentLine += " " + word;
+        } else {
+            lines.push(currentLine);
+            currentLine = word;
+        }
+    }
+    lines.push(currentLine);
+
+    // Typewriter Logic
+    if (introState.phase === 'typing') {
+        if (now - introState.lastUpdate > 50) {
+            introState.charIndex++;
             introState.lastUpdate = now;
         }
-    } else if (introState.phase === 'pause') {
-        if (elapsed > 2000) { // 2 second pause
-            if (introState.lineIndex < introLines.length - 1) {
-                introState.lineIndex++;
-                introState.alpha = 0;
-                introState.phase = 'in';
-            } else {
-                // Last line finished, transition to next phase
-                gameState = 'SCENE_BUILDUP';
-                animStartTime = now; // Reset timer for buildup
-            }
+        if (introState.charIndex >= introText.length) {
+            introState.charIndex = introText.length;
+            introState.phase = 'waiting';
+            introState.completeTime = now;
+        }
+    } else if (introState.phase === 'waiting') {
+        if (now - introState.completeTime > 6000) {
+            gameState = 'SCENE_BUILDUP';
+            animStartTime = now;
         }
     }
 
-    // Draw the lines
-    ctx.font = "italic 24px 'Georgia', serif";
+    // Draw
+    ctx.fillStyle = 'white';
     ctx.textAlign = 'center';
-    for (let i = 0; i <= introState.lineIndex; i++) {
-        ctx.fillStyle = `rgba(255, 255, 255, ${i < introState.lineIndex ? 1 : introState.alpha})`;
-        ctx.fillText(introLines[i], w / 2, h / 2 - 30 + (i * 40));
+    let y = h / 2 - (lines.length * 30) / 2;
+    let charsRemaining = introState.charIndex;
+
+    for (let i = 0; i < lines.length; i++) {
+        let line = lines[i];
+        if (charsRemaining <= 0) break;
+        
+        let stringToDraw = "";
+        if (charsRemaining >= line.length) {
+            stringToDraw = line;
+            charsRemaining -= (line.length + 1); // +1 for space/newline
+        } else {
+            stringToDraw = line.substring(0, charsRemaining);
+            charsRemaining = 0;
+        }
+        ctx.fillText(stringToDraw, w / 2, y);
+        y += 30;
     }
 }
 
