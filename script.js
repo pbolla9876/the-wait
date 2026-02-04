@@ -169,7 +169,7 @@ function drawSideEnvironment(side, x, y, width, height) {
 
     // 3. Weather Effects
         // Clouds
-        if (data.main === 'Clouds' || data.main === 'Rain' || data.main === 'Snow') {
+        if (data && (data.main === 'Clouds' || data.main === 'Rain' || data.main === 'Snow')) {
             if (pSystem.clouds.length < 4) { // Fewer, more distinct clouds
                 pSystem.clouds.push({ x: x - 100, y: y + Math.random() * 100, w: 80 + Math.random()*50, speed: 0.1 + Math.random() * 0.2 });
             }
@@ -187,7 +187,7 @@ function drawSideEnvironment(side, x, y, width, height) {
         }
 
         // Rain
-        if (data.main === 'Rain') {
+        if (data && data.main === 'Rain') {
             if (pSystem.rain.length < 100) pSystem.rain.push({ x: x + Math.random()*width, y: y + Math.random()*height, l: 10+Math.random()*10, v: 10+Math.random()*5 });
             ctx.strokeStyle = "rgba(174, 194, 224, 0.6)"; ctx.lineWidth = 1;
             pSystem.rain.forEach(r => {
@@ -197,7 +197,7 @@ function drawSideEnvironment(side, x, y, width, height) {
         }
 
         // Snow
-        if (data.main === 'Snow') {
+        if (data && data.main === 'Snow') {
             if (pSystem.snow.length < 50) pSystem.snow.push({ x: x + Math.random()*width, y: y + Math.random()*height, r: 2+Math.random()*2, v: 1+Math.random() });
             ctx.fillStyle = "rgba(255, 255, 255, 0.8)";
             pSystem.snow.forEach(s => {
@@ -207,7 +207,6 @@ function drawSideEnvironment(side, x, y, width, height) {
             });
         }
     }
-}
 
 function drawSky() {
     const dividerX = w/2;
