@@ -118,23 +118,27 @@ function drawSideEnvironment(side, x, y, width, height) {
     ctx.fillRect(x, y, width, height);
 
     // 2. Celestial Body (Sun/Moon)
-    if (data) {
-        const celestialY = y + height * 0.2;
-        let progress = 0;
+    const celestialY = y + height * 0.2;
+
+    if (isDay) {
+        let sunX = x + width * 0.5;
+        let sunY = celestialY;
+        if (data && data.sunrise && data.sunset) {
+            const progress = (now - data.sunrise) / (data.sunset - data.sunrise);
+            sunX = x + (width * 0.1) + (width * 0.8 * progress);
+            sunY = celestialY + Math.sin(progress * Math.PI) * -50;
+        }
         
-        if (isDay) {
-            // Sun Arc
-            progress = (now - data.sunrise) / (data.sunset - data.sunrise);
-            const sunX = x + (width * 0.1) + (width * 0.8 * progress);
-            const sunY = celestialY + Math.sin(progress * Math.PI) * -50; // Arc up
-            
-            ctx.fillStyle = "#FDB813";
-            ctx.shadowBlur = 20; ctx.shadowColor = "#FDB813";
-            ctx.beginPath();
-            ctx.arc(sunX, sunY, 30, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.shadowBlur = 0;
-        } else {
+        ctx.fillStyle = "#FDB813";
+        ctx.shadowBlur = 20; ctx.shadowColor = "#FDB813";
+        ctx.beginPath();
+        ctx.arc(sunX, sunY, 30, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+    }
+
+    if (data) {
+        if (!isDay) {
             // Moon & Stars
             // Draw Stars only if the sky is clear
             if (data.main === 'Clear') {
