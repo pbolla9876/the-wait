@@ -19,8 +19,13 @@ let particles = {
 let gameState = 'INTRO_TEXT';
 let animStartTime;
 
-const introText = "Hey Jaan, sorry it took almost more than a couple of days to build this... I thought it was easy, but every time I get an idea, it’s getting even more difficult to implement. But yeah, here is the output—hope it works well on your side. Coming to the no communication thing, it’s so tough. More than the timer, I am counting each and every second in my mind, wishing the timer would become zero... For the first time, I am wishing maybe I could be Thanos, so I could snap my fingers and make the timer zero, but in real life, I am not a Marvel character. I'm just a character in real life who is 678 miles away from the person whom I love and admire so much. Previously, only the distance used to affect me, now the time as well... but I am missing you so much... I want to say more, but I will save it for that day—hope we will be back and with lots of affection. Miss you so much.........";
-let introState = { charIndex: 0, phase: 'typing', lastUpdate: 0, completeTime: 0 };
+// Phase 1: Text Reveal
+const introLines = [
+    "Though oceans may divide us, our souls are intertwined forever...",
+    "Every sunset brings me closer to the sunrise I'll share with you.",
+    "Counting the heartbeats until the distance disappears and I'm home in your arms."
+];
+let introState = { lineIndex: 0, alpha: 0, phase: 'in', lastUpdate: 0 };
 
 // Phase 2: Scene Buildup
 let sceneBuildupState = { sky: 0, ground: 0, chars: 0 };
@@ -66,8 +71,6 @@ function init() {
     gameState = 'INTRO_TEXT';
     animStartTime = Date.now();
     introState.lastUpdate = animStartTime;
-    introState.charIndex = 0;
-    introState.phase = 'typing';
     fetchWeather();
     
     // Initialize Puzzle Pieces
@@ -712,56 +715,6 @@ function drawCharacterSilhouette(x, y, scale, isMale, walkCycle) {
 }
 
 init(); // Start animation logic immediately
-window.addEventListener('resize', resize);
-function resize() { 
-    w = canvas.width = window.innerWidth; 
-    h = canvas.height = window.innerHeight; 
-
-    // Re-create dimension-dependent assets
-    buildings = Array.from({ length: 100 }, () => {
-        const bH = 100 + Math.random() * (h * 0.4);
-        const bW = 40 + Math.random() * 80;
-        const wins = [];
-        // Generate windows
-        for(let y = 20; y < bH - 20; y += 20) {
-            for(let x = 10; x < bW - 10; x += 15) {
-                if(Math.random() > 0.7) wins.push({x, y});
-            }
-        }
-        const color = `hsl(230, 20%, ${10 + Math.random() * 15}%)`; // Dark blue/purple/grey tones
-
-        const typeRoll = Math.random();
-        let type;
-        if (typeRoll < 0.6) {
-            type = 'rect'; // 60% chance for a standard rectangle
-        } else if (typeRoll < 0.85) {
-            type = 'stepped'; // 25% chance for a stepped building
-        } else {
-            type = 'spire'; // 15% chance for a building with a spire
-        }
-
-        return { x: Math.random() * w, h: bH, w: bW, windows: wins, color: color, type: type };
-    });
-
-    // Fireflies
-    fireflies = Array.from({ length: 15 }, () => ({
-        offsetX: (Math.random() - 0.5) * 100,
-        offsetY: -100 + (Math.random() - 0.5) * 50,
-        phase: Math.random() * Math.PI * 2,
-        speed: 0.002 + Math.random() * 0.002
-    }));
-
-    // Birds
-    birds = Array.from({ length: 6 }, () => ({
-        x: w * 0.5 + Math.random() * (w * 0.5), // Start on right side
-        y: Math.random() * h * 0.6,
-        vx: (Math.random() - 0.5) * 2,
-        vy: (Math.random() - 0.5) * 2,
-        state: 'flying', // 'flying', 'landing', 'perched'
-        target: null,
-        timer: 0
-    }));
-}
 window.addEventListener('resize', resize);
 function resize() { 
     w = canvas.width = window.innerWidth; 
