@@ -1,796 +1,702 @@
-const canvas = document.getElementById('scene');
-const ctx = canvas.getContext('2d');
-const timerElement = document.getElementById('timer');
+const canvas = document.getElementById('scene'); const ctx = canvas.getContext('2d'); const timerElement = document.getElementById('timer');
 
-const img = new Image();
-img.src = 'image1.png';
+const img = new Image(); img.src = 'image1.png';
 
-const targetDate = new Date("March 1, 2026 00:00:00 GMT-0600").getTime();
-const startDate = new Date("February 1, 2026 00:00:00 GMT-0600").getTime();
+const targetDate = new Date("March 1, 2026 00:00:00 GMT-0600").getTime(); const startDate = new Date("February 1, 2026 00:00:00 GMT-0600").getTime();
 
-let w, h, buildings = [], fireflies = [], smokeParticles = [], birds = [], fireworks = [], stars = [];
-let weatherData = { left: null, right: null };
-let particles = {
-    left: { rain: [], snow: [], clouds: [] },
-    right: { rain: [], snow: [], clouds: [] }
-};
+let w, h, buildings = [], fireflies = [], smokeParticles = [], birds = [], fireworks = [], stars = []; let weatherData = { left: null, right: null }; let particles = { left: { rain: [], snow: [], clouds: [] }, right: { rain: [], snow: [], clouds: [] } };
 
-// --- State Machine Variables ---
-let gameState = 'INTRO_TEXT';
-let animStartTime;
+// --- State Machine Variables --- let gameState = 'INTRO_TEXT'; let animStartTime;
 
-const introText = "Hey Jaan, sorry it took almost more than a couple of days to build this... I thought it was easy, but every time I get an idea, it’s getting even more difficult to implement. But yeah, here is the output—hope it works well on your side. Coming to the no communication thing, it’s so tough. More than the timer, I am counting each and every second in my mind, wishing the timer would become zero... For the first time, I am wishing maybe I could be Thanos, so I could snap my fingers and make the timer zero, but in real life, I am not a Marvel character. I'm just a character in real life who is 678 miles away from the person whom I love and admire so much. Previously, only the distance used to affect me, now the time as well... but I am missing you so much... I want to say more, but I will save it for that day—hope we will be back and with lots of affection. Miss you so much.........";
-let introState = { charIndex: 0, phase: 'typing', lastUpdate: 0, completeTime: 0 };
+const introText = "Hey Jaan, sorry it took almost more than a couple of days to build this... I thought it was easy, but every time I get an idea, it’s getting even more difficult to implement. But yeah, here is the output—hope it works well on your side. Coming to the no communication thing, it’s so tough. More than the timer, I am counting each and every second in my mind, wishing the timer would become zero... For the first time, I am wishing maybe I could be Thanos, so I could snap my fingers and make the timer zero, but in real life, I am not a Marvel character. I'm just a character in real life who is 678 miles away from the person whom I love and admire so much. Previously, only the distance used to affect me, now the time as well... but I am missing you so much... I want to say more, but I will save it for that day—hope we will be back and with lots of affection. Miss you so much........."; let introState = { charIndex: 0, phase: 'typing', lastUpdate: 0, completeTime: 0 };
 
-// Phase 2: Scene Buildup
-let sceneBuildupState = { sky: 0, ground: 0, chars: 0 };
+// Phase 2: Scene Buildup let sceneBuildupState = { sky: 0, ground: 0, chars: 0 };
 
-// Phase 4: Puzzle Reveal
-let pieces = [], revealProgress = 0;
+// Phase 4: Puzzle Reveal let pieces = [], revealProgress = 0;
 
-// This tells the script: Use the key from config.js, but don't crash if it's missing.
-const API_KEY = typeof CONFIG !== 'undefined' ? CONFIG.WEATHER_API_KEY : '';
+// This tells the script: Use the key from config.js, but don't crash if it's missing. const API_KEY = typeof CONFIG !== 'undefined' ? CONFIG.WEATHER_API_KEY : '';
 
-async function fetchWeather() {
-    if (!API_KEY) {
-        console.warn("Weather API Key missing. Skipping fetch.");
-        return;
-    }
-    try {
-        // Left: Atlanta, GA
-        const resLeft = await fetch(`https://api.openweathermap.org/data/2.5/weather?lat=33.7490&lon=-84.3880&appid=${API_KEY}`);
-        const dataLeft = await resLeft.json();
-        weatherData.left = processWeatherData(dataLeft);
+async function fetchWeather() { if (!API_KEY) { console.warn("Weather API Key missing. Skipping fetch."); return; } try { // Left: Atlanta, GA const resLeft = await fetch(https://api.openweathermap.org/data/2.5/weather?lat=33.7490&lon=-84.3880&appid=${API_KEY}); const dataLeft = await resLeft.json(); weatherData.left = processWeatherData(dataLeft);
 
-        // Right: Valparaiso, IN
-        const resRight = await fetch(`https://api.openweathermap.org/data/2.5/weather?lat=41.4731&lon=-87.0611&appid=${API_KEY}`);
-        const dataRight = await resRight.json();
-        weatherData.right = processWeatherData(dataRight);
+script.js: 8 lines selected
+    // Right: Valparaiso, IN
+    const resRight = await fetch(`https://api.openweathermap.org/data/2.5/weather?lat=41.4731&lon=-87.0611&appid=${API_KEY}`);
+    const dataRight = await resRight.json();
+    weatherData.right = processWeatherData(dataRight);
 
-    } catch (e) {
-        console.log("Weather fetch error", e);
-    }
+} catch (e) {
+    console.log("Weather fetch error", e);
+}
 }
 
-function processWeatherData(data) {
-    if (!data || !data.sys) return null;
-    return {
-        main: data.weather[0].main, // 'Rain', 'Snow', 'Clouds', 'Clear'
-        sunrise: data.sys.sunrise * 1000,
-        sunset: data.sys.sunset * 1000,
-        dt: Date.now() // Current time for animation sync
-    };
+function processWeatherData(data) { if (!data || !data.sys) return null; return { main: data.weather[0].main, // 'Rain', 'Snow', 'Clouds', 'Clear' sunrise: data.sys.sunrise * 1000, sunset: data.sys.sunset * 1000, dt: Date.now() // Current time for animation sync }; }
+
+function init() { gameState = 'INTRO_TEXT'; animStartTime = Date.now(); introState.lastUpdate = animStartTime; introState.charIndex = 0; introState.phase = 'typing'; fetchWeather();
+
+script.js: 21 lines selected
+// Initialize Puzzle Pieces
+const grid = 10; // 10x10 grid for puzzle
+pieces = Array.from({ length: grid * grid }, (_, i) =&gt; i);
+// Shuffle pieces
+for (let i = pieces.length - 1; i &gt; 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [pieces[i], pieces[j]] = [pieces[j], pieces[i]];
 }
 
-function init() {
-    gameState = 'INTRO_TEXT';
-    animStartTime = Date.now();
-    introState.lastUpdate = animStartTime;
-    introState.charIndex = 0;
-    introState.phase = 'typing';
-    fetchWeather();
-    
-    // Initialize Puzzle Pieces
-    const grid = 10; // 10x10 grid for puzzle
-    pieces = Array.from({ length: grid * grid }, (_, i) => i);
-    // Shuffle pieces
-    for (let i = pieces.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [pieces[i], pieces[j]] = [pieces[j], pieces[i]];
+resize(); // Set initial sizes and create dimension-dependent assets
+animate();
+
+// Start a smooth fade-out for the splash screen.
+setTimeout(() =&gt; {
+    const splash = document.getElementById('splash');
+    if (splash) {
+        splash.style.opacity = '0';
+        // After the fade-out transition ends, remove the element completely.
+        splash.addEventListener('transitionend', () =&gt; splash.remove());
     }
-
-    resize(); // Set initial sizes and create dimension-dependent assets
-    animate();
-
-    // Start a smooth fade-out for the splash screen.
-    setTimeout(() => {
-        const splash = document.getElementById('splash');
-        if (splash) {
-            splash.style.opacity = '0';
-            // After the fade-out transition ends, remove the element completely.
-            splash.addEventListener('transitionend', () => splash.remove());
-        }
-    }, 4000);
+}, 4000);
 }
 
-function drawSideEnvironment(side, x, y, width, height) {
-    const data = weatherData[side];
-    const pSystem = particles[side];
-    const now = Date.now();
-    const currentHour = new Date().getHours();
+function drawSideEnvironment(side, x, y, width, height) { const data = weatherData[side]; const pSystem = particles[side]; const now = Date.now(); const currentHour = new Date().getHours();
 
-    // Logic: Use API data if available, otherwise fallback to system time (6am - 6pm is Day)
-    let isDay = (currentHour >= 6 && currentHour < 18);
+script.js: 101 lines selected
+// Logic: Use API data if available, otherwise fallback to system time (6am - 6pm is Day)
+let isDay = (currentHour &gt;= 6 && currentHour &lt; 18);
+if (data && data.sunrise && data.sunset) {
+    isDay = (now &gt; data.sunrise && now &lt; data.sunset);
+}
+
+// 1. Sky Gradient
+const skyGrd = ctx.createLinearGradient(x, y, x, y + height);
+if (isDay) {
+    skyGrd.addColorStop(0, '#87CEEB'); // Light Blue
+    skyGrd.addColorStop(1, '#FFD700'); // Golden
+} else {
+    skyGrd.addColorStop(0, '#000000'); // Black
+    skyGrd.addColorStop(1, '#000000'); // Black
+}
+ctx.fillStyle = skyGrd;
+ctx.fillRect(x, y, width, height);
+
+// 2. Celestial Body (Sun/Moon)
+const celestialY = y + height * 0.2;
+
+if (isDay) {
+    let sunX = x + width * 0.5;
+    let sunY = celestialY;
     if (data && data.sunrise && data.sunset) {
-        isDay = (now > data.sunrise && now < data.sunset);
+        const progress = (now - data.sunrise) / (data.sunset - data.sunrise);
+        sunX = x + (width * 0.1) + (width * 0.8 * progress);
+        sunY = celestialY + Math.sin(progress * Math.PI) * -50;
     }
     
-    // 1. Sky Gradient
-    const skyGrd = ctx.createLinearGradient(x, y, x, y + height);
-    if (isDay) {
-        skyGrd.addColorStop(0, '#87CEEB'); // Light Blue
-        skyGrd.addColorStop(1, '#FFD700'); // Golden
-    } else {
-        skyGrd.addColorStop(0, '#000000'); // Black
-        skyGrd.addColorStop(1, '#000000'); // Black
-    }
-    ctx.fillStyle = skyGrd;
-    ctx.fillRect(x, y, width, height);
+    ctx.fillStyle = "#FDB813";
+    ctx.shadowBlur = 20; ctx.shadowColor = "#FDB813";
+    ctx.beginPath();
+    ctx.arc(sunX, sunY, 30, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+}
 
-    // 2. Celestial Body (Sun/Moon)
-    const celestialY = y + height * 0.2;
-
-    if (isDay) {
-        let sunX = x + width * 0.5;
-        let sunY = celestialY;
-        if (data && data.sunrise && data.sunset) {
-            const progress = (now - data.sunrise) / (data.sunset - data.sunrise);
-            sunX = x + (width * 0.1) + (width * 0.8 * progress);
-            sunY = celestialY + Math.sin(progress * Math.PI) * -50;
+if (data) {
+    if (!isDay) {
+        // Moon & Stars
+        // Draw Stars only if the sky is clear
+        if (data.main === 'Clear') {
+            ctx.fillStyle = "white";
+            for(let i=0; i&lt;50; i++) {
+                const sx = x + Math.random() * width;
+                const sy = y + Math.random() * (height * 0.6);
+                ctx.globalAlpha = Math.random();
+                ctx.beginPath(); ctx.arc(sx, sy, Math.random() * 1.5, 0, Math.PI*2); ctx.fill();
+            }
         }
-        
-        ctx.fillStyle = "#FDB813";
-        ctx.shadowBlur = 20; ctx.shadowColor = "#FDB813";
-        ctx.beginPath();
-        ctx.arc(sunX, sunY, 30, 0, Math.PI * 2);
-        ctx.fill();
+        ctx.globalAlpha = 1;
+
+        // Moon
+        const moonX = x + width * 0.8;
+        ctx.fillStyle = "#FEFCD7";
+        ctx.shadowBlur = 15; ctx.shadowColor = "#FEFCD7";
+        ctx.beginPath(); ctx.arc(moonX, celestialY, 25, 0, Math.PI*2); ctx.fill();
         ctx.shadowBlur = 0;
     }
 
-    if (data) {
-        if (!isDay) {
-            // Moon & Stars
-            // Draw Stars only if the sky is clear
-            if (data.main === 'Clear') {
-                ctx.fillStyle = "white";
-                for(let i=0; i<50; i++) {
-                    const sx = x + Math.random() * width;
-                    const sy = y + Math.random() * (height * 0.6);
-                    ctx.globalAlpha = Math.random();
-                    ctx.beginPath(); ctx.arc(sx, sy, Math.random() * 1.5, 0, Math.PI*2); ctx.fill();
-                }
-            }
-            ctx.globalAlpha = 1;
-
-            // Moon
-            const moonX = x + width * 0.8;
-            ctx.fillStyle = "#FEFCD7";
-            ctx.shadowBlur = 15; ctx.shadowColor = "#FEFCD7";
-            ctx.beginPath(); ctx.arc(moonX, celestialY, 25, 0, Math.PI*2); ctx.fill();
-            ctx.shadowBlur = 0;
+    // 3. Weather Effects
+    // Clouds
+    if (data.main === 'Clouds' || data.main === 'Rain' || data.main === 'Snow') {
+        if (pSystem.clouds.length &lt; 4) { // Fewer, more distinct clouds
+            pSystem.clouds.push({ x: x - 100, y: y + Math.random() * 100, w: 80 + Math.random()*50, speed: 0.1 + Math.random() * 0.2 });
         }
+        ctx.fillStyle = "rgba(200, 200, 200, 0.4)";
+        pSystem.clouds.forEach((c, i) =&gt; {
+            c.x += c.speed;
+            if (c.x - c.w &gt; x + width) c.x = x - c.w;
+            ctx.beginPath();
+            ctx.arc(c.x, c.y, c.w * 0.4, 0, Math.PI * 2); // Center
+            ctx.arc(c.x + c.w * 0.3, c.y + c.w * 0.1, c.w * 0.3, 0, Math.PI * 2); // Right
+            ctx.arc(c.x - c.w * 0.3, c.y + c.w * 0.1, c.w * 0.3, 0, Math.PI * 2); // Left
+            ctx.arc(c.x, c.y - c.w * 0.2, c.w * 0.3, 0, Math.PI * 2); // Top
+            ctx.fill();
+        });
+    }
 
-        // 3. Weather Effects
-        // Clouds
-        if (data.main === 'Clouds' || data.main === 'Rain' || data.main === 'Snow') {
-            if (pSystem.clouds.length < 4) { // Fewer, more distinct clouds
-                pSystem.clouds.push({ x: x - 100, y: y + Math.random() * 100, w: 80 + Math.random()*50, speed: 0.1 + Math.random() * 0.2 });
-            }
-            ctx.fillStyle = "rgba(200, 200, 200, 0.4)";
-            pSystem.clouds.forEach((c, i) => {
-                c.x += c.speed;
-                if (c.x - c.w > x + width) c.x = x - c.w;
-                ctx.beginPath();
-                ctx.arc(c.x, c.y, c.w * 0.4, 0, Math.PI * 2); // Center
-                ctx.arc(c.x + c.w * 0.3, c.y + c.w * 0.1, c.w * 0.3, 0, Math.PI * 2); // Right
-                ctx.arc(c.x - c.w * 0.3, c.y + c.w * 0.1, c.w * 0.3, 0, Math.PI * 2); // Left
-                ctx.arc(c.x, c.y - c.w * 0.2, c.w * 0.3, 0, Math.PI * 2); // Top
-                ctx.fill();
-            });
-        }
+    // Rain
+    if (data.main === 'Rain') {
+        if (pSystem.rain.length &lt; 100) pSystem.rain.push({ x: x + Math.random()*width, y: y + Math.random()*height, l: 10+Math.random()*10, v: 10+Math.random()*5 });
+        ctx.strokeStyle = "rgba(174, 194, 224, 0.6)"; ctx.lineWidth = 1;
+        pSystem.rain.forEach(r =&gt; {
+            r.y += r.v; if (r.y &gt; y + height) r.y = y - 20;
+            ctx.beginPath(); ctx.moveTo(r.x, r.y); ctx.lineTo(r.x, r.y + r.l); ctx.stroke();
+        });
+    }
 
-        // Rain
-        if (data.main === 'Rain') {
-            if (pSystem.rain.length < 100) pSystem.rain.push({ x: x + Math.random()*width, y: y + Math.random()*height, l: 10+Math.random()*10, v: 10+Math.random()*5 });
-            ctx.strokeStyle = "rgba(174, 194, 224, 0.6)"; ctx.lineWidth = 1;
-            pSystem.rain.forEach(r => {
-                r.y += r.v; if (r.y > y + height) r.y = y - 20;
-                ctx.beginPath(); ctx.moveTo(r.x, r.y); ctx.lineTo(r.x, r.y + r.l); ctx.stroke();
-            });
-        }
-
-        // Snow
-        if (data.main === 'Snow') {
-            if (pSystem.snow.length < 50) pSystem.snow.push({ x: x + Math.random()*width, y: y + Math.random()*height, r: 2+Math.random()*2, v: 1+Math.random() });
-            ctx.fillStyle = "rgba(255, 255, 255, 0.8)";
-            pSystem.snow.forEach(s => {
-                s.y += s.v; s.x += Math.sin(Date.now()*0.001)*0.5;
-                if (s.y > y + height) s.y = y - 10;
-                ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI*2); ctx.fill();
-            });
-        }
+    // Snow
+    if (data.main === 'Snow') {
+        if (pSystem.snow.length &lt; 50) pSystem.snow.push({ x: x + Math.random()*width, y: y + Math.random()*height, r: 2+Math.random()*2, v: 1+Math.random() });
+        ctx.fillStyle = "rgba(255, 255, 255, 0.8)";
+        pSystem.snow.forEach(s =&gt; {
+            s.y += s.v; s.x += Math.sin(Date.now()*0.001)*0.5;
+            if (s.y &gt; y + height) s.y = y - 10;
+            ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI*2); ctx.fill();
+        });
     }
 }
-
-function drawSky() {
-    const dividerX = w/2;
-    ctx.save();
-    ctx.beginPath();
-    ctx.rect(0, 0, dividerX, h);
-    ctx.clip();
-    
-    // Draw Left Environment (Atlanta)
-    drawSideEnvironment('left', 0, 0, dividerX, h);
-
-    ctx.restore();
-
-    ctx.save();
-    ctx.beginPath();
-    ctx.rect(dividerX, 0, w - dividerX, h);
-    ctx.clip();
-    // Draw Right Environment (Valparaiso)
-    drawSideEnvironment('right', dividerX, 0, w - dividerX, h);
-    ctx.restore();
 }
 
-function updateSmoke(x, y) {
-    if (Math.random() < 0.03) {
-        smokeParticles.push({ x: x, y: y, vx: (Math.random() - 0.5) * 0.5, vy: -1 - Math.random(), life: 1, size: 3 });
-    }
-    ctx.fillStyle = "rgba(200, 200, 200, 0.4)";
-    for(let i = smokeParticles.length - 1; i >= 0; i--) {
-        let p = smokeParticles[i];
-        p.x += p.vx + 0.2; p.y += p.vy; p.size += 0.05; p.life -= 0.005;
-        if(p.life <= 0) smokeParticles.splice(i, 1);
-        else {
-            ctx.globalAlpha = p.life;
-            ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI*2); ctx.fill();
+function drawSky() { const dividerX = w/2; ctx.save(); ctx.beginPath(); ctx.rect(0, 0, dividerX, h); ctx.clip();
+
+script.js: 12 lines selected
+// Draw Left Environment (Atlanta)
+drawSideEnvironment('left', 0, 0, dividerX, h);
+
+ctx.restore();
+
+ctx.save();
+ctx.beginPath();
+ctx.rect(dividerX, 0, w - dividerX, h);
+ctx.clip();
+// Draw Right Environment (Valparaiso)
+drawSideEnvironment('right', dividerX, 0, w - dividerX, h);
+ctx.restore();
+}
+
+function updateSmoke(x, y) { if (Math.random() < 0.03) { smokeParticles.push({ x: x, y: y, vx: (Math.random() - 0.5) * 0.5, vy: -1 - Math.random(), life: 1, size: 3 }); } ctx.fillStyle = "rgba(200, 200, 200, 0.4)"; for(let i = smokeParticles.length - 1; i >= 0; i--) { let p = smokeParticles[i]; p.x += p.vx + 0.2; p.y += p.vy; p.size += 0.05; p.life -= 0.005; if(p.life <= 0) smokeParticles.splice(i, 1); else { ctx.globalAlpha = p.life; ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI*2); ctx.fill(); } } ctx.globalAlpha = 1; }
+
+function updateBirds() { const treeX = w * 0.9; const treeY = h - 100; // Landing spots relative to tree center const spots = [ {x: 12, y: -160}, {x: -30, y: -140}, {x: 50, y: -130}, {x: 15, y: -110} ];
+
+script.js: 68 lines selected
+ctx.strokeStyle = 'black';
+ctx.lineWidth = 1.5;
+ctx.fillStyle = 'black';
+
+birds.forEach(b =&gt; {
+    // Logic
+    if (b.state === 'flying') {
+        b.x += b.vx;
+        b.y += b.vy;
+
+        // Boundaries (Keep mostly to the right side)
+        if (b.x &lt; w * 0.5) b.vx += 0.05;
+        if (b.x &gt; w) b.vx -= 0.05;
+        if (b.y &lt; 0) b.vy += 0.05;
+        if (b.y &gt; h - 50) b.vy -= 0.05;
+
+        // Random movement
+        b.vx += (Math.random() - 0.5) * 0.1;
+        b.vy += (Math.random() - 0.5) * 0.1;
+
+        // Speed limit
+        const speed = Math.hypot(b.vx, b.vy);
+        if (speed &gt; 3) { b.vx *= 0.95; b.vy *= 0.95; }
+
+        // Decide to land
+        if (Math.random() &lt; 0.005) {
+            b.state = 'landing';
+            const spot = spots[Math.floor(Math.random() * spots.length)];
+            b.target = { x: treeX + spot.x, y: treeY + spot.y };
         }
-    }
-    ctx.globalAlpha = 1;
-}
+    } else if (b.state === 'landing') {
+        const dx = b.target.x - b.x;
+        const dy = b.target.y - b.y;
+        const dist = Math.hypot(dx, dy);
 
-function updateBirds() {
-    const treeX = w * 0.9;
-    const treeY = h - 100;
-    // Landing spots relative to tree center
-    const spots = [
-        {x: 12, y: -160}, {x: -30, y: -140}, {x: 50, y: -130}, {x: 15, y: -110}
-    ];
-
-    ctx.strokeStyle = 'black';
-    ctx.lineWidth = 1.5;
-    ctx.fillStyle = 'black';
-
-    birds.forEach(b => {
-        // Logic
-        if (b.state === 'flying') {
+        if (dist &lt; 5) {
+            b.state = 'perched';
+            b.timer = 100 + Math.random() * 200;
+            b.x = b.target.x;
+            b.y = b.target.y;
+        } else {
+            b.vx = dx * 0.02;
+            b.vy = dy * 0.02;
             b.x += b.vx;
             b.y += b.vy;
-
-            // Boundaries (Keep mostly to the right side)
-            if (b.x < w * 0.5) b.vx += 0.05;
-            if (b.x > w) b.vx -= 0.05;
-            if (b.y < 0) b.vy += 0.05;
-            if (b.y > h - 50) b.vy -= 0.05;
-
-            // Random movement
-            b.vx += (Math.random() - 0.5) * 0.1;
-            b.vy += (Math.random() - 0.5) * 0.1;
-
-            // Speed limit
-            const speed = Math.hypot(b.vx, b.vy);
-            if (speed > 3) { b.vx *= 0.95; b.vy *= 0.95; }
-
-            // Decide to land
-            if (Math.random() < 0.005) {
-                b.state = 'landing';
-                const spot = spots[Math.floor(Math.random() * spots.length)];
-                b.target = { x: treeX + spot.x, y: treeY + spot.y };
-            }
-        } else if (b.state === 'landing') {
-            const dx = b.target.x - b.x;
-            const dy = b.target.y - b.y;
-            const dist = Math.hypot(dx, dy);
-
-            if (dist < 5) {
-                b.state = 'perched';
-                b.timer = 100 + Math.random() * 200;
-                b.x = b.target.x;
-                b.y = b.target.y;
-            } else {
-                b.vx = dx * 0.02;
-                b.vy = dy * 0.02;
-                b.x += b.vx;
-                b.y += b.vy;
-            }
-        } else if (b.state === 'perched') {
-            b.timer--;
-            if (b.timer <= 0) {
-                b.state = 'flying';
-                b.vx = (Math.random() - 0.5) * 2;
-                b.vy = -2; // Jump up
-            }
         }
-
-        // Draw
-        if (b.state === 'perched') {
-            ctx.beginPath(); ctx.arc(b.x, b.y, 2, 0, Math.PI*2); ctx.fill();
-        } else {
-            // Flapping Animation
-            const flap = Math.sin(Date.now() * 0.015 + b.x);
-            ctx.beginPath();
-            ctx.moveTo(b.x - 3, b.y - 3 * flap);
-            ctx.lineTo(b.x, b.y);
-            ctx.lineTo(b.x + 3, b.y - 3 * flap);
-            ctx.stroke();
-        }
-    });
-}
-
-function updateFireflies(baseX, baseY) {
-    ctx.fillStyle = "#ffeb3b";
-    const time = Date.now();
-    fireflies.forEach(f => {
-        const fx = baseX + f.offsetX + Math.sin(time * f.speed + f.phase) * 20;
-        const fy = baseY + f.offsetY + Math.cos(time * f.speed + f.phase) * 10;
-        const alpha = 0.5 + Math.sin(time * 0.005 + f.phase) * 0.5;
-        ctx.globalAlpha = alpha;
-        ctx.beginPath(); ctx.arc(fx, fy, 2, 0, Math.PI*2); ctx.fill();
-    });
-    ctx.globalAlpha = 1;
-}
-
-function drawGroundElements() {
-    const dividerX = w / 2;
-    const groundLevel = h - 100;
-
-    const dataLeft = weatherData.left;
-    const now = Date.now();
-    const currentHour = new Date().getHours();
-    let isNightLeft = (currentHour < 6 || currentHour >= 18);
-    if (dataLeft && dataLeft.sunrise && dataLeft.sunset) {
-        isNightLeft = (now < dataLeft.sunrise || now > dataLeft.sunset);
-    }
-
-    // Clip building drawing to the left side
-    ctx.save();
-    ctx.beginPath();
-    ctx.rect(0, 0, dividerX, h);
-    ctx.clip();
-
-    buildings.forEach(b => {
-        ctx.fillStyle = b.color;
-        const groundY = h - b.h;
-
-        // Draw building based on its type
-        switch (b.type) {
-            case 'stepped':
-                ctx.fillRect(b.x, groundY, b.w, b.h);
-                const topHeight = b.h * 0.4;
-                const topWidth = b.w * 0.6;
-                ctx.fillRect(b.x + (b.w - topWidth) / 2, groundY - topHeight, topWidth, topHeight);
-                break;
-            case 'spire':
-                ctx.fillRect(b.x, groundY, b.w, b.h);
-                ctx.beginPath();
-                ctx.moveTo(b.x, groundY);
-                ctx.lineTo(b.x + b.w / 2, groundY - 50);
-                ctx.lineTo(b.x + b.w, groundY);
-                ctx.closePath();
-                ctx.fill();
-                break;
-            default: // 'rect'
-                ctx.fillRect(b.x, groundY, b.w, b.h);
-                break;
-        }
-        
-        // Draw Windows if it's night
-        if (isNightLeft) {
-            ctx.fillStyle = "rgba(255, 220, 150, 0.7)"; // Warm yellow glow
-            b.windows.forEach(win => {
-                ctx.fillRect(b.x + win.x, groundY + win.y, 4, 6);
-            });
-        }
-
-        b.x -= 0.5; // Parallax speed
-        if (b.x + b.w < 0) b.x = w;
-    });
-
-    ctx.restore(); // End clipping for buildings
-
-    // Draw House
-    const houseX = w * 0.75;
-    const houseY = groundLevel;
-    
-    // House Body
-    ctx.fillStyle = "#263238";
-    ctx.fillRect(houseX, houseY - 120, 120, 120); // Bigger body
-    
-    // Chimney & Smoke
-    ctx.fillStyle = "#1c2327";
-    ctx.fillRect(houseX + 85, houseY - 160, 15, 40);
-    updateSmoke(houseX + 92, houseY - 160);
-
-    // Roof
-    ctx.beginPath(); 
-    ctx.moveTo(houseX - 10, houseY - 120); 
-    ctx.lineTo(houseX + 60, houseY - 170); // Higher peak for bigger roof
-    ctx.lineTo(houseX + 130, houseY - 120); 
-    ctx.fillStyle = "#37474f"; 
-    ctx.fill();
-    // Lit Window
-    ctx.fillStyle = "rgba(255, 235, 59, 0.5)"; 
-    ctx.fillRect(houseX + 40, houseY - 70, 25, 25);
-
-    // Garden with White Flowers
-    ctx.fillStyle = "#2e7d32"; // Green bed
-    ctx.beginPath();
-    ctx.ellipse(houseX + 60, houseY + 5, 70, 10, 0, 0, Math.PI*2);
-    ctx.fill();
-
-    for(let i=0; i<12; i++) {
-        const fx = houseX + 10 + (i * 9) + Math.sin(i*99)*5;
-        const fy = houseY + 2 + Math.cos(i*50)*3;
-        ctx.fillStyle = "#ffffff";
-        ctx.beginPath(); ctx.arc(fx, fy, 3, 0, Math.PI*2); ctx.fill();
-        ctx.fillStyle = "#ffd700"; 
-        ctx.beginPath(); ctx.arc(fx, fy, 1, 0, Math.PI*2); ctx.fill();
-    }
-
-    // Draw Tree
-    const treeX = w * 0.9;
-    const treeY = groundLevel;
-    
-    // Trunk
-    ctx.fillStyle = "#3e2723";
-    ctx.fillRect(treeX, treeY - 150, 25, 150); // Taller and fatter trunk
-    
-    // Leaves
-    ctx.fillStyle = "#1b5e20";
-    ctx.beginPath();
-    ctx.arc(treeX + 12, treeY - 160, 60, 0, Math.PI * 2); // Main large canopy
-    ctx.arc(treeX - 30, treeY - 140, 40, 0, Math.PI * 2); // Left cluster
-    ctx.arc(treeX + 50, treeY - 130, 45, 0, Math.PI * 2); // Right cluster
-    ctx.arc(treeX + 15, treeY - 110, 35, 0, Math.PI * 2); // Bottom cluster
-    ctx.fill();
-
-    // Tree Flowers
-    ctx.fillStyle = "#f48fb1";
-    [{x:10,y:-170}, {x:-20,y:-150}, {x:40,y:-140}, {x:20,y:-120}, {x:-5, y:-200}].forEach(p => {
-        ctx.beginPath(); ctx.arc(treeX + 12 + p.x, treeY + p.y, 4, 0, Math.PI*2); ctx.fill();
-    });
-
-    // Fireflies
-    updateFireflies(treeX, treeY);
-
-    // Birds
-    updateBirds();
-
-    // 5. Ground Gradient
-    const groundGrd = ctx.createLinearGradient(0, groundLevel, 0, h);
-    groundGrd.addColorStop(0, '#050508');
-    groundGrd.addColorStop(1, '#000');
-    ctx.fillStyle = groundGrd;
-    ctx.fillRect(0, groundLevel, w, h);
-
-    // 6. Divider Line
-    ctx.strokeStyle = "rgba(255,255,255,0.2)";
-    ctx.lineWidth = 2;
-    ctx.beginPath(); ctx.moveTo(dividerX, 0); ctx.lineTo(dividerX, h); ctx.stroke();
-
-}
-
-function drawCharacters(progress) {
-    const dividerX = w / 2;
-    const groundLevel = h - 100;
-    const now = Date.now();
-    let maleWalkCycle = 0;
-    if (now - animStartTime > 2000) {
-        maleWalkCycle = (now - (animStartTime + 2000)) * 0.006;
-    }
-
-    const startGap = w * 0.8, endGap = 80;
-    const currentGap = startGap - (startGap - endGap) * progress;
-    drawCharacterSilhouette(dividerX - currentGap / 2, groundLevel, 0.8, true, maleWalkCycle);
-    drawCharacterSilhouette(dividerX + currentGap / 2, groundLevel, 0.8, false, 0);
-}
-
-function drawLockAndTimer(progress) {
-    const lockX = w / 2;
-    const lockY = 100; // Moved down to avoid overlap with timer text
-    const isLocked = progress < 1;
-
-    ctx.save();
-    ctx.strokeStyle = 'white'; // White color
-    ctx.fillStyle = 'white';
-    ctx.lineWidth = 4;
-    ctx.shadowBlur = 15;
-    ctx.shadowColor = "white"; // White glow
-
-    // Shackle
-    ctx.beginPath();
-    if (isLocked) {
-        ctx.arc(lockX, lockY, 15, Math.PI, 0);
-    } else {
-        // Unlocked animation
-        ctx.save();
-        ctx.translate(lockX - 15, lockY);
-        ctx.rotate(-Math.PI / 4);
-        ctx.arc(15, 0, 15, Math.PI, 0);
-        ctx.restore();
-    }
-    ctx.stroke();
-
-    // Body
-    ctx.beginPath();
-    const bodyPath = new Path2D();
-    bodyPath.roundRect(lockX - 22, lockY, 44, 30, 5);
-    ctx.fill(bodyPath);
-
-    // Keyhole
-    ctx.fillStyle = 'black';
-    ctx.beginPath();
-    ctx.arc(lockX, lockY + 15, 4, 0, Math.PI * 2);
-    ctx.fill();
-    
-    ctx.restore();
-}
-
-function handleIntroText() {
-    const now = Date.now();
-    ctx.fillStyle = 'black';
-    ctx.fillRect(0, 0, w, h);
-
-    // Wrap text logic
-    ctx.font = "22px 'Georgia', serif";
-    const maxWidth = w * 0.8;
-    const words = introText.split(' ');
-    let lines = [];
-    let currentLine = words[0];
-
-    for (let i = 1; i < words.length; i++) {
-        let word = words[i];
-        let width = ctx.measureText(currentLine + " " + word).width;
-        if (width < maxWidth) {
-            currentLine += " " + word;
-        } else {
-            lines.push(currentLine);
-            currentLine = word;
-        }
-    }
-    lines.push(currentLine);
-
-    // Typewriter Logic
-    if (introState.phase === 'typing') {
-        if (now - introState.lastUpdate > 50) {
-            introState.charIndex++;
-            introState.lastUpdate = now;
-        }
-        if (introState.charIndex >= introText.length) {
-            introState.charIndex = introText.length;
-            introState.phase = 'waiting';
-            introState.completeTime = now;
-        }
-    } else if (introState.phase === 'waiting') {
-        if (now - introState.completeTime > 6000) {
-            gameState = 'SCENE_BUILDUP';
-            animStartTime = now;
+    } else if (b.state === 'perched') {
+        b.timer--;
+        if (b.timer &lt;= 0) {
+            b.state = 'flying';
+            b.vx = (Math.random() - 0.5) * 2;
+            b.vy = -2; // Jump up
         }
     }
 
     // Draw
-    ctx.fillStyle = 'white';
-    ctx.textAlign = 'center';
-    let y = h / 2 - (lines.length * 30) / 2;
-    let charsRemaining = introState.charIndex;
-
-    for (let i = 0; i < lines.length; i++) {
-        let line = lines[i];
-        if (charsRemaining <= 0) break;
-        
-        let stringToDraw = "";
-        if (charsRemaining >= line.length) {
-            stringToDraw = line;
-            charsRemaining -= (line.length + 1); // +1 for space/newline
-        } else {
-            stringToDraw = line.substring(0, charsRemaining);
-            charsRemaining = 0;
-        }
-        ctx.fillText(stringToDraw, w / 2, y);
-        y += 30;
-    }
-}
-
-function handleSceneBuildup() {
-    const now = Date.now();
-    const elapsed = now - animStartTime;
-
-    // Animate alphas over 3 seconds
-    if (elapsed < 1000) { // 0-1s: Sky fades in
-        sceneBuildupState.sky = elapsed / 1000;
-    } else if (elapsed < 2000) { // 1-2s: Ground fades in
-        sceneBuildupState.sky = 1;
-        sceneBuildupState.ground = (elapsed - 1000) / 1000;
-    } else if (elapsed < 3000) { // 2-3s: Chars fade in
-        sceneBuildupState.sky = 1;
-        sceneBuildupState.ground = 1;
-        sceneBuildupState.chars = (elapsed - 2000) / 1000;
+    if (b.state === 'perched') {
+        ctx.beginPath(); ctx.arc(b.x, b.y, 2, 0, Math.PI*2); ctx.fill();
     } else {
-        // Buildup complete, transition to journey
-        gameState = 'JOURNEY';
-        animStartTime = now; // Reset timer for journey
-        return;
-    }
-
-    // Draw components with their current alpha
-    ctx.globalAlpha = sceneBuildupState.sky;
-    drawSky();
-    ctx.globalAlpha = 1;
-    
-    ctx.globalAlpha = sceneBuildupState.ground;
-    drawGroundElements();
-    ctx.globalAlpha = 1;
-
-    ctx.globalAlpha = sceneBuildupState.chars;
-    drawCharacters(0); // progress is 0, they are standing still
-    ctx.globalAlpha = 1;
-}
-
-function animate() {
-    const now = Date.now();
-    const timeLeft = targetDate - now;
-
-    // Safeguard: Always clear the canvas to black first.
-    ctx.fillStyle = 'black';
-    ctx.fillRect(0, 0, w, h);
-
-    if (timeLeft <= 0 && gameState !== 'REVEAL') {
-        gameState = 'REVEAL';
-        animStartTime = now;
-    }
-
-    switch (gameState) {
-        case 'INTRO_TEXT':
-            timerElement.style.opacity = '0'; // Ensure hidden
-            handleIntroText();
-            break;
-        case 'SCENE_BUILDUP':
-            timerElement.style.opacity = '0'; // Ensure hidden
-            handleSceneBuildup();
-            break;
-        case 'JOURNEY':
-            timerElement.style.opacity = '1'; // Show
-            const totalDuration = targetDate - startDate;
-            const progress = Math.min(1, Math.max(0, 1 - (timeLeft / totalDuration)));
-            
-            drawSky();
-            drawGroundElements();
-            drawCharacters(progress);
-            drawLockAndTimer(progress);
-
-            const d = Math.floor(timeLeft / (1000 * 60 * 60 * 24));
-            const h_ = Math.floor((timeLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-            const m = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
-            const s = Math.floor((timeLeft % (1000 * 60)) / 1000);
-            const pad = (num) => String(num).padStart(2, '0');
-            timerElement.innerText = `${d} : ${pad(h_)} : ${pad(m)} : ${pad(s)}`;
-            break;
-        case 'REVEAL':
-            if (timerElement.style.opacity !== "0") timerElement.style.opacity = "0";
-            
-            const grid = 10;
-            revealProgress += 0.5;
-            const limit = Math.min(Math.floor(revealProgress), pieces.length);
-
-            for (let i = 0; i < limit; i++) {
-                const idx = pieces[i];
-                const sx = (idx % grid) * (img.width / grid);
-                const sy = Math.floor(idx / grid) * (img.height / grid);
-                const dx = (idx % grid) * (w / grid);
-                const dy = Math.floor(idx / grid) * (h / grid);
-                ctx.drawImage(img, sx, sy, img.width/grid, img.height/grid, dx, dy, w/grid, h/grid);
-            }
-        
-        if (Math.random() < 0.05) {
-            createFirework(Math.random() * w, Math.random() * h * 0.5);
-        }
-        updateFireworks();
-
-            if (limit >= pieces.length) {
-                drawLockAndTimer(1.1); // Draw unlocked lock on top of finished image
-            }
-            break;
-    }
-    requestAnimationFrame(animate);
-}
-
-function drawCharacterSilhouette(x, y, scale, isMale, walkCycle) {
-    ctx.save();
-    ctx.translate(x, y);
-    ctx.scale(scale * (isMale ? 1 : -1), scale);
-
-    // Animation Math
-    const legSwing = Math.sin(walkCycle) * 0.5;
-    const armSwing = Math.sin(walkCycle + Math.PI) * 0.5;
-    const bob = Math.abs(Math.sin(walkCycle * 2)) * 2;
-
-    ctx.translate(0, -bob);
-    ctx.fillStyle = 'black';
-
-    // Helper to draw a simple limb
-    const drawLimb = (angle, w, h, x, y) => {
-        ctx.save();
-        ctx.translate(x, y);
-        ctx.rotate(angle);
-        ctx.fillRect(-w / 2, 0, w, h);
-        ctx.restore();
-    };
-
-    // Back Limbs
-    drawLimb(-legSwing, 8, 45, 0, -45); // Back Leg
-    drawLimb(-armSwing, 7, 38, 0, -85); // Back Arm
-
-    // Torso
-    if (isMale) {
-        ctx.fillRect(-12, -90, 24, 50);
-    } else {
+        // Flapping Animation
+        const flap = Math.sin(Date.now() * 0.015 + b.x);
         ctx.beginPath();
-        ctx.moveTo(-10, -90); ctx.lineTo(10, -90);
-        ctx.lineTo(15, -45); ctx.lineTo(-15, -45);
-        ctx.fill();
+        ctx.moveTo(b.x - 3, b.y - 3 * flap);
+        ctx.lineTo(b.x, b.y);
+        ctx.lineTo(b.x + 3, b.y - 3 * flap);
+        ctx.stroke();
+    }
+});
+}
+
+function updateFireflies(baseX, baseY) { ctx.fillStyle = "#ffeb3b"; const time = Date.now(); fireflies.forEach(f => { const fx = baseX + f.offsetX + Math.sin(time * f.speed + f.phase) * 20; const fy = baseY + f.offsetY + Math.cos(time * f.speed + f.phase) * 10; const alpha = 0.5 + Math.sin(time * 0.005 + f.phase) * 0.5; ctx.globalAlpha = alpha; ctx.beginPath(); ctx.arc(fx, fy, 2, 0, Math.PI*2); ctx.fill(); }); ctx.globalAlpha = 1; }
+
+function drawGroundElements() { const dividerX = w / 2; const groundLevel = h - 100;
+
+script.js: 133 lines selected
+const dataLeft = weatherData.left;
+const now = Date.now();
+const currentHour = new Date().getHours();
+let isNightLeft = (currentHour &lt; 6 || currentHour &gt;= 18);
+if (dataLeft && dataLeft.sunrise && dataLeft.sunset) {
+    isNightLeft = (now &lt; dataLeft.sunrise || now &gt; dataLeft.sunset);
+}
+
+// Clip building drawing to the left side
+ctx.save();
+ctx.beginPath();
+ctx.rect(0, 0, dividerX, h);
+ctx.clip();
+
+buildings.forEach(b =&gt; {
+    ctx.fillStyle = b.color;
+    const groundY = h - b.h;
+
+    // Draw building based on its type
+    switch (b.type) {
+        case 'stepped':
+            ctx.fillRect(b.x, groundY, b.w, b.h);
+            const topHeight = b.h * 0.4;
+            const topWidth = b.w * 0.6;
+            ctx.fillRect(b.x + (b.w - topWidth) / 2, groundY - topHeight, topWidth, topHeight);
+            break;
+        case 'spire':
+            ctx.fillRect(b.x, groundY, b.w, b.h);
+            ctx.beginPath();
+            ctx.moveTo(b.x, groundY);
+            ctx.lineTo(b.x + b.w / 2, groundY - 50);
+            ctx.lineTo(b.x + b.w, groundY);
+            ctx.closePath();
+            ctx.fill();
+            break;
+        default: // 'rect'
+            ctx.fillRect(b.x, groundY, b.w, b.h);
+            break;
+    }
+    
+    // Draw Windows if it's night
+    if (isNightLeft) {
+        ctx.fillStyle = "rgba(255, 220, 150, 0.7)"; // Warm yellow glow
+        b.windows.forEach(win =&gt; {
+            ctx.fillRect(b.x + win.x, groundY + win.y, 4, 6);
+        });
     }
 
-    // Head
-    ctx.beginPath();
-    ctx.arc(0, -100, 12, 0, Math.PI * 2);
-    ctx.fill();
+    b.x -= 0.5; // Parallax speed
+    if (b.x + b.w &lt; 0) b.x = w;
+});
 
-    // Front Limbs
-    drawLimb(legSwing, 8, 45, 0, -45); // Front Leg
-    drawLimb(armSwing, 7, 38, 0, -85); // Front Arm
+ctx.restore(); // End clipping for buildings
 
+// Draw House
+const houseX = w * 0.75;
+const houseY = groundLevel;
+
+// House Body
+ctx.fillStyle = "#263238";
+ctx.fillRect(houseX, houseY - 120, 120, 120); // Bigger body
+
+// Chimney & Smoke
+ctx.fillStyle = "#1c2327";
+ctx.fillRect(houseX + 85, houseY - 160, 15, 40);
+updateSmoke(houseX + 92, houseY - 160);
+
+// Roof
+ctx.beginPath(); 
+ctx.moveTo(houseX - 10, houseY - 120); 
+ctx.lineTo(houseX + 60, houseY - 170); // Higher peak for bigger roof
+ctx.lineTo(houseX + 130, houseY - 120); 
+ctx.fillStyle = "#37474f"; 
+ctx.fill();
+// Lit Window
+ctx.fillStyle = "rgba(255, 235, 59, 0.5)"; 
+ctx.fillRect(houseX + 40, houseY - 70, 25, 25);
+
+// Garden with White Flowers
+ctx.fillStyle = "#2e7d32"; // Green bed
+ctx.beginPath();
+ctx.ellipse(houseX + 60, houseY + 5, 70, 10, 0, 0, Math.PI*2);
+ctx.fill();
+
+for(let i=0; i&lt;12; i++) {
+    const fx = houseX + 10 + (i * 9) + Math.sin(i*99)*5;
+    const fy = houseY + 2 + Math.cos(i*50)*3;
+    ctx.fillStyle = "#ffffff";
+    ctx.beginPath(); ctx.arc(fx, fy, 3, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = "#ffd700"; 
+    ctx.beginPath(); ctx.arc(fx, fy, 1, 0, Math.PI*2); ctx.fill();
+}
+
+// Draw Tree
+const treeX = w * 0.9;
+const treeY = groundLevel;
+
+// Trunk
+ctx.fillStyle = "#3e2723";
+ctx.fillRect(treeX, treeY - 150, 25, 150); // Taller and fatter trunk
+
+// Leaves
+ctx.fillStyle = "#1b5e20";
+ctx.beginPath();
+ctx.arc(treeX + 12, treeY - 160, 60, 0, Math.PI * 2); // Main large canopy
+ctx.arc(treeX - 30, treeY - 140, 40, 0, Math.PI * 2); // Left cluster
+ctx.arc(treeX + 50, treeY - 130, 45, 0, Math.PI * 2); // Right cluster
+ctx.arc(treeX + 15, treeY - 110, 35, 0, Math.PI * 2); // Bottom cluster
+ctx.fill();
+
+// Tree Flowers
+ctx.fillStyle = "#f48fb1";
+[{x:10,y:-170}, {x:-20,y:-150}, {x:40,y:-140}, {x:20,y:-120}, {x:-5, y:-200}].forEach(p =&gt; {
+    ctx.beginPath(); ctx.arc(treeX + 12 + p.x, treeY + p.y, 4, 0, Math.PI*2); ctx.fill();
+});
+
+// Fireflies
+updateFireflies(treeX, treeY);
+
+// Birds
+updateBirds();
+
+// 5. Ground Gradient
+const groundGrd = ctx.createLinearGradient(0, groundLevel, 0, h);
+groundGrd.addColorStop(0, '#050508');
+groundGrd.addColorStop(1, '#000');
+ctx.fillStyle = groundGrd;
+ctx.fillRect(0, groundLevel, w, h);
+
+// 6. Divider Line
+ctx.strokeStyle = "rgba(255,255,255,0.2)";
+ctx.lineWidth = 2;
+ctx.beginPath(); ctx.moveTo(dividerX, 0); ctx.lineTo(dividerX, h); ctx.stroke();
+}
+
+function drawCharacters(progress) { const dividerX = w / 2; const groundLevel = h - 100; const now = Date.now(); let maleWalkCycle = 0; if (now - animStartTime > 2000) { maleWalkCycle = (now - (animStartTime + 2000)) * 0.006; }
+
+script.js: 4 lines selected
+const startGap = w * 0.8, endGap = 80;
+const currentGap = startGap - (startGap - endGap) * progress;
+drawCharacterSilhouette(dividerX - currentGap / 2, groundLevel, 0.8, true, maleWalkCycle);
+drawCharacterSilhouette(dividerX + currentGap / 2, groundLevel, 0.8, false, 0);
+}
+
+function drawLockAndTimer(progress) { const lockX = w / 2; const lockY = 100; // Moved down to avoid overlap with timer text const isLocked = progress < 1;
+
+script.js: 34 lines selected
+ctx.save();
+ctx.strokeStyle = 'white'; // White color
+ctx.fillStyle = 'white';
+ctx.lineWidth = 4;
+ctx.shadowBlur = 15;
+ctx.shadowColor = "white"; // White glow
+
+// Shackle
+ctx.beginPath();
+if (isLocked) {
+    ctx.arc(lockX, lockY, 15, Math.PI, 0);
+} else {
+    // Unlocked animation
+    ctx.save();
+    ctx.translate(lockX - 15, lockY);
+    ctx.rotate(-Math.PI / 4);
+    ctx.arc(15, 0, 15, Math.PI, 0);
     ctx.restore();
 }
+ctx.stroke();
 
-init(); // Start animation logic immediately
-window.addEventListener('resize', resize);
-function resize() { 
-    w = canvas.width = window.innerWidth; 
-    h = canvas.height = window.innerHeight; 
+// Body
+ctx.beginPath();
+const bodyPath = new Path2D();
+bodyPath.roundRect(lockX - 22, lockY, 44, 30, 5);
+ctx.fill(bodyPath);
 
-    // Re-create dimension-dependent assets
-    buildings = Array.from({ length: 100 }, () => {
-        const bH = 100 + Math.random() * (h * 0.4);
-        const bW = 40 + Math.random() * 80;
-        const wins = [];
-        // Generate windows
-        for(let y = 20; y < bH - 20; y += 20) {
-            for(let x = 10; x < bW - 10; x += 15) {
-                if(Math.random() > 0.7) wins.push({x, y});
-            }
-        }
-        const color = `hsl(230, 20%, ${10 + Math.random() * 15}%)`; // Dark blue/purple/grey tones
+// Keyhole
+ctx.fillStyle = 'black';
+ctx.beginPath();
+ctx.arc(lockX, lockY + 15, 4, 0, Math.PI * 2);
+ctx.fill();
 
-        const typeRoll = Math.random();
-        let type;
-        if (typeRoll < 0.6) {
-            type = 'rect'; // 60% chance for a standard rectangle
-        } else if (typeRoll < 0.85) {
-            type = 'stepped'; // 25% chance for a stepped building
-        } else {
-            type = 'spire'; // 15% chance for a building with a spire
-        }
-
-        return { x: Math.random() * w, h: bH, w: bW, windows: wins, color: color, type: type };
-    });
-
-    // Fireflies
-    fireflies = Array.from({ length: 15 }, () => ({
-        offsetX: (Math.random() - 0.5) * 100,
-        offsetY: -100 + (Math.random() - 0.5) * 50,
-        phase: Math.random() * Math.PI * 2,
-        speed: 0.002 + Math.random() * 0.002
-    }));
-
-    // Birds
-    birds = Array.from({ length: 6 }, () => ({
-        x: w * 0.5 + Math.random() * (w * 0.5), // Start on right side
-        y: Math.random() * h * 0.6,
-        vx: (Math.random() - 0.5) * 2,
-        vy: (Math.random() - 0.5) * 2,
-        state: 'flying', // 'flying', 'landing', 'perched'
-        target: null,
-        timer: 0
-    }));
+ctx.restore();
 }
+
+function handleIntroText() { const now = Date.now(); ctx.fillStyle = 'black'; ctx.fillRect(0, 0, w, h);
+
+script.js: 58 lines selected
+// Wrap text logic
+ctx.font = "22px 'Georgia', serif";
+const maxWidth = w * 0.8;
+const words = introText.split(' ');
+let lines = [];
+let currentLine = words[0];
+
+for (let i = 1; i &lt; words.length; i++) {
+    let word = words[i];
+    let width = ctx.measureText(currentLine + " " + word).width;
+    if (width &lt; maxWidth) {
+        currentLine += " " + word;
+    } else {
+        lines.push(currentLine);
+        currentLine = word;
+    }
+}
+lines.push(currentLine);
+
+// Typewriter Logic
+if (introState.phase === 'typing') {
+    if (now - introState.lastUpdate &gt; 50) {
+        introState.charIndex++;
+        introState.lastUpdate = now;
+    }
+    if (introState.charIndex &gt;= introText.length) {
+        introState.charIndex = introText.length;
+        introState.phase = 'waiting';
+        introState.completeTime = now;
+    }
+} else if (introState.phase === 'waiting') {
+    if (now - introState.completeTime &gt; 6000) {
+        gameState = 'SCENE_BUILDUP';
+        animStartTime = now;
+    }
+}
+
+// Draw
+ctx.fillStyle = 'white';
+ctx.textAlign = 'center';
+let y = h / 2 - (lines.length * 30) / 2;
+let charsRemaining = introState.charIndex;
+
+for (let i = 0; i &lt; lines.length; i++) {
+    let line = lines[i];
+    if (charsRemaining &lt;= 0) break;
+    
+    let stringToDraw = "";
+    if (charsRemaining &gt;= line.length) {
+        stringToDraw = line;
+        charsRemaining -= (line.length + 1); // +1 for space/newline
+    } else {
+        stringToDraw = line.substring(0, charsRemaining);
+        charsRemaining = 0;
+    }
+    ctx.fillText(stringToDraw, w / 2, y);
+    y += 30;
+}
+}
+
+function handleSceneBuildup() { const now = Date.now(); const elapsed = now - animStartTime;
+
+script.js: 29 lines selected
+// Animate alphas over 3 seconds
+if (elapsed &lt; 1000) { // 0-1s: Sky fades in
+    sceneBuildupState.sky = elapsed / 1000;
+} else if (elapsed &lt; 2000) { // 1-2s: Ground fades in
+    sceneBuildupState.sky = 1;
+    sceneBuildupState.ground = (elapsed - 1000) / 1000;
+} else if (elapsed &lt; 3000) { // 2-3s: Chars fade in
+    sceneBuildupState.sky = 1;
+    sceneBuildupState.ground = 1;
+    sceneBuildupState.chars = (elapsed - 2000) / 1000;
+} else {
+    // Buildup complete, transition to journey
+    gameState = 'JOURNEY';
+    animStartTime = now; // Reset timer for journey
+    return;
+}
+
+// Draw components with their current alpha
+ctx.globalAlpha = sceneBuildupState.sky;
+drawSky();
+ctx.globalAlpha = 1;
+
+ctx.globalAlpha = sceneBuildupState.ground;
+drawGroundElements();
+ctx.globalAlpha = 1;
+
+ctx.globalAlpha = sceneBuildupState.chars;
+drawCharacters(0); // progress is 0, they are standing still
+ctx.globalAlpha = 1;
+}
+
+function animate() { const now = Date.now(); const timeLeft = targetDate - now;
+
+script.js: 62 lines selected
+// Safeguard: Always clear the canvas to black first.
+ctx.fillStyle = 'black';
+ctx.fillRect(0, 0, w, h);
+
+if (timeLeft &lt;= 0 && gameState !== 'REVEAL') {
+    gameState = 'REVEAL';
+    animStartTime = now;
+}
+
+switch (gameState) {
+    case 'INTRO_TEXT':
+        timerElement.style.opacity = '0'; // Ensure hidden
+        handleIntroText();
+        break;
+    case 'SCENE_BUILDUP':
+        timerElement.style.opacity = '0'; // Ensure hidden
+        handleSceneBuildup();
+        break;
+    case 'JOURNEY':
+        timerElement.style.opacity = '1'; // Show
+        const totalDuration = targetDate - startDate;
+        const progress = Math.min(1, Math.max(0, 1 - (timeLeft / totalDuration)));
+        
+        drawSky();
+        drawGroundElements();
+        drawCharacters(progress);
+        drawLockAndTimer(progress);
+
+        const d = Math.floor(timeLeft / (1000 * 60 * 60 * 24));
+        const h_ = Math.floor((timeLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const m = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+        const s = Math.floor((timeLeft % (1000 * 60)) / 1000);
+        const pad = (num) =&gt; String(num).padStart(2, '0');
+        timerElement.innerText = `${d} : ${pad(h_)} : ${pad(m)} : ${pad(s)}`;
+        break;
+    case 'REVEAL':
+        if (timerElement.style.opacity !== "0") timerElement.style.opacity = "0";
+        
+        const grid = 10;
+        revealProgress += 0.5;
+        const limit = Math.min(Math.floor(revealProgress), pieces.length);
+
+        for (let i = 0; i &lt; limit; i++) {
+            const idx = pieces[i];
+            const sx = (idx % grid) * (img.width / grid);
+            const sy = Math.floor(idx / grid) * (img.height / grid);
+            const dx = (idx % grid) * (w / grid);
+            const dy = Math.floor(idx / grid) * (h / grid);
+            ctx.drawImage(img, sx, sy, img.width/grid, img.height/grid, dx, dy, w/grid, h/grid);
+        }
+    
+    if (Math.random() &lt; 0.05) {
+        createFirework(Math.random() * w, Math.random() * h * 0.5);
+    }
+    updateFireworks();
+
+        if (limit &gt;= pieces.length) {
+            drawLockAndTimer(1.1); // Draw unlocked lock on top of finished image
+        }
+        break;
+}
+requestAnimationFrame(animate);
+}
+
+function drawCharacterSilhouette(x, y, scale, isMale, walkCycle) { ctx.save(); ctx.translate(x, y); ctx.scale(scale * (isMale ? 1 : -1), scale);
+
+script.js: 41 lines selected
+// Animation Math
+const legSwing = Math.sin(walkCycle) * 0.5;
+const armSwing = Math.sin(walkCycle + Math.PI) * 0.5;
+const bob = Math.abs(Math.sin(walkCycle * 2)) * 2;
+
+ctx.translate(0, -bob);
+ctx.fillStyle = 'black';
+
+// Helper to draw a simple limb
+const drawLimb = (angle, w, h, x, y) =&gt; {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(angle);
+    ctx.fillRect(-w / 2, 0, w, h);
+    ctx.restore();
+};
+
+// Back Limbs
+drawLimb(-legSwing, 8, 45, 0, -45); // Back Leg
+drawLimb(-armSwing, 7, 38, 0, -85); // Back Arm
+
+// Torso
+if (isMale) {
+    ctx.fillRect(-12, -90, 24, 50);
+} else {
+    ctx.beginPath();
+    ctx.moveTo(-10, -90); ctx.lineTo(10, -90);
+    ctx.lineTo(15, -45); ctx.lineTo(-15, -45);
+    ctx.fill();
+}
+
+// Head
+ctx.beginPath();
+ctx.arc(0, -100, 12, 0, Math.PI * 2);
+ctx.fill();
+
+// Front Limbs
+drawLimb(legSwing, 8, 45, 0, -45); // Front Leg
+drawLimb(armSwing, 7, 38, 0, -85); // Front Arm
+
+ctx.restore();
+}
+
+init(); // Start animation logic immediately window.addEventListener('resize', resize); function resize() { w = canvas.width = window.innerWidth; h = canvas.height = window.innerHeight;
+
+script.js: 44 lines selected
+// Re-create dimension-dependent assets
+buildings = Array.from({ length: 100 }, () =&gt; {
+    const bH = 100 + Math.random() * (h * 0.4);
+    const bW = 40 + Math.random() * 80;
+    const wins = [];
+    // Generate windows
+    for(let y = 20; y &lt; bH - 20; y += 20) {
+        for(let x = 10; x &lt; bW - 10; x += 15) {
+            if(Math.random() &gt; 0.7) wins.push({x, y});
+        }
+    }
+    const color = `hsl(230, 20%, ${10 + Math.random() * 15}%)`; // Dark blue/purple/grey tones
+
+    const typeRoll = Math.random();
+    let type;
+    if (typeRoll &lt; 0.6) {
+        type = 'rect'; // 60% chance for a standard rectangle
+    } else if (typeRoll &lt; 0.85) {
+        type = 'stepped'; // 25% chance for a stepped building
+    } else {
+        type = 'spire'; // 15% chance for a building with a spire
+    }
+
+    return { x: Math.random() * w, h: bH, w: bW, windows: wins, color: color, type: type };
+});
+
+// Fireflies
+fireflies = Array.from({ length: 15 }, () =&gt; ({
+    offsetX: (Math.random() - 0.5) * 100,
+    offsetY: -100 + (Math.random() - 0.5) * 50,
+    phase: Math.random() * Math.PI * 2,
+    speed: 0.002 + Math.random() * 0.002
+}));
+
+// Birds
+birds = Array.from({ length: 6 }, () =&gt; ({
+    x: w * 0.5 + Math.random() * (w * 0.5), // Start on right side
+    y: Math.random() * h * 0.6,
+    vx: (Math.random() - 0.5) * 2,
+    vy: (Math.random() - 0.5) * 2,
+    state: 'flying', // 'flying', 'landing', 'perched'
+    target: null,
+    timer: 0
+}));
