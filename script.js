@@ -8,7 +8,7 @@ img.src = 'image1.png';
 const targetDate = new Date("March 1, 2026 00:00:00 GMT-0600").getTime();
 const startDate = new Date("February 1, 2026 00:00:00 GMT-0600").getTime();
 
-let w, h, buildings = [], fireflies = [], smokeParticles = [], birds = [], fireworks = [], stars = [];
+let w, h, buildings = [], fireflies = [], smokeParticles = [], birds = [], fireworks = [], stars = { left: [], right: [] };
 let weatherData = { left: null, right: null };
 let particles = {
     left: { rain: [], snow: [], clouds: [] },
@@ -137,30 +137,37 @@ function drawSideEnvironment(side, x, y, width, height) {
         ctx.shadowBlur = 0;
     }
 
-    if (data) {
-        if (!isDay) {
-            // Moon & Stars
-            // Draw Stars only if the sky is clear
-            if (data.main === 'Clear') {
-                ctx.fillStyle = "white";
-                for(let i=0; i<50; i++) {
-                    const sx = x + Math.random() * width;
-                    const sy = y + Math.random() * (height * 0.6);
-                    ctx.globalAlpha = Math.random();
-                    ctx.beginPath(); ctx.arc(sx, sy, Math.random() * 1.5, 0, Math.PI*2); ctx.fill();
-                }
-            }
+    // Night: always draw moon; draw stars when clear or when no API data available
+    if (!isDay) {
+        const showStars = !data || (data && data.main === 'Clear');
+        if (showStars) {
+            const starList = stars[side] || [];
+            ctx.fillStyle = "white";
+            starList.forEach(s => {
+                const sx = x + s.x * width;
+                const sy = y + s.y * (height * 0.6);
+                ctx.globalAlpha = s.a;
+                ctx.beginPath(); ctx.arc(sx, sy, s.r, 0, Math.PI * 2); ctx.fill();
+            });
             ctx.globalAlpha = 1;
-
-            // Moon
-            const moonX = x + width * 0.8;
-            ctx.fillStyle = "#FEFCD7";
-            ctx.shadowBlur = 15; ctx.shadowColor = "#FEFCD7";
-            ctx.beginPath(); ctx.arc(moonX, celestialY, 25, 0, Math.PI*2); ctx.fill();
-            ctx.shadowBlur = 0;
         }
 
-        // 3. Weather Effects
+        // Moon (draw always during night)
+        let moonX = x + width * 0.8;
+        let moonY = celestialY;
+        if (data && data.sunrise && data.sunset) {
+            // place moon opposite to sun progress for a nicer arc
+            const progress = (now - data.sunrise) / (data.sunset - data.sunrise);
+            moonX = x + (width * 0.9) - (width * 0.8 * progress);
+            moonY = celestialY + Math.sin((1 - progress) * Math.PI) * -40;
+        }
+        ctx.fillStyle = "#FEFCD7";
+        ctx.shadowBlur = 15; ctx.shadowColor = "#FEFCD7";
+        ctx.beginPath(); ctx.arc(moonX, moonY, 25, 0, Math.PI * 2); ctx.fill();
+        ctx.shadowBlur = 0;
+    }
+
+    // 3. Weather Effects
         // Clouds
         if (data.main === 'Clouds' || data.main === 'Rain' || data.main === 'Snow') {
             if (pSystem.clouds.length < 4) { // Fewer, more distinct clouds
@@ -375,13 +382,45 @@ function drawGroundElements() {
                 break;
         }
         
-        // Draw Windows if it's night
-        if (isNightLeft) {
-            ctx.fillStyle = "rgba(255, 220, 150, 0.7)"; // Warm yellow glow
+            // Draw windows (always). Size scales with building so they don't mix.
+            const winW = Math.max(3, Math.floor(b.w / 10));
+            const winH = Math.max(3, Math.floor(b.h / 15));
+            ctx.fillStyle = isNightLeft ? "rgba(255, 220, 150, 0.85)" : "rgba(200, 220, 255, 0.18)";
             b.windows.forEach(win => {
-                ctx.fillRect(b.x + win.x, groundY + win.y, 4, 6);
+                ctx.fillRect(Math.round(b.x + win.x), Math.round(groundY + win.y), winW, winH);
             });
-        }
+
+            b.x -= 0.5; // Parallax speed
+            if (b.x + b.w < 0) {
+                // Respawn on the right with fresh size, windows and visible color
+                b.x = w + Math.random() * 200;
+                b.w = 40 + Math.random() * 80;
+                b.h = 100 + Math.random() * (h * 0.4);
+
+                // Regenerate windows based on new dimensions (spacing adapts)
+                b.windows = [];
+                const yStep = Math.max(18, Math.floor(b.h / 10));
+                const xStep = Math.max(12, Math.floor(b.w / 6));
+                for (let wy = 20; wy < b.h - 20; wy += yStep) {
+                    for (let wx = 10; wx < b.w - 10; wx += xStep) {
+                        if (Math.random() > 0.6) b.windows.push({ x: wx, y: wy });
+                    }
+                }
+
+                // Assign a visible color
+                if (b.x + b.w / 2 < w / 2) {
+                    const hue = Math.floor(Math.random() * 60);
+                    const sat = 60 + Math.floor(Math.random() * 20);
+                    const light = 35 + Math.floor(Math.random() * 20);
+                    b.color = `hsl(${hue}, ${sat}%, ${light}%)`;
+                } else {
+                    const light = 20 + Math.floor(Math.random() * 30);
+                    b.color = `hsl(230, 20%, ${light}%)`;
+                }
+
+                const tRoll = Math.random();
+                b.type = tRoll < 0.6 ? 'rect' : (tRoll < 0.85 ? 'stepped' : 'spire');
+            }
 
         b.x -= 0.5; // Parallax speed
         if (b.x + b.w < 0) b.x = w;
@@ -760,7 +799,20 @@ function resize() {
                 if(Math.random() > 0.7) wins.push({x, y});
             }
         }
-        const color = `hsl(230, 20%, ${10 + Math.random() * 15}%)`; // Dark blue/purple/grey tones
+
+        // Decide X first so we can color the left (male) side differently
+        const bx = Math.random() * w;
+        let color;
+        if (bx < w / 2) {
+            // Male/left side: vibrant, warmer palette
+            const hue = Math.floor(Math.random() * 60); // reds/yellows/greens
+            const sat = 60 + Math.floor(Math.random() * 20);
+            const light = 30 + Math.floor(Math.random() * 25);
+            color = `hsl(${hue}, ${sat}%, ${light}%)`;
+        } else {
+            // Right side: keep darker city tones
+            color = `hsl(230, 20%, ${10 + Math.random() * 15}%)`;
+        }
 
         const typeRoll = Math.random();
         let type;
@@ -772,7 +824,7 @@ function resize() {
             type = 'spire'; // 15% chance for a building with a spire
         }
 
-        return { x: Math.random() * w, h: bH, w: bW, windows: wins, color: color, type: type };
+        return { x: bx, h: bH, w: bW, windows: wins, color: color, type: type };
     });
 
     // Fireflies
@@ -782,6 +834,16 @@ function resize() {
         phase: Math.random() * Math.PI * 2,
         speed: 0.002 + Math.random() * 0.002
     }));
+
+    // Stars (persistent per side) - positions normalized [0..1]
+    const makeStars = (count) => Array.from({ length: count }, () => ({
+        x: Math.random(),
+        y: 0.02 + Math.random() * 0.6,
+        r: Math.random() * 1.6 + 0.3,
+        a: 0.4 + Math.random() * 0.6
+    }));
+    stars.left = makeStars(80);
+    stars.right = makeStars(80);
 
     // Birds
     birds = Array.from({ length: 6 }, () => ({
