@@ -416,11 +416,19 @@ function animate() {
 
 function resize() {
     w = canvas.width = window.innerWidth; h = canvas.height = window.innerHeight;
-    buildings = Array.from({ length: 60 }, () => ({
-        x: Math.random() * w, h: 100 + Math.random() * 300, w: 50 + Math.random() * 50,
-        color: `hsl(230, 15%, ${10 + Math.random() * 10}%)`,
-        windows: Array.from({length: 8}, () => ({x: Math.random()*40, y: Math.random()*200}))
-    }));
+    buildings = Array.from({ length: 60 }, () => {
+        const t = Math.random();
+        let c;
+        if (t < 0.25) c = `hsl(0, 0%, ${15 + Math.random() * 15}%)`; // Concrete Grey
+        else if (t < 0.5) c = `hsl(210, 15%, ${15 + Math.random() * 15}%)`; // Glassy Blue
+        else if (t < 0.75) c = `hsl(30, 15%, ${15 + Math.random() * 15}%)`; // Warm Stone
+        else c = `hsl(10, 20%, ${15 + Math.random() * 15}%)`; // Brick Red
+        return {
+            x: Math.random() * w, h: 100 + Math.random() * 300, w: 50 + Math.random() * 50,
+            color: c,
+            windows: Array.from({length: 8}, () => ({x: Math.random()*40, y: Math.random()*200}))
+        };
+    });
     fireflies = Array.from({ length: 15 }, () => ({
         offsetX: (Math.random()-0.5)*100, offsetY: -100+(Math.random()-0.5)*50,
         phase: Math.random()*Math.PI*2, speed: 0.002

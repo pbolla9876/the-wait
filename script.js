@@ -8,7 +8,7 @@ img.src = 'image1.png';
 const targetDate = new Date("March 1, 2026 00:00:00 GMT-0600").getTime();
 const startDate = new Date("February 1, 2026 00:00:00 GMT-0600").getTime();
 
-let w, h, buildings = [], fireflies = [], smokeParticles = [], birds = [], fireworks = [], stars = [];
+let w, h, buildings = [], fireflies = [], smokeParticles = [], birds = [], fireworks = [], stars = [], shootingStar = null;
 let weatherData = { left: null, right: null };
 let particles = {
     left: { rain: [], snow: [], clouds: [] },
@@ -153,11 +153,13 @@ function drawSideEnvironment(side, x, y, width, height) {
             ctx.globalAlpha = 1;
 
             // Moon
-            const moonX = x + width * 0.8;
-            ctx.fillStyle = "#FEFCD7";
-            ctx.shadowBlur = 15; ctx.shadowColor = "#FEFCD7";
-            ctx.beginPath(); ctx.arc(moonX, celestialY, 25, 0, Math.PI*2); ctx.fill();
-            ctx.shadowBlur = 0;
+            if (side === 'right') {
+                const moonX = x + width * 0.8;
+                ctx.fillStyle = "#FEFCD7";
+                ctx.shadowBlur = 15; ctx.shadowColor = "#FEFCD7";
+                ctx.beginPath(); ctx.arc(moonX, celestialY, 25, 0, Math.PI*2); ctx.fill();
+                ctx.shadowBlur = 0;
+            }
         }
 
         // 3. Weather Effects
@@ -654,7 +656,7 @@ function animate() {
             const totalDuration = targetDate - startDate;
             const progress = Math.min(1, Math.max(0, 1 - (timeLeft / totalDuration)));
             
-            drawSky();
+            drawSky(); updateAndDrawShootingStar();
             drawGroundElements();
             drawCharacters(progress);
             drawLockAndTimer(progress);
