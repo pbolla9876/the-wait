@@ -40,6 +40,16 @@ let moonPhase = 0.3; // 0 = New Moon, 1 = Full Moon
 // --- State Machine Variables ---
 let gameState = 'INTRO_TEXT';
 let animStartTime;
+let scrollLocked = false;
+let backToTitleBtn;
+
+const preventScroll = (e) => {
+    if (scrollLocked) {
+        e.preventDefault();
+        e.stopPropagation();
+        return false;
+    }
+};
 
 const introText = "Hey Jaan, sorry it took almost more than a couple of days to build this... I thought it was easy, but every time I get an idea, it’s getting even more difficult to implement. But yeah, here is the output—hope it works well on your side. Coming to the no communication thing, it’s so tough. More than the timer, I am counting each and every second in my mind, wishing the timer would become zero... For the first time, I am wishing maybe I could be Thanos, so I could snap my fingers and make the timer zero, but in real life, I am not a Marvel character. I'm just a character in real life who is 678 miles away from the person whom I love and admire so much. Previously, only the distance used to affect me, now the time as well... but I am missing you so much... I want to say more, but I will save it for that day—hope we will be back and with lots of affection. Miss you so much.........";
 let introState = { charIndex: 0, phase: 'typing', lastUpdate: 0, completeTime: 0 };
@@ -104,6 +114,26 @@ function init() {
     animate();
 
     // Splash removed from HTML; nothing to fade out.
+
+    if (!backToTitleBtn) {
+        backToTitleBtn = document.createElement('button');
+        backToTitleBtn.id = 'back-to-title';
+        backToTitleBtn.type = 'button';
+        backToTitleBtn.textContent = 'Back to Title';
+        backToTitleBtn.addEventListener('click', () => {
+            scrollLocked = false;
+            document.documentElement.classList.remove('scroll-locked');
+            document.body.classList.remove('scroll-locked');
+            document.body.classList.remove('journey-only');
+            document.documentElement.style.overflow = '';
+            document.body.style.overflow = '';
+            window.removeEventListener('wheel', preventScroll);
+            window.removeEventListener('touchmove', preventScroll);
+            window.scrollTo(0, 0);
+            window.location.reload();
+        });
+        document.body.appendChild(backToTitleBtn);
+    }
 }
 
 function drawSideEnvironment(side, x, y, width, height) {
@@ -1984,6 +2014,20 @@ function initScrollytelling() {
     bg.className = 'scrolly-bg';
     container.appendChild(bg);
 
+    const stars = document.createElement('div');
+    stars.className = 'scrolly-stars';
+    container.appendChild(stars);
+
+    const intro = document.createElement('div');
+    intro.className = 'intro-screen';
+    intro.innerHTML = `
+        <div>
+            <div class="intro-title">Two Hearts, Two Skies, One Moon</div>
+            <div class="intro-prompt">Scroll to bridge</div>
+        </div>
+    `;
+    container.appendChild(intro);
+
     // Center the timer during scrollytelling
     const uiLayer = document.getElementById('ui-layer');
     if (uiLayer) uiLayer.classList.add('scrolly-center');
@@ -1991,6 +2035,11 @@ function initScrollytelling() {
         timerElement.style.display = 'none';
         gsap.set(timerElement, { opacity: 0, y: 12 });
     }
+    if (backToTitleBtn) {
+        backToTitleBtn.style.opacity = '0';
+        backToTitleBtn.style.pointerEvents = 'none';
+    }
+    gsap.set(canvas, { opacity: 0 });
 
     // Images
     const maleImg = document.createElement('img');
@@ -2100,10 +2149,15 @@ function initScrollytelling() {
 
     gsap.set([cloud], { y: 12 });
 
-    // Phase 1: Black screen -> Male fade in, then cloud
-    tl.to(bg, { opacity: 0, duration: 1.5 })
-      .to(maleImg, { opacity: 1, duration: 2.6 }, "<")
-      .to(cloud, { opacity: 1, y: 0, duration: 1.8 })
+    // Phase 1: Intro -> fade/zoom title, hide prompt, start scene (keep canvas hidden)
+    const introTitle = intro.querySelector('.intro-title');
+    const introPrompt = intro.querySelector('.intro-prompt');
+    tl.to(introPrompt, { opacity: 0, duration: 0.2 })
+      .to(introTitle, { opacity: 0, scale: 1.08, duration: 1.1 }, "<")
+      .to(intro, { opacity: 0, duration: 1.1, onComplete: () => intro.remove() }, "<0.2")
+      .to(bg, { opacity: 0, duration: 1.2 }, "<0.1")
+      .fromTo(maleImg, { opacity: 0, x: -60 }, { opacity: 1, x: 0, duration: 2.2 }, "<0.2")
+      .fromTo(cloud, { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 1.6 }, "<0.4")
       .add(() => { typeLine(line1El, line1); }, "<0.1");
 
     // Phase 2: Thread draws, moon turns full, thread glows gold
@@ -2125,6 +2179,24 @@ function initScrollytelling() {
         if (timerElement) {
             timerElement.style.display = '';
             gsap.set(timerElement, { opacity: 0, y: 0 });
+        }
+        gsap.set(canvas, { opacity: 1 });
+        if (!scrollLocked) {
+            scrollLocked = true;
+            document.documentElement.classList.add('scroll-locked');
+            document.body.classList.add('scroll-locked');
+            window.scrollTo(0, 0);
+            window.addEventListener('wheel', preventScroll, { passive: false });
+            window.addEventListener('touchmove', preventScroll, { passive: false });
+            window.addEventListener('keydown', (e) => {
+                if (scrollLocked && ['ArrowDown','ArrowUp','PageDown','PageUp','Home','End',' '].includes(e.key)) {
+                    e.preventDefault();
+                }
+            });
+        }
+        if (backToTitleBtn) {
+            backToTitleBtn.style.opacity = '1';
+            backToTitleBtn.style.pointerEvents = 'auto';
         }
         gameState = 'JOURNEY'; // Start walking animation
     }});

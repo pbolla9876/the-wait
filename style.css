@@ -11,6 +11,40 @@ body, html {
     color-rendering: optimizeLegibility;
 }
 
+.scroll-locked {
+    overflow: hidden !important;
+    height: 100% !important;
+}
+
+ .intro-screen {
+    position: absolute;
+    inset: 0;
+    z-index: 30;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background:
+        radial-gradient(900px 600px at 50% 30%, rgba(255, 255, 255, 0.08), rgba(0, 0, 0, 0) 60%),
+        linear-gradient(180deg, #0a1b34 0%, #04070e 55%, #000 100%);
+    text-align: center;
+    color: #f2f2f2;
+    font-family: "Georgia", serif;
+}
+
+.intro-title {
+    font-size: clamp(2.2rem, 4vw, 4rem);
+    letter-spacing: 1px;
+    margin: 0 0 14px 0;
+    text-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+
+.intro-prompt {
+    font-size: 0.95rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    opacity: 0.75;
+}
+
 body::before {
     content: "";
     position: fixed;
@@ -105,6 +139,34 @@ canvas {
     pointer-events: none;
 }
 
+#back-to-title {
+    position: fixed;
+    left: 18px;
+    bottom: 18px;
+    z-index: 210;
+    padding: 10px 14px;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    background: rgba(18, 22, 32, 0.65);
+    color: #f2f2f2;
+    font-family: "Georgia", serif;
+    font-size: 14px;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.4s ease, transform 0.4s ease, background 0.3s ease;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
+#back-to-title:hover {
+    background: rgba(26, 32, 46, 0.8);
+    transform: translateY(-2px);
+}
+
+
+
 #ui-layer.scrolly-center {
     top: 50%;
     transform: translateY(-50%);
@@ -142,6 +204,28 @@ canvas {
     overflow: hidden;
 }
 
+.scrolly-stars {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 1;
+    z-index: 1;
+    background:
+        radial-gradient(2px 2px at 10% 20%, rgba(255,255,255,1), transparent 60%),
+        radial-gradient(1.6px 1.6px at 30% 40%, rgba(255,255,255,0.9), transparent 60%),
+        radial-gradient(1.8px 1.8px at 70% 25%, rgba(255,255,255,0.95), transparent 60%),
+        radial-gradient(1.6px 1.6px at 85% 60%, rgba(255,255,255,0.85), transparent 60%),
+        radial-gradient(2.2px 2.2px at 55% 15%, rgba(255,255,255,1), transparent 60%),
+        radial-gradient(2px 2px at 20% 75%, rgba(255,255,255,0.9), transparent 60%),
+        radial-gradient(1.8px 1.8px at 65% 80%, rgba(255,255,255,0.95), transparent 60%),
+        radial-gradient(1.6px 1.6px at 45% 55%, rgba(255,255,255,0.85), transparent 60%);
+    animation: starTwinkle 5s ease-in-out infinite;
+}
+
+@keyframes starTwinkle {
+    0%, 100% { opacity: 0.75; }
+    50% { opacity: 1; }
+}
 .scrolly-bg::before {
     content: "";
     position: absolute;
