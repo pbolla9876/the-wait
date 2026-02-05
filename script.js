@@ -146,7 +146,8 @@ function drawSideEnvironment(side, x, y, width, height) {
             starList.forEach(s => {
                 const sx = x + s.x * width;
                 const sy = y + s.y * (height * 0.6);
-                ctx.globalAlpha = s.a;
+                const tw = 0.6 + 0.4 * Math.sin(now * 0.002 + s.phase);
+                ctx.globalAlpha = Math.max(0.05, Math.min(1, s.a * tw));
                 ctx.beginPath(); ctx.arc(sx, sy, s.r, 0, Math.PI * 2); ctx.fill();
             });
             ctx.globalAlpha = 1;
@@ -161,8 +162,16 @@ function drawSideEnvironment(side, x, y, width, height) {
             moonX = x + (width * 0.9) - (width * 0.8 * progress);
             moonY = celestialY + Math.sin((1 - progress) * Math.PI) * -40;
         }
+        // Moon halo (soft radial glow)
+        const halo = ctx.createRadialGradient(moonX, moonY, 10, moonX, moonY, 80);
+        halo.addColorStop(0, 'rgba(254,252,215,0.9)');
+        halo.addColorStop(0.5, 'rgba(254,252,215,0.25)');
+        halo.addColorStop(1, 'rgba(254,252,215,0)');
+        ctx.fillStyle = halo;
+        ctx.beginPath(); ctx.arc(moonX, moonY, 80, 0, Math.PI * 2); ctx.fill();
+
         ctx.fillStyle = "#FEFCD7";
-        ctx.shadowBlur = 15; ctx.shadowColor = "#FEFCD7";
+        ctx.shadowBlur = 12; ctx.shadowColor = "rgba(254,252,215,0.9)";
         ctx.beginPath(); ctx.arc(moonX, moonY, 25, 0, Math.PI * 2); ctx.fill();
         ctx.shadowBlur = 0;
     }
@@ -384,9 +393,20 @@ function drawGroundElements() {
             // Draw windows (always). Size scales with building so they don't mix.
             const winW = Math.max(3, Math.floor(b.w / 10));
             const winH = Math.max(3, Math.floor(b.h / 15));
-            ctx.fillStyle = isNightLeft ? "rgba(255, 220, 150, 0.85)" : "rgba(200, 220, 255, 0.18)";
+            // Window glow: night windows warm and slightly blurred, day windows faint
             b.windows.forEach(win => {
-                ctx.fillRect(Math.round(b.x + win.x), Math.round(groundY + win.y), winW, winH);
+                const wx = Math.round(b.x + win.x);
+                const wy = Math.round(groundY + win.y);
+                ctx.save();
+                if (isNightLeft) {
+                    ctx.fillStyle = "rgba(255, 220, 150, 0.95)";
+                    ctx.shadowBlur = 8; ctx.shadowColor = "rgba(255,200,120,0.7)";
+                } else {
+                    ctx.fillStyle = "rgba(200, 220, 255, 0.18)";
+                    ctx.shadowBlur = 0;
+                }
+                ctx.fillRect(wx, wy, winW, winH);
+                ctx.restore();
             });
 
             b.x -= 0.5; // Parallax speed
@@ -788,40 +808,39 @@ function resize() {
     h = canvas.height = window.innerHeight; 
 
     // Re-create dimension-dependent assets
-    buildings = Array.from({ length: 100 }, () => {
+    const numBuildings = 70;
+    buildings = Array.from({ length: numBuildings }, (_, i) => {
         const bH = 100 + Math.random() * (h * 0.4);
         const bW = 40 + Math.random() * 80;
         const wins = [];
-        // Generate windows
-        for(let y = 20; y < bH - 20; y += 20) {
-            for(let x = 10; x < bW - 10; x += 15) {
-                if(Math.random() > 0.7) wins.push({x, y});
+        // Generate windows (spacing will be adjusted on respawn too)
+        for(let yy = 20; yy < bH - 20; yy += 20) {
+            for(let xx = 10; xx < bW - 10; xx += 15) {
+                if(Math.random() > 0.7) wins.push({x: xx, y: yy});
             }
         }
 
-        // Decide X first so we can color the left (male) side differently
-        const bx = Math.random() * w;
+        // Distribute buildings across the width to avoid clustering
+        const band = w / numBuildings;
+        const bx = Math.max(0, Math.min(w - bW, i * band + Math.random() * band * 0.6 - band * 0.1));
         let color;
-        if (bx < w / 2) {
+        if (bx + bW/2 < w / 2) {
             // Male/left side: vibrant, warmer palette
             const hue = Math.floor(Math.random() * 60); // reds/yellows/greens
             const sat = 60 + Math.floor(Math.random() * 20);
             const light = 30 + Math.floor(Math.random() * 25);
             color = `hsl(${hue}, ${sat}%, ${light}%)`;
         } else {
-            // Right side: keep darker city tones
-            color = `hsl(230, 20%, ${10 + Math.random() * 15}%)`;
+            // Right side: city tones but not too dark
+            const light = 20 + Math.floor(Math.random() * 25);
+            color = `hsl(230, 20%, ${light}%)`;
         }
 
         const typeRoll = Math.random();
         let type;
-        if (typeRoll < 0.6) {
-            type = 'rect'; // 60% chance for a standard rectangle
-        } else if (typeRoll < 0.85) {
-            type = 'stepped'; // 25% chance for a stepped building
-        } else {
-            type = 'spire'; // 15% chance for a building with a spire
-        }
+        if (typeRoll < 0.6) type = 'rect';
+        else if (typeRoll < 0.85) type = 'stepped';
+        else type = 'spire';
 
         return { x: bx, h: bH, w: bW, windows: wins, color: color, type: type };
     });
@@ -839,7 +858,8 @@ function resize() {
         x: Math.random(),
         y: 0.02 + Math.random() * 0.6,
         r: Math.random() * 1.6 + 0.3,
-        a: 0.4 + Math.random() * 0.6
+        a: 0.4 + Math.random() * 0.6,
+        phase: Math.random() * Math.PI * 2
     }));
     stars.left = makeStars(80);
     stars.right = makeStars(80);
