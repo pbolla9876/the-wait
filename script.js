@@ -1987,66 +1987,106 @@ function initScrollytelling() {
     // Center the timer during scrollytelling
     const uiLayer = document.getElementById('ui-layer');
     if (uiLayer) uiLayer.classList.add('scrolly-center');
-    gsap.set(timerElement, { opacity: 0, y: 12 });
+    if (timerElement) {
+        timerElement.style.display = 'none';
+        gsap.set(timerElement, { opacity: 0, y: 12 });
+    }
 
     // Images
     const maleImg = document.createElement('img');
     maleImg.src = 'male.png';
     maleImg.onerror = () => { maleImg.src = 'male.heic'; };
-    Object.assign(maleImg.style, { position: 'absolute', left: '12%', bottom: '6%', height: '52vh', opacity: 0 });
+    Object.assign(maleImg.style, { position: 'absolute', left: '12%', bottom: '6%', width: '24vw', height: '52vh', objectFit: 'cover', opacity: 0, zIndex: 3 });
+    maleImg.classList.add('float-dream');
     container.appendChild(maleImg);
 
     const femaleImg = document.createElement('img');
     femaleImg.src = 'female.jpg';
-    Object.assign(femaleImg.style, { position: 'absolute', right: '12%', bottom: '6%', height: '52vh', opacity: 0 });
+    Object.assign(femaleImg.style, { position: 'absolute', right: '12%', bottom: '6%', width: '24vw', height: '52vh', objectFit: 'cover', opacity: 0, zIndex: 3 });
+    femaleImg.classList.add('float-dream', 'alt');
     container.appendChild(femaleImg);
 
     // Thought Cloud
     const cloud = document.createElement('div');
     cloud.className = 'thought-cloud';
-    Object.assign(cloud.style, { left: '28%', bottom: '56%', opacity: 0 });
+    Object.assign(cloud.style, { left: '28%', bottom: '60%', opacity: 0, zIndex: 5 });
     cloud.innerHTML = `
-        <p id="cloud-text-1">They say the world waits thirty days for a full moon... Perhaps that’s why it shines so bright when it returns.</p>
-        <p id="cloud-translation-1" class="translation" style="opacity: 0;">(ప్రపంచం పౌర్ణమి కోసం ముప్పై రోజులు వేచి ఉంటుందని అంటారు... బహుశా అందుకే అది తిరిగి వచ్చినప్పుడు అంత ప్రకాశవంతంగా వెలుగుతుంది.)</p>
-        <p id="cloud-text-2" style="opacity: 0; margin-top: 14px; font-weight: bold; color: #d4af37;">Now I understand why.<br><span style="font-size:14px; font-weight:normal; color:#886a18;">(ఆ మాటకు అర్థం ఇప్పుడే తెలిసింది.)</span></p>
+        <p id="cloud-translation-1" class="translation" style="opacity: 1;"></p>
+        <p id="cloud-text-2" class="translation" style="opacity: 1; margin-top: 14px; font-weight: normal; color: #d4af37; text-shadow: 0 0 8px rgba(212,175,55,0.6);"></p>
     `;
     container.appendChild(cloud);
 
-    // Lock icon (between characters)
-    const lock = document.createElement('div');
-    lock.id = 'scrolly-lock';
-    lock.innerHTML = `
-        <svg viewBox="0 0 64 64" width="64" height="64" fill="none" aria-hidden="true">
-            <path d="M20 28v-6a12 12 0 0 1 24 0v6" stroke="#FFD700" stroke-width="4" stroke-linecap="round"/>
-            <rect x="14" y="28" width="36" height="28" rx="6" fill="#FFD700"/>
-            <circle cx="32" cy="42" r="4" fill="#1b1b1b"/>
-        </svg>
-    `;
-    container.appendChild(lock);
+    // Lock icon removed from scrollytelling scene
 
     // Thread (SVG)
     const svgNS = "http://www.w3.org/2000/svg";
     const svg = document.createElementNS(svgNS, "svg");
-    Object.assign(svg.style, { position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' });
+    Object.assign(svg.style, { position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', zIndex: 1, pointerEvents: 'none' });
+    // Arrow marker removed
     const thread = document.createElementNS(svgNS, "path");
     thread.id = 'scrolly-thread';
     // Curve from male to female, lower arc to feel grounded
-    const startX = window.innerWidth * 0.24;
-    const startY = window.innerHeight * 0.76;
-    const endX = window.innerWidth * 0.76;
-    const endY = window.innerHeight * 0.78;
-    const d = `M ${startX} ${startY} Q ${window.innerWidth * 0.5} ${window.innerHeight * 0.9} ${endX} ${endY}`;
+    const startX = window.innerWidth * 0.26;
+    const startY = window.innerHeight * 0.90;
+    const endX = window.innerWidth * 0.74;
+    const endY = window.innerHeight * 0.90;
+    const d = `M ${startX} ${startY} Q ${window.innerWidth * 0.5} ${window.innerHeight * 0.98} ${endX} ${endY}`;
     thread.setAttribute("d", d);
     thread.setAttribute("fill", "none");
     thread.setAttribute("stroke", "white");
     thread.setAttribute("stroke-width", "3");
     thread.setAttribute("stroke-linecap", "round");
+    thread.style.opacity = "0";
+    thread.classList.add('thread-pulse');
     svg.appendChild(thread);
+
+    const particleGroup = document.createElementNS(svgNS, "g");
+    particleGroup.setAttribute("opacity", "0");
+    const particles = [];
+    for (let i = 0; i < 6; i++) {
+        const p = document.createElementNS(svgNS, "circle");
+        p.setAttribute("r", "2.2");
+        p.setAttribute("fill", "rgba(255,215,0,0.9)");
+        particleGroup.appendChild(p);
+        particles.push({ el: p, t: i / 6 });
+    }
+    svg.appendChild(particleGroup);
     container.appendChild(svg);
 
     const length = thread.getTotalLength();
     thread.style.strokeDasharray = `${length}`;
     thread.style.strokeDashoffset = `${length}`;
+
+    const line1 = "ప్రపంచం పౌర్ణమి కోసం ముప్పై రోజులు వేచి ఉంటుందని అంటారు... బహుశా అందుకే అది తిరిగి వచ్చినప్పుడు అంత ప్రకాశవంతంగా వెలుగుతుంది.";
+    const line2 = "ఆ మాటకు అర్థం ఇప్పుడే తెలిసింది.";
+    const line1El = cloud.querySelector("#cloud-translation-1");
+    const line2El = cloud.querySelector("#cloud-text-2");
+
+    const typeLine = (el, text, speed = 26) => new Promise((resolve) => {
+        let i = 0;
+        const tick = () => {
+            i++;
+            el.textContent = text.slice(0, i);
+            if (i < text.length) {
+                setTimeout(tick, speed);
+            } else {
+                resolve();
+            }
+        };
+        tick();
+    });
+
+    const animateParticles = () => {
+        const time = performance.now() * 0.00008;
+        for (const p of particles) {
+            const t = (p.t + time) % 1;
+            const point = thread.getPointAtLength(t * length);
+            p.el.setAttribute("cx", point.x);
+            p.el.setAttribute("cy", point.y);
+        }
+        requestAnimationFrame(animateParticles);
+    };
+    animateParticles();
 
     // GSAP Timeline
     const tl = gsap.timeline({
@@ -2058,30 +2098,34 @@ function initScrollytelling() {
         }
     });
 
-    gsap.set([cloud, lock], { y: 12 });
+    gsap.set([cloud], { y: 12 });
 
-    // Phase 1: Black screen -> Male fade in, cloud appears
+    // Phase 1: Black screen -> Male fade in, then cloud
     tl.to(bg, { opacity: 0, duration: 1.5 })
-      .to(maleImg, { opacity: 1, duration: 2 }, "<")
-      .to(cloud, { opacity: 1, y: 0, duration: 2 }, "<0.3")
-      .to("#cloud-translation-1", { opacity: 1, duration: 1.2 }, "<0.4");
+      .to(maleImg, { opacity: 1, duration: 2.6 }, "<")
+      .to(cloud, { opacity: 1, y: 0, duration: 1.8 })
+      .add(() => { typeLine(line1El, line1); }, "<0.1");
 
-    // Phase 2: Thread draws, final line appears, moon turns full, thread glows gold
-    tl.to(thread, { strokeDashoffset: 0, duration: 4 })
-      .to("#cloud-text-2", { opacity: 1, duration: 1 }, "<0.2")
+    // Phase 2: Thread draws, moon turns full, thread glows gold
+    tl.to(thread, { opacity: 1, duration: 0.4 })
+      .to(particleGroup, { opacity: 1, duration: 0.6 }, "<")
+      .to(thread, { strokeDashoffset: 0, duration: 4 }, "<")
       .to(thread, { stroke: "#FFD700", strokeWidth: 4, duration: 1 }, "<")
-      .to(window, { moonPhase: 1, duration: 2 }, "<")
-      .to([timerElement, lock], { opacity: 1, y: 0, duration: 1.6 }, "<0.1");
+      .to(window, { moonPhase: 1, duration: 2 }, "<");
 
-    // Phase 3: Female reveal once thread reaches her
-    tl.to(femaleImg, { opacity: 1, duration: 2 });
+    // Phase 3: Female reveal, then final line in cloud
+    tl.to(femaleImg, { opacity: 1, duration: 2.2 })
+      .add(() => { typeLine(line2El, line2); }, "<0.2");
 
     // Phase 4: Hold moment, then transition to canvas animation
     tl.to(container, { opacity: 0, duration: 2, onComplete: () => {
         container.remove();
         spacer.remove();
         if (uiLayer) uiLayer.classList.remove('scrolly-center');
-        gsap.set(timerElement, { opacity: 0, y: 0 });
+        if (timerElement) {
+            timerElement.style.display = '';
+            gsap.set(timerElement, { opacity: 0, y: 0 });
+        }
         gameState = 'JOURNEY'; // Start walking animation
     }});
 }
