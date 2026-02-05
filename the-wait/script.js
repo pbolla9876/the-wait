@@ -56,178 +56,11 @@ function processWeatherData(data) {
     if (!data || !data.sys) return null;
     return {
         main: data.weather[0].main, // 'Rain', 'Snow', 'Clouds', 'Clear'
-        sunrise: data.sys.sunrise * 1000,
-        sunset: data.sys.sunset * 1000,
-        dt: Date.now() // Current time for animation sync
-    };
-}
+    // Duplicate script placeholder removed. The main script is at ../script.js
+    // This file intentionally left minimal to avoid duplicate declarations.
+    // See /the-wait/script.js for the authoritative code.
 
-// Utility: lighten an `hsl(h, s%, l%)` color string by `add` percent (clamped)
-function lightenHSL(hslStr, add) {
-    const m = /hsl\((\d+),\s*(\d+)%\s*,\s*(\d+)%\)/i.exec(hslStr);
-    if (!m) return hslStr;
-    let h = Number(m[1]);
-    let s = Number(m[2]);
-    let l = Number(m[3]);
-    l = Math.min(90, l + add);
-    return `hsl(${h}, ${s}%, ${l}%)`;
-}
-
-function init() {
-    gameState = 'INTRO_TEXT';
-    animStartTime = Date.now();
-    introState.lastUpdate = animStartTime;
-    introState.charIndex = 0;
-    introState.phase = 'typing';
-    fetchWeather();
-    
-    // Initialize Puzzle Pieces
-    const grid = 10; // 10x10 grid for puzzle
-    pieces = Array.from({ length: grid * grid }, (_, i) => i);
-    // Shuffle pieces
-    for (let i = pieces.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [pieces[i], pieces[j]] = [pieces[j], pieces[i]];
-    }
-
-    resize(); // Set initial sizes and create dimension-dependent assets
-    animate();
-
-    // Start a smooth fade-out for the splash screen.
-    setTimeout(() => {
-        const splash = document.getElementById('splash');
-        if (splash) {
-            splash.style.opacity = '0';
-            // After the fade-out transition ends, remove the element completely.
-            splash.addEventListener('transitionend', () => splash.remove());
-        }
-    }, 4000);
-}
-
-function drawSideEnvironment(side, x, y, width, height) {
-    const data = weatherData[side];
-    const pSystem = particles[side];
-    const now = Date.now();
-    const currentHour = new Date().getHours();
-
-    // Logic: Use API data if available, otherwise fallback to system time (6am - 6pm is Day)
-    let isDay = (currentHour >= 6 && currentHour < 18);
-    if (data && data.sunrise && data.sunset) {
-        isDay = (now > data.sunrise && now < data.sunset);
-    }
-    
-    // 1. Sky Gradient
-    const skyGrd = ctx.createLinearGradient(x, y, x, y + height);
-    if (isDay) {
-        skyGrd.addColorStop(0, '#87CEEB'); // Light Blue
-        skyGrd.addColorStop(1, '#FFD700'); // Golden
-    } else {
-        skyGrd.addColorStop(0, '#000000'); // Black
-        skyGrd.addColorStop(1, '#000000'); // Black
-    }
-    ctx.fillStyle = skyGrd;
-    ctx.fillRect(x, y, width, height);
-
-    // 2. Celestial Body (Sun/Moon)
-    const celestialY = y + height * 0.2;
-
-    if (isDay) {
-        let sunX = x + width * 0.5;
-        let sunY = celestialY;
-        if (data && data.sunrise && data.sunset) {
-            const progress = (now - data.sunrise) / (data.sunset - data.sunrise);
-            sunX = x + (width * 0.1) + (width * 0.8 * progress);
-            sunY = celestialY + Math.sin(progress * Math.PI) * -50;
-        }
-        
-        ctx.fillStyle = "#FDB813";
-        ctx.shadowBlur = 20; ctx.shadowColor = "#FDB813";
-        ctx.beginPath();
-        ctx.arc(sunX, sunY, 30, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.shadowBlur = 0;
-    }
-
-    // Night: always draw moon; draw stars when clear or when no API data available
-    if (!isDay) {
-        const showStars = !data || (data && data.main === 'Clear');
-        if (showStars) {
-            const starList = stars[side] || [];
-            ctx.fillStyle = "white";
-            starList.forEach(s => {
-                const sx = x + s.x * width;
-                const sy = y + s.y * (height * 0.6);
-                const tw = 0.6 + 0.4 * Math.sin(now * 0.002 + s.phase);
-                ctx.globalAlpha = Math.max(0.05, Math.min(1, s.a * tw));
-                ctx.beginPath(); ctx.arc(sx, sy, s.r, 0, Math.PI * 2); ctx.fill();
-            });
-            ctx.globalAlpha = 1;
-        }
-
-        // Moon (draw always during night)
-        let moonX = x + width * 0.8;
-        let moonY = celestialY;
-        if (data && data.sunrise && data.sunset) {
-            // place moon opposite to sun progress for a nicer arc
-            const progress = (now - data.sunrise) / (data.sunset - data.sunrise);
-            moonX = x + (width * 0.9) - (width * 0.8 * progress);
-            moonY = celestialY + Math.sin((1 - progress) * Math.PI) * -40;
-        }
-        // Moon halo (soft radial glow)
-        const halo = ctx.createRadialGradient(moonX, moonY, 10, moonX, moonY, 80);
-        halo.addColorStop(0, 'rgba(254,252,215,0.9)');
-        halo.addColorStop(0.5, 'rgba(254,252,215,0.25)');
-        halo.addColorStop(1, 'rgba(254,252,215,0)');
-        ctx.fillStyle = halo;
-        ctx.beginPath(); ctx.arc(moonX, moonY, 80, 0, Math.PI * 2); ctx.fill();
-
-        ctx.fillStyle = "#FEFCD7";
-        ctx.shadowBlur = 12; ctx.shadowColor = "rgba(254,252,215,0.9)";
-        ctx.beginPath(); ctx.arc(moonX, moonY, 25, 0, Math.PI * 2); ctx.fill();
-        ctx.shadowBlur = 0;
-    }
-
-    // 3. Weather Effects
-        // Clouds
-        if (data && (data.main === 'Clouds' || data.main === 'Rain' || data.main === 'Snow')) {
-            if (pSystem.clouds.length < 4) { // Fewer, more distinct clouds
-                pSystem.clouds.push({ x: x - 100, y: y + Math.random() * 100, w: 80 + Math.random()*50, speed: 0.1 + Math.random() * 0.2 });
-            }
-            ctx.fillStyle = "rgba(200, 200, 200, 0.4)";
-            pSystem.clouds.forEach((c, i) => {
-                c.x += c.speed;
-                if (c.x - c.w > x + width) c.x = x - c.w;
-                ctx.beginPath();
-                ctx.arc(c.x, c.y, c.w * 0.4, 0, Math.PI * 2); // Center
-                ctx.arc(c.x + c.w * 0.3, c.y + c.w * 0.1, c.w * 0.3, 0, Math.PI * 2); // Right
-                ctx.arc(c.x - c.w * 0.3, c.y + c.w * 0.1, c.w * 0.3, 0, Math.PI * 2); // Left
-                ctx.arc(c.x, c.y - c.w * 0.2, c.w * 0.3, 0, Math.PI * 2); // Top
-                ctx.fill();
-            });
-        }
-
-        // Rain
-        if (data && data.main === 'Rain') {
-            if (pSystem.rain.length < 100) pSystem.rain.push({ x: x + Math.random()*width, y: y + Math.random()*height, l: 10+Math.random()*10, v: 10+Math.random()*5 });
-            ctx.strokeStyle = "rgba(174, 194, 224, 0.6)"; ctx.lineWidth = 1;
-            pSystem.rain.forEach(r => {
-                r.y += r.v; if (r.y > y + height) r.y = y - 20;
-                ctx.beginPath(); ctx.moveTo(r.x, r.y); ctx.lineTo(r.x, r.y + r.l); ctx.stroke();
-            });
-        }
-
-        // Snow
-        if (data && data.main === 'Snow') {
-            if (pSystem.snow.length < 50) pSystem.snow.push({ x: x + Math.random()*width, y: y + Math.random()*height, r: 2+Math.random()*2, v: 1+Math.random() });
-            ctx.fillStyle = "rgba(255, 255, 255, 0.8)";
-            pSystem.snow.forEach(s => {
-                s.y += s.v; s.x += Math.sin(Date.now()*0.001)*0.5;
-                if (s.y > y + height) s.y = y - 10;
-                ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI*2); ctx.fill();
-            });
-        }
-    }
-
+    console.log('Duplicate nested script disabled. Using top-level script.js');
 function drawSky() {
     const dividerX = w/2;
     ctx.save();
@@ -608,18 +441,7 @@ function drawGroundElements() {
 }
 
 function drawCharacters(progress) {
-    const dividerX = w / 2;
-    const groundLevel = h - 100;
-    const now = Date.now();
-    let maleWalkCycle = 0;
-    if (now - animStartTime > 2000) {
-        maleWalkCycle = (now - (animStartTime + 2000)) * 0.006;
-    }
-
-    const startGap = w * 0.8, endGap = 80;
-    const currentGap = startGap - (startGap - endGap) * progress;
-    drawCharacterSilhouette(dividerX - currentGap / 2, groundLevel, 0.8, true, maleWalkCycle);
-    drawCharacterSilhouette(dividerX + currentGap / 2, groundLevel, 0.8, false, 0);
+    // Characters removed — function left intentionally empty.
 }
 
 function drawLockAndTimer(progress) {
@@ -990,132 +812,9 @@ let pieces = [], revealProgress = 0;
 const API_KEY = typeof CONFIG !== 'undefined' ? CONFIG.WEATHER_API_KEY : '';
 
 // --- Color Interpolation Helper ---
-function interpolateColor(c1, c2, factor) {
-    const r1 = parseInt(c1.slice(1, 3), 16);
-    const g1 = parseInt(c1.slice(3, 5), 16);
-    const b1 = parseInt(c1.slice(5, 7), 16);
-    const r2 = parseInt(c2.slice(1, 3), 16);
-    const g2 = parseInt(c2.slice(3, 5), 16);
-    const b2 = parseInt(c2.slice(5, 7), 16);
-    const r = Math.round(r1 + (r2 - r1) * factor);
-    const g = Math.round(g1 + (g2 - g1) * factor);
-    const b = Math.round(b1 + (b2 - b1) * factor);
-    return `rgb(${r},${g},${b})`;
+function drawCharacterSilhouette() {
+    // Character drawing removed (dummies replaced).
 }
-
-async function fetchWeather() {
-    if (!API_KEY) return;
-    try {
-        const resLeft = await fetch(`https://api.openweathermap.org/data/2.5/weather?lat=33.7490&lon=-84.3880&appid=${API_KEY}`);
-        weatherData.left = processWeatherData(await resLeft.json());
-        const resRight = await fetch(`https://api.openweathermap.org/data/2.5/weather?lat=41.4731&lon=-87.0611&appid=${API_KEY}`);
-        weatherData.right = processWeatherData(await resRight.json());
-    } catch (e) { console.log("Weather fetch error", e); }
-}
-
-function processWeatherData(data) {
-    if (!data || !data.sys) return null;
-    return {
-        main: data.weather[0].main,
-        sunrise: data.sys.sunrise * 1000,
-        sunset: data.sys.sunset * 1000
-    };
-}
-
-function drawSideEnvironment(side, x, y, width, height) {
-    const data = weatherData[side];
-    const pSystem = particles[side];
-    const now = Date.now();
-    
-    // 1. Calculate Sun/Moon Timing
-    const todayStart = new Date();
-    todayStart.setHours(0,0,0,0);
-    let sunrise = data && data.sunrise ? data.sunrise : todayStart.getTime() + 6 * 3600 * 1000;
-    let sunset = data && data.sunset ? data.sunset : todayStart.getTime() + 18 * 3600 * 1000;
-
-    // 2. Day Factor Calculation (0=Night, 1=Day)
-    const transitionDuration = 3600000 * 1.5; 
-    let dayFactor = 0;
-    if (now >= sunrise - transitionDuration/2 && now <= sunrise + transitionDuration/2) {
-        dayFactor = (now - (sunrise - transitionDuration/2)) / transitionDuration;
-    } else if (now > sunrise + transitionDuration/2 && now < sunset - transitionDuration/2) {
-        dayFactor = 1;
-    } else if (now >= sunset - transitionDuration/2 && now <= sunset + transitionDuration/2) {
-        dayFactor = 1 - (now - (sunset - transitionDuration/2)) / transitionDuration;
-    } else if (now > sunrise && now < sunset) {
-        dayFactor = 1;
-    }
-    dayFactor = Math.max(0, Math.min(1, dayFactor));
-
-    // 3. Sky Rendering
-    const cTop = interpolateColor("#020205", "#87CEEB", dayFactor);
-    const cBot = interpolateColor("#000000", "#FFD700", dayFactor);
-    const skyGrd = ctx.createLinearGradient(x, y, x, y + height);
-    skyGrd.addColorStop(0, cTop);
-    skyGrd.addColorStop(1, cBot);
-    ctx.fillStyle = skyGrd;
-    ctx.fillRect(x, y, width, height);
-
-    const celestialY = y + height * 0.2;
-
-    // 4. Night Elements (Stars/Moon) - Fade out as dayFactor increases
-    if (dayFactor < 1) {
-        ctx.save();
-        ctx.globalAlpha = 1 - dayFactor;
-        ctx.fillStyle = "white";
-        for(let i=0; i<30; i++) {
-            const sx = x + (Math.sin(i*10) * 0.5 + 0.5) * width;
-            const sy = y + (Math.cos(i*10) * 0.5 + 0.5) * (height * 0.5);
-            ctx.beginPath(); ctx.arc(sx, sy, 1, 0, Math.PI*2); ctx.fill();
-        }
-        const moonX = x + width * 0.8; 
-        ctx.fillStyle = "#FEFCD7";
-        ctx.shadowBlur = 15; ctx.shadowColor = "#FEFCD7";
-        ctx.beginPath(); ctx.arc(moonX, celestialY, 25, 0, Math.PI*2); ctx.fill();
-        ctx.restore();
-    }
-
-    // 5. Day Elements (Sun) - Fade in and Arc
-    if (dayFactor > 0) {
-        ctx.save();
-        ctx.globalAlpha = dayFactor;
-        const progress = Math.max(0, Math.min(1, (now - sunrise) / (sunset - sunrise)));
-        const sunX = x + (width * 0.1) + (width * 0.8 * progress);
-        const sunY = celestialY + Math.sin(progress * Math.PI) * -80;
-        ctx.fillStyle = "#FDB813";
-        ctx.shadowBlur = 20; ctx.shadowColor = "#FDB813";
-        ctx.beginPath(); ctx.arc(sunX, sunY, 30, 0, Math.PI * 2); ctx.fill();
-        ctx.restore();
-    }
-
-    // 6. Weather Overlays
-    if (data) {
-        if (data.main === 'Clouds' || data.main === 'Rain' || data.main === 'Snow') {
-            if (pSystem.clouds.length < 4) {
-                pSystem.clouds.push({ x: x - 100, y: y + Math.random() * 100, w: 80, speed: 0.2 });
-            }
-            ctx.fillStyle = "rgba(200, 200, 200, 0.4)";
-            pSystem.clouds.forEach(c => {
-                c.x += c.speed;
-                if (c.x - c.w > x + width) c.x = x - c.w;
-                ctx.beginPath(); ctx.arc(c.x, c.y, 30, 0, Math.PI*2); ctx.fill();
-            });
-        }
-        if (data.main === 'Rain') {
-            if (pSystem.rain.length < 60) pSystem.rain.push({ x: x + Math.random()*width, y: Math.random()*h, v: 8 });
-            ctx.strokeStyle = "rgba(174, 194, 224, 0.5)";
-            pSystem.rain.forEach(r => {
-                r.y += r.v; if (r.y > h) r.y = -20;
-                ctx.beginPath(); ctx.moveTo(r.x, r.y); ctx.lineTo(r.x, r.y+10); ctx.stroke();
-            });
-        }
-    }
-}
-
-function drawSky() {
-    const dividerX = w/2;
-    ctx.save(); ctx.beginPath(); ctx.rect(0,0,dividerX,h); ctx.clip();
-    drawSideEnvironment('left', 0, 0, dividerX, h); ctx.restore();
     ctx.save(); ctx.beginPath(); ctx.rect(dividerX,0,w-dividerX,h); ctx.clip();
     drawSideEnvironment('right', dividerX, 0, w - dividerX, h); ctx.restore();
 }
@@ -1206,30 +905,8 @@ function drawGroundElements() {
     ctx.strokeStyle = "rgba(255,255,255,0.2)"; ctx.beginPath(); ctx.moveTo(dividerX, 0); ctx.lineTo(dividerX, h); ctx.stroke();
 }
 
-function drawCharacterSilhouette(x, y, scale, isMale, walkCycle) {
-    ctx.save(); ctx.translate(x, y); ctx.scale(scale * (isMale ? 1 : -1), scale);
-    const legSwing = Math.sin(walkCycle) * 0.5;
-    const bob = Math.abs(Math.sin(walkCycle * 2)) * 2;
-    ctx.translate(0, -bob); 
-    
-    const currentHour = new Date().getHours();
-    const isNight = (currentHour < 6 || currentHour >= 18);
-    if (isNight && !isMale) {
-        ctx.fillStyle = "#333"; 
-        ctx.shadowColor = "rgba(255, 255, 200, 0.5)"; ctx.shadowBlur = 10;
-    } else {
-        ctx.fillStyle = 'black';
-    }
-    
-    // Draw Legs
-    ctx.save(); ctx.translate(0, -45); ctx.rotate(legSwing); ctx.fillRect(-4, 0, 8, 45); ctx.restore();
-    ctx.save(); ctx.translate(0, -45); ctx.rotate(-legSwing); ctx.fillRect(-4, 0, 8, 45); ctx.restore();
-    
-    // Body & Head
-    if (isMale) ctx.fillRect(-12, -90, 24, 50);
-    else { ctx.beginPath(); ctx.moveTo(-10,-90); ctx.lineTo(10,-90); ctx.lineTo(15,-45); ctx.lineTo(-15,-45); ctx.fill(); }
-    ctx.beginPath(); ctx.arc(0, -100, 12, 0, Math.PI*2); ctx.fill();
-    ctx.restore();
+function drawCharacterSilhouette() {
+    // Character drawing removed.
 }
 
 function drawCharacters(progress) {

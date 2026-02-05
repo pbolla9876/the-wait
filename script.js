@@ -27,6 +27,7 @@ let sceneBuildupState = { sky: 0, ground: 0, chars: 0 };
 
 // Phase 4: Puzzle Reveal
 let pieces = [], revealProgress = 0;
+let characterGap = null; // current gap between characters (for smooth walking)
 
 // This tells the script: Use the key from config.js, but don't crash if it's missing.
 const API_KEY = typeof CONFIG !== 'undefined' ? CONFIG.WEATHER_API_KEY : '';
@@ -460,6 +461,8 @@ function drawGroundElements() {
     ctx.fillRect(houseX + 85, houseY - 160, 15, 40);
     updateSmoke(houseX + 92, houseY - 160);
 
+        // Female character removed
+
     // Roof
     ctx.beginPath(); 
     ctx.moveTo(houseX - 10, houseY - 120); 
@@ -539,9 +542,20 @@ function drawCharacters(progress) {
     }
 
     const startGap = w * 0.8, endGap = 80;
-    const currentGap = startGap - (startGap - endGap) * progress;
-    drawCharacterSilhouette(dividerX - currentGap / 2, groundLevel, 0.8, true, maleWalkCycle);
-    drawCharacterSilhouette(dividerX + currentGap / 2, groundLevel, 0.8, false, 0);
+    const targetGap = startGap - (startGap - endGap) * progress;
+
+    // Initialize characterGap if needed
+    if (characterGap === null) characterGap = startGap;
+    // Smoothly ease gap toward target so male appears to walk toward female
+    characterGap += (targetGap - characterGap) * 0.06;
+
+    // Compute male walk cycle speed and normalization
+    // maleWalkCycle is used as phase for sin/cos; keep scaling for readable speed
+    const maleCycle = maleWalkCycle;
+
+    // Characters removed per user request. This is intentionally a no-op.
+    // Kept as a stub so existing calls elsewhere do not need changes.
+    return;
 }
 
 function drawLockAndTimer(progress) {
@@ -753,53 +767,13 @@ function animate() {
     requestAnimationFrame(animate);
 }
 
-function drawCharacterSilhouette(x, y, scale, isMale, walkCycle) {
-    ctx.save();
-    ctx.translate(x, y);
-    ctx.scale(scale * (isMale ? 1 : -1), scale);
-
-    // Animation Math
-    const legSwing = Math.sin(walkCycle) * 0.5;
-    const armSwing = Math.sin(walkCycle + Math.PI) * 0.5;
-    const bob = Math.abs(Math.sin(walkCycle * 2)) * 2;
-
-    ctx.translate(0, -bob);
-    ctx.fillStyle = 'black';
-
-    // Helper to draw a simple limb
-    const drawLimb = (angle, w, h, x, y) => {
-        ctx.save();
-        ctx.translate(x, y);
-        ctx.rotate(angle);
-        ctx.fillRect(-w / 2, 0, w, h);
-        ctx.restore();
-    };
-
-    // Back Limbs
-    drawLimb(-legSwing, 8, 45, 0, -45); // Back Leg
-    drawLimb(-armSwing, 7, 38, 0, -85); // Back Arm
-
-    // Torso
-    if (isMale) {
-        ctx.fillRect(-12, -90, 24, 50);
-    } else {
-        ctx.beginPath();
-        ctx.moveTo(-10, -90); ctx.lineTo(10, -90);
-        ctx.lineTo(15, -45); ctx.lineTo(-15, -45);
-        ctx.fill();
-    }
-
-    // Head
-    ctx.beginPath();
-    ctx.arc(0, -100, 12, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Front Limbs
-    drawLimb(legSwing, 8, 45, 0, -45); // Front Leg
-    drawLimb(armSwing, 7, 38, 0, -85); // Front Arm
-
-    ctx.restore();
+function drawCharacterSilhouette() {
+    // Removed per user request. This stub prevents errors from other calls.
 }
+
+// Draw a simple female character standing and facing left
+// drawFemaleCharacter removed per user request
+
 
 init(); // Start animation logic immediately
 window.addEventListener('resize', resize);
