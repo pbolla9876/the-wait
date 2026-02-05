@@ -726,47 +726,74 @@ function drawGroundElements() {
     ctx.fillStyle = groundGrd;
     ctx.fillRect(0, groundLevel, w, h);
 
-    // Realistic road on left side (asphalt with perspective + center dashes)
-    // Oriented to the left to match the male's walking direction
-    const roadTop = groundLevel - 12;
-    const roadLeft = 0;
-    const roadRight = w * 0.48;
-    const roadHorizon = roadTop + 26;
+    // Realistic road on left side (Moving with parallax)
+    const roadTop = groundLevel;
+    const roadW = w / 2;
+    
+    // Parallax scroll based on time
+    // Foreground moves faster than background buildings (0.5px/frame approx 0.03px/ms)
+    const scrollSpeed = 0.08; 
+    const scrollOffset = (Date.now() * scrollSpeed);
 
-    // Asphalt base
-    const asphaltGrad = ctx.createLinearGradient(0, roadTop, 0, h);
-    asphaltGrad.addColorStop(0, "#3a3a3a");
-    asphaltGrad.addColorStop(1, "#1e1e1e");
-    ctx.fillStyle = asphaltGrad;
-    ctx.beginPath();
-    ctx.moveTo(roadLeft, h);
-    ctx.lineTo(roadLeft, roadHorizon);
-    ctx.quadraticCurveTo(w * 0.12, groundLevel - 10, w * 0.24, roadHorizon); // bend left
-    ctx.lineTo(w * 0.38, h);
-    ctx.closePath();
-    ctx.fill();
+    // 1. Sidewalk (Background of ground strip)
+    const sidewalkH = 40;
+    ctx.fillStyle = "#4a4a4a";
+    ctx.fillRect(0, roadTop, roadW, sidewalkH);
 
-    // Road shoulder edge
-    ctx.strokeStyle = "rgba(220, 220, 220, 0.35)";
+    // Sidewalk cracks (moving left)
+    ctx.strokeStyle = "rgba(0,0,0,0.3)";
     ctx.lineWidth = 2;
     ctx.beginPath();
-    ctx.moveTo(roadLeft, roadHorizon);
-    ctx.quadraticCurveTo(w * 0.12, groundLevel - 10, w * 0.24, roadHorizon);
+    const crackSpacing = 150;
+    const crackShift = scrollOffset % crackSpacing;
+    for (let cx = roadW + crackSpacing - crackShift; cx > -50; cx -= crackSpacing) {
+        // Slanted perspective line
+        ctx.moveTo(cx + 20, roadTop);
+        ctx.lineTo(cx, roadTop + sidewalkH);
+    }
     ctx.stroke();
 
-    // Center dashed line (perspective)
-    ctx.strokeStyle = "rgba(245, 214, 97, 0.8)";
-    ctx.lineWidth = 2.5;
-    const dashCount = 6;
-    for (let i = 0; i < dashCount; i++) {
-        const t = i / dashCount;
-        const y = roadHorizon + t * (h - roadHorizon);
-        const x = w * 0.12 + t * (w * 0.05); // drift leftward
-        const dashLen = 8 + t * 10;
-        ctx.beginPath();
-        ctx.moveTo(x, y);
-        ctx.lineTo(x, y + dashLen);
-        ctx.stroke();
+    // 2. Curb
+    ctx.fillStyle = "#666";
+    ctx.fillRect(0, roadTop + sidewalkH, roadW, 6);
+    ctx.fillStyle = "#333"; // Drop shadow from curb
+    ctx.fillRect(0, roadTop + sidewalkH + 6, roadW, 4);
+
+    // 3. Asphalt Road (Foreground)
+    const asphaltY = roadTop + sidewalkH + 10;
+    const asphaltH = h - asphaltY;
+    const asphaltGrad = ctx.createLinearGradient(0, asphaltY, 0, h);
+    asphaltGrad.addColorStop(0, "#333");
+    asphaltGrad.addColorStop(1, "#1a1a1a");
+    ctx.fillStyle = asphaltGrad;
+    ctx.fillRect(0, asphaltY, roadW, asphaltH);
+
+    // Road Markings (Double Yellow Lines moving left)
+    const laneY = asphaltY + asphaltH * 0.4;
+    ctx.beginPath();
+    ctx.strokeStyle = "rgba(255, 200, 0, 0.7)";
+    ctx.lineWidth = 3;
+    ctx.setLineDash([60, 80]); // Dash pattern
+    ctx.lineDashOffset = -scrollOffset * 1.5; // Move faster (closer to camera)
+    ctx.moveTo(0, laneY);
+    ctx.lineTo(roadW, laneY);
+    ctx.stroke();
+    
+    ctx.beginPath();
+    ctx.moveTo(0, laneY + 6); // Double line
+    ctx.lineTo(roadW, laneY + 6);
+    ctx.stroke();
+    
+    ctx.setLineDash([]); // Reset
+    
+    // Road Texture/Noise (Simple moving dots)
+    ctx.fillStyle = "rgba(255,255,255,0.05)";
+    const noiseSpacing = 200;
+    const noiseShift = (scrollOffset * 1.2) % noiseSpacing;
+    for(let nx = roadW + noiseSpacing - noiseShift; nx > -50; nx -= noiseSpacing) {
+        ctx.beginPath(); ctx.arc(nx, asphaltY + 20, 2, 0, Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.arc(nx + 100, asphaltY + 50, 3, 0, Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.arc(nx + 50, asphaltY + 80, 2, 0, Math.PI*2); ctx.fill();
     }
 
     // Draw Rural House (right side, traditional village vibe)
@@ -1005,19 +1032,33 @@ function drawWaitingWoman(x, y, scale, faceLeft) {
     ctx.ellipse(0, -45, headR - 2, headR + 4, 0, 0, Math.PI * 2); // slimmer face
     ctx.fill();
 
-    // Eyes (clearer, human)
-    ctx.fillStyle = "#f6f4f2";
-    ctx.beginPath(); ctx.ellipse(-6, -48, 6, 4.5, 0, 0, Math.PI * 2); ctx.fill();
-    ctx.beginPath(); ctx.ellipse(6, -48, 6, 4.5, 0, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = "#2c5c77";
-    ctx.beginPath(); ctx.arc(-7, -48, 2.4, 0, Math.PI * 2); ctx.fill();
-    ctx.beginPath(); ctx.arc(7, -48, 2.4, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = "#0b0b0b";
-    ctx.beginPath(); ctx.arc(-7, -48, 1.2, 0, Math.PI * 2); ctx.fill();
-    ctx.beginPath(); ctx.arc(7, -48, 1.2, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = "rgba(255,255,255,0.9)";
-    ctx.beginPath(); ctx.arc(-8.5, -50, 1.1, 0, Math.PI * 2); ctx.fill();
-    ctx.beginPath(); ctx.arc(5.5, -50, 1.1, 0, Math.PI * 2); ctx.fill();
+    // Blinking logic
+    const blinkDuration = 150; // ms
+    const blinkInterval = 4000; // ms
+    const isBlinking = (Date.now() % blinkInterval) < blinkDuration;
+
+    // Eyes (with blinking)
+    if (isBlinking) {
+        // Draw closed eyes (a simple line)
+        ctx.strokeStyle = "rgba(60,30,20,0.9)";
+        ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.moveTo(-11, -48); ctx.lineTo(-1, -48); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(1, -48); ctx.lineTo(11, -48); ctx.stroke();
+    } else {
+        // Draw open eyes
+        ctx.fillStyle = "#f6f4f2";
+        ctx.beginPath(); ctx.ellipse(-6, -48, 6, 4.5, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.ellipse(6, -48, 6, 4.5, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = "#2c5c77";
+        ctx.beginPath(); ctx.arc(-7, -48, 2.4, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(7, -48, 2.4, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = "#0b0b0b";
+        ctx.beginPath(); ctx.arc(-7, -48, 1.2, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(7, -48, 1.2, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = "rgba(255,255,255,0.9)";
+        ctx.beginPath(); ctx.arc(-8.5, -50, 1.1, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(5.5, -50, 1.1, 0, Math.PI * 2); ctx.fill();
+    }
 
     // Brows
     ctx.strokeStyle = "rgba(60,30,20,0.8)";
@@ -1112,74 +1153,78 @@ function drawWalkingMan(x, y, scale, faceRight) {
     ctx.translate(x, y);
     ctx.scale(scale * (faceRight ? 1 : -1), scale);
 
-    const headR = 16;
-    const torsoH = 44;
-    const torsoW = 18;
+    const torsoW = 20;
     const legH = 55;
-    const armH = 30;
-    const walk = Math.sin(Date.now() * 0.008) * 10;
+    const armH = 40;
+    const walk = Math.sin(Date.now() * 0.008); // -1 to 1
+    const walkAngle = walk * 0.3; // Radians for rotation
 
-    // Hair (youthful, full coverage)
-    const hairGrad = ctx.createLinearGradient(-18, -58, 18, -26);
-    hairGrad.addColorStop(0, "#2b1a14");
-    hairGrad.addColorStop(1, "#0f0906");
-    ctx.fillStyle = hairGrad;
+    // --- Back Limbs ---
+    // Back Arm
+    ctx.save();
+    ctx.translate(0, -10);
+    ctx.rotate(-walkAngle);
+    // Jacket Sleeve
+    const jacketSleeveGrad = ctx.createLinearGradient(0, 0, 0, armH);
+    jacketSleeveGrad.addColorStop(0, "#4a4a4a");
+    jacketSleeveGrad.addColorStop(1, "#2a2a2a");
+    ctx.fillStyle = jacketSleeveGrad;
     ctx.beginPath();
-    ctx.moveTo(-20, -34);
-    ctx.quadraticCurveTo(-10, -64, 2, -66);
-    ctx.quadraticCurveTo(16, -64, 22, -46);
-    ctx.quadraticCurveTo(24, -34, 12, -30);
-    ctx.quadraticCurveTo(2, -26, -12, -28);
+    ctx.roundRect(-4, 0, 8, armH, 4);
+    ctx.fill();
+    // Hand
+    ctx.fillStyle = "#d29c75"; // Skin tone
+    ctx.beginPath();
+    ctx.ellipse(0, armH, 5, 4, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
+    // Back Leg
+    ctx.save();
+    ctx.translate(0, 28);
+    ctx.rotate(walkAngle);
+    const jeanGrad = ctx.createLinearGradient(0, 0, 0, legH);
+    jeanGrad.addColorStop(0, "#3a4a6a");
+    jeanGrad.addColorStop(1, "#2b3a55");
+    ctx.fillStyle = jeanGrad;
+    ctx.beginPath();
+    ctx.roundRect(-4, 0, 8, legH, 4);
+    ctx.fill();
+    // Shoe
+    ctx.fillStyle = "#2a1f1a";
+    ctx.beginPath();
+    ctx.ellipse(2, legH, 12, 5, -0.1, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
+    // --- Torso & Head ---
+    // T-shirt (visible at neck)
+    ctx.fillStyle = "#e0e0e0";
+    ctx.beginPath();
+    ctx.arc(0, -19, 8, Math.PI * 0.8, Math.PI * 2.2);
+    ctx.fill();
+
+    // Jacket Body
+    const jacketGrad = ctx.createLinearGradient(-torsoW, -20, torsoW, 40);
+    jacketGrad.addColorStop(0, "#555555");
+    jacketGrad.addColorStop(1, "#333333");
+    ctx.fillStyle = jacketGrad;
+    ctx.beginPath();
+    ctx.moveTo(-torsoW / 2, -18);
+    ctx.lineTo(torsoW / 2, -18);
+    ctx.lineTo(torsoW / 2 - 2, 30);
+    ctx.lineTo(-torsoW / 2 + 2, 30);
     ctx.closePath();
     ctx.fill();
 
-    // Side coverage (no baldness)
-    ctx.fillStyle = "#1a100b";
+    // Jacket Collar
+    ctx.fillStyle = "#444444";
     ctx.beginPath();
-    ctx.ellipse(-14, -36, 10, 12, -0.2, 0, Math.PI * 2);
+    ctx.moveTo(2, -22);
+    ctx.lineTo(12, -28);
+    ctx.lineTo(10, -16);
+    ctx.closePath();
     ctx.fill();
-    ctx.beginPath();
-    ctx.ellipse(4, -36, 10, 12, 0.2, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Top fill to ensure full coverage
-    ctx.fillStyle = "#1a100b";
-    ctx.beginPath();
-    ctx.ellipse(0, -54, 12, 10, 0, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Face (same tone as female)
-    const faceGrad = ctx.createRadialGradient(0, -46, 4, 0, -46, 22);
-    faceGrad.addColorStop(0, "#e2b08a");
-    faceGrad.addColorStop(0.7, "#d29c75");
-    faceGrad.addColorStop(1, "#c48a66");
-    ctx.fillStyle = faceGrad;
-    ctx.beginPath();
-    ctx.ellipse(1, -45, headR - 3, headR + 3, 0, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Eye with highlight
-    ctx.fillStyle = "#f6f4f2";
-    ctx.beginPath(); ctx.ellipse(6, -48, 5.5, 4, 0, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = "#2c5c77";
-    ctx.beginPath(); ctx.arc(7, -48, 2.2, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = "#0b0b0b";
-    ctx.beginPath(); ctx.arc(7, -48, 1.1, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = "rgba(255,255,255,0.85)";
-    ctx.beginPath(); ctx.arc(6.2, -49.2, 0.9, 0, Math.PI * 2); ctx.fill();
-
-    // Brow
-    ctx.strokeStyle = "rgba(50,25,18,0.8)";
-    ctx.lineWidth = 1.4;
-    ctx.beginPath(); ctx.moveTo(2, -56); ctx.quadraticCurveTo(8, -60, 14, -56); ctx.stroke();
-
-    // Nose and mouth (profile)
-    ctx.strokeStyle = "rgba(120,80,60,0.6)";
-    ctx.lineWidth = 1.4;
-    ctx.beginPath(); ctx.moveTo(6, -46); ctx.quadraticCurveTo(12, -43, 8, -38); ctx.stroke();
-    ctx.strokeStyle = "rgba(140,80,80,0.7)";
-    ctx.lineWidth = 1.5;
-    ctx.beginPath(); ctx.moveTo(4, -32); ctx.quadraticCurveTo(10, -31, 13, -34); ctx.stroke();
 
     // Neck
     ctx.fillStyle = "#c48a66";
@@ -1187,51 +1232,127 @@ function drawWalkingMan(x, y, scale, faceRight) {
     ctx.roundRect(-5, -27, 10, 10, 4);
     ctx.fill();
 
-    // Shirt
-    const shirtGrad = ctx.createLinearGradient(-18, -18, 18, 40);
-    shirtGrad.addColorStop(0, "#4f7aa8");
-    shirtGrad.addColorStop(1, "#2f4c6e");
-    ctx.fillStyle = shirtGrad;
+    // Face (Refined Profile)
+    const faceGrad = ctx.createRadialGradient(0, -48, 4, 0, -48, 24);
+    faceGrad.addColorStop(0, "#e2b08a");
+    faceGrad.addColorStop(0.7, "#d29c75");
+    faceGrad.addColorStop(1, "#c48a66");
+    ctx.fillStyle = faceGrad;
     ctx.beginPath();
-    ctx.roundRect(-torsoW / 2, -18, torsoW, torsoH, 6);
+    ctx.moveTo(-6, -30); // Neck connection
+    ctx.quadraticCurveTo(6, -28, 12, -32); // Jawline to Chin
+    ctx.lineTo(13, -36); // Lower lip area
+    ctx.lineTo(16, -39); // Nose tip
+    ctx.lineTo(13, -48); // Nose bridge
+    ctx.lineTo(13, -60); // Forehead
+    ctx.quadraticCurveTo(0, -68, -12, -60); // Top head
+    ctx.quadraticCurveTo(-18, -50, -12, -35); // Back head
+    ctx.closePath();
     ctx.fill();
 
-    // Arms (swinging)
-    ctx.fillStyle = "#d09a75";
+    // Beard Shadow (Subtle)
+    const beardGrad = ctx.createLinearGradient(0, -40, 0, -30);
+    beardGrad.addColorStop(0, "rgba(60, 50, 40, 0)");
+    beardGrad.addColorStop(1, "rgba(60, 50, 40, 0.1)");
+    ctx.fillStyle = beardGrad;
+    ctx.beginPath();
+    ctx.moveTo(-6, -35);
+    ctx.quadraticCurveTo(6, -35, 12, -32);
+    ctx.lineTo(13, -36);
+    ctx.quadraticCurveTo(4, -42, -6, -38);
+    ctx.fill();
+
+    // Ear
+    ctx.fillStyle = "#d29c75";
+    ctx.beginPath();
+    ctx.ellipse(-8, -45, 3.5, 6, 0.15, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "rgba(80, 50, 30, 0.15)";
+    ctx.beginPath();
+    ctx.ellipse(-8, -45, 2, 4, 0.15, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Hair (keep the improved style)
+    const hairGrad = ctx.createLinearGradient(-20, -70, 20, -30);
+    hairGrad.addColorStop(0, "#3e2723"); 
+    hairGrad.addColorStop(0.5, "#2b1a14"); 
+    hairGrad.addColorStop(1, "#0f0906"); 
+    ctx.fillStyle = hairGrad;
+    ctx.beginPath();
+    ctx.moveTo(-14, -32); 
+    ctx.quadraticCurveTo(-22, -45, -18, -60); 
+    ctx.quadraticCurveTo(-5, -78, 12, -68); 
+    ctx.quadraticCurveTo(22, -62, 18, -52); 
+    ctx.quadraticCurveTo(10, -58, 2, -58); 
+    ctx.quadraticCurveTo(-5, -50, -14, -32); 
+    ctx.fill();
+    // Texture
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.12)";
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.moveTo(-8, -65); ctx.quadraticCurveTo(0, -74, 10, -64);
+    ctx.stroke();
+
+    // Blinking logic (with an offset so they don't sync)
+    const blinkDuration = 150; // ms
+    const blinkInterval = 4300; // ms, slightly different from female
+    const isBlinking = (Date.now() % blinkInterval) < blinkDuration;
+
+    // Eye (with blinking)
+    if (isBlinking) {
+        // Draw closed eye (a simple curved line for profile)
+        ctx.strokeStyle = "#2b1a14";
+        ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.moveTo(5, -50); ctx.quadraticCurveTo(8, -51, 11, -50); ctx.stroke();
+    } else {
+        // Draw open eye
+        ctx.fillStyle = "#f6f4f2";
+        ctx.beginPath(); ctx.ellipse(7, -50, 3.5, 2.5, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = "#2c5c77";
+        ctx.beginPath(); ctx.arc(8, -50, 1.5, 0, Math.PI * 2); ctx.fill();
+    }
+    
+    // Eyebrow
+    ctx.strokeStyle = "#2b1a14";
+    ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(4, -56); ctx.quadraticCurveTo(9, -58, 12, -55); ctx.stroke();
+
+    // Mouth
+    ctx.strokeStyle = "rgba(140, 80, 80, 0.8)";
+    ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(9, -37); ctx.lineTo(12, -37); ctx.stroke();
+
+    // --- Front Limbs ---
+    // Front Leg
     ctx.save();
-    ctx.translate(-torsoW / 2 - 4, -4);
-    ctx.rotate((-walk * 0.03));
-    ctx.roundRect(0, 0, 6, armH, 4);
+    ctx.translate(0, 28);
+    ctx.rotate(-walkAngle);
+    ctx.fillStyle = jeanGrad; // Reuse gradient
+    ctx.beginPath();
+    ctx.roundRect(-4, 0, 8, legH, 4);
+    ctx.fill();
+    // Shoe
+    ctx.fillStyle = "#3a2f2a"; // Slightly lighter for front shoe
+    ctx.beginPath();
+    ctx.ellipse(2, legH, 12, 5, -0.1, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
 
+    // Front Arm
     ctx.save();
-    ctx.translate(torsoW / 2 - 2, -4);
-    ctx.rotate((walk * 0.03));
-    ctx.roundRect(0, 0, 6, armH, 4);
+    ctx.translate(0, -10);
+    ctx.rotate(walkAngle);
+    // Jacket Sleeve
+    ctx.fillStyle = jacketGrad; // Reuse gradient
+    ctx.beginPath();
+    ctx.roundRect(-4, 0, 8, armH, 4);
+    ctx.fill();
+    // Hand
+    ctx.fillStyle = "#e2b08a"; // Lighter skin tone for front hand
+    ctx.beginPath();
+    ctx.ellipse(0, armH, 5, 4, 0, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
-
-    // Jeans (walking)
-    ctx.fillStyle = "#2b3a55";
-    ctx.save();
-    ctx.translate(-6, 28);
-    ctx.rotate((walk * 0.03));
-    ctx.roundRect(0, 0, 6, legH, 4);
-    ctx.fill();
-    ctx.restore();
-
-    ctx.save();
-    ctx.translate(2, 28);
-    ctx.rotate((-walk * 0.03));
-    ctx.roundRect(0, 0, 6, legH, 4);
-    ctx.fill();
-    ctx.restore();
-
-    // Shoes
-    ctx.fillStyle = "#1f1b16";
-    ctx.beginPath(); ctx.ellipse(-3, 90, 8, 3, 0, 0, Math.PI * 2); ctx.fill();
-    ctx.beginPath(); ctx.ellipse(6, 90, 8, 3, 0, 0, Math.PI * 2); ctx.fill();
 
     ctx.restore();
 }
