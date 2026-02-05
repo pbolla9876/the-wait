@@ -2,6 +2,24 @@ const canvas = document.getElementById('scene');
 const ctx = canvas.getContext('2d');
 const timerElement = document.getElementById('timer');
 
+// Polyfill for roundRect (prevents blank screen in browsers without support)
+if (!CanvasRenderingContext2D.prototype.roundRect) {
+    CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r) {
+        const radius = Math.min(r, w / 2, h / 2);
+        this.beginPath();
+        this.moveTo(x + radius, y);
+        this.lineTo(x + w - radius, y);
+        this.quadraticCurveTo(x + w, y, x + w, y + radius);
+        this.lineTo(x + w, y + h - radius);
+        this.quadraticCurveTo(x + w, y + h, x + w - radius, y + h);
+        this.lineTo(x + radius, y + h);
+        this.quadraticCurveTo(x, y + h, x, y + h - radius);
+        this.lineTo(x, y + radius);
+        this.quadraticCurveTo(x, y, x + radius, y);
+        return this;
+    };
+}
+
 const img = new Image();
 img.src = 'image1.png';
 
@@ -9,6 +27,8 @@ const targetDate = new Date("March 1, 2026 00:00:00 GMT-0600").getTime();
 const startDate = new Date("February 1, 2026 00:00:00 GMT-0600").getTime();
 
 let w, h, buildings = [], fireflies = [], smokeParticles = [], birds = [], fireworks = [], stars = { left: [], right: [] };
+let planes = { left: [], right: [] }; // moving airplanes per side
+let lastPlaneTime = { left: 0, right: 0 };
 let weatherData = { left: null, right: null };
 let particles = {
     left: { rain: [], snow: [], clouds: [] },
@@ -108,15 +128,93 @@ function drawSideEnvironment(side, x, y, width, height) {
     
     // 1. Sky Gradient
     const skyGrd = ctx.createLinearGradient(x, y, x, y + height);
+    let dayProgress = 0.5;
+    if (data && data.sunrise && data.sunset) {
+        dayProgress = (now - data.sunrise) / (data.sunset - data.sunrise);
+        dayProgress = Math.max(0, Math.min(1, dayProgress));
+    }
+    const isSunrise = isDay && dayProgress < 0.2;
+    const isSunset = isDay && dayProgress > 0.8;
     if (isDay) {
-        skyGrd.addColorStop(0, '#87CEEB'); // Light Blue
-        skyGrd.addColorStop(1, '#FFD700'); // Golden
+        if (isSunrise) {
+            // Sunrise tones
+            skyGrd.addColorStop(0, '#f7b28a');
+            skyGrd.addColorStop(0.55, '#f6a96b');
+            skyGrd.addColorStop(1, '#9fd3ff');
+        } else if (isSunset) {
+            // Sunset tones
+            skyGrd.addColorStop(0, '#ff9a6a');
+            skyGrd.addColorStop(0.6, '#f05a28');
+            skyGrd.addColorStop(1, '#7aa2d9');
+        } else {
+            // Clear morning sky
+            skyGrd.addColorStop(0, '#8fd3ff');
+            skyGrd.addColorStop(0.7, '#bfe9ff');
+            skyGrd.addColorStop(1, '#e7f6ff');
+        }
     } else {
-        skyGrd.addColorStop(0, '#000000'); // Black
+        // Rich, attractive night sky
+        skyGrd.addColorStop(0, '#0b1130'); // Deep indigo
+        skyGrd.addColorStop(0.6, '#050814'); // Near-black blue
         skyGrd.addColorStop(1, '#000000'); // Black
     }
     ctx.fillStyle = skyGrd;
     ctx.fillRect(x, y, width, height);
+
+    // Subtle star haze band
+    if (!isDay) {
+        const haze = ctx.createLinearGradient(x, y + height * 0.1, x, y + height * 0.5);
+        haze.addColorStop(0, "rgba(120, 140, 255, 0.08)");
+        haze.addColorStop(1, "rgba(120, 140, 255, 0)");
+        ctx.fillStyle = haze;
+        ctx.fillRect(x, y, width, height * 0.6);
+    }
+
+    // Northern lights (night sky)
+    if (!isDay) {
+        const aurora = ctx.createLinearGradient(x, y, x + width, y + height * 0.5);
+        aurora.addColorStop(0, "rgba(80, 220, 180, 0.0)");
+        aurora.addColorStop(0.35, "rgba(80, 220, 180, 0.35)");
+        aurora.addColorStop(0.6, "rgba(140, 120, 255, 0.28)");
+        aurora.addColorStop(0.85, "rgba(80, 220, 180, 0.22)");
+        aurora.addColorStop(1, "rgba(80, 220, 180, 0.0)");
+        ctx.fillStyle = aurora;
+        ctx.beginPath();
+        ctx.moveTo(x, y + height * 0.15);
+        ctx.quadraticCurveTo(x + width * 0.3, y + height * 0.05, x + width * 0.6, y + height * 0.18);
+        ctx.quadraticCurveTo(x + width * 0.85, y + height * 0.3, x + width, y + height * 0.12);
+        ctx.lineTo(x + width, y + height * 0.4);
+        ctx.quadraticCurveTo(x + width * 0.6, y + height * 0.5, x + width * 0.2, y + height * 0.35);
+        ctx.closePath();
+        ctx.fill();
+
+        // second band
+        ctx.fillStyle = "rgba(90, 200, 255, 0.2)";
+        ctx.beginPath();
+        ctx.moveTo(x, y + height * 0.25);
+        ctx.quadraticCurveTo(x + width * 0.4, y + height * 0.15, x + width * 0.7, y + height * 0.28);
+        ctx.quadraticCurveTo(x + width * 0.9, y + height * 0.38, x + width, y + height * 0.25);
+        ctx.lineTo(x + width, y + height * 0.32);
+        ctx.quadraticCurveTo(x + width * 0.6, y + height * 0.42, x + width * 0.15, y + height * 0.3);
+        ctx.closePath();
+        ctx.fill();
+
+        // Milky Way band
+        const milky = ctx.createLinearGradient(x, y + height * 0.1, x + width, y + height * 0.6);
+        milky.addColorStop(0, "rgba(180, 190, 255, 0.0)");
+        milky.addColorStop(0.35, "rgba(180, 190, 255, 0.18)");
+        milky.addColorStop(0.6, "rgba(200, 200, 255, 0.12)");
+        milky.addColorStop(1, "rgba(180, 190, 255, 0.0)");
+        ctx.fillStyle = milky;
+        ctx.beginPath();
+        ctx.moveTo(x, y + height * 0.12);
+        ctx.quadraticCurveTo(x + width * 0.35, y + height * 0.22, x + width * 0.7, y + height * 0.16);
+        ctx.quadraticCurveTo(x + width * 0.9, y + height * 0.1, x + width, y + height * 0.18);
+        ctx.lineTo(x + width, y + height * 0.28);
+        ctx.quadraticCurveTo(x + width * 0.6, y + height * 0.35, x + width * 0.2, y + height * 0.3);
+        ctx.closePath();
+        ctx.fill();
+    }
 
     // 2. Celestial Body (Sun/Moon)
     const celestialY = y + height * 0.2;
@@ -124,18 +222,50 @@ function drawSideEnvironment(side, x, y, width, height) {
     if (isDay) {
         let sunX = x + width * 0.5;
         let sunY = celestialY;
+        let progress = 0.05;
         if (data && data.sunrise && data.sunset) {
-            const progress = (now - data.sunrise) / (data.sunset - data.sunrise);
-            sunX = x + (width * 0.1) + (width * 0.8 * progress);
-            sunY = celestialY + Math.sin(progress * Math.PI) * -50;
+            progress = (now - data.sunrise) / (data.sunset - data.sunrise);
+            progress = Math.max(0, Math.min(1, progress));
         }
-        
-        ctx.fillStyle = "#FDB813";
-        ctx.shadowBlur = 20; ctx.shadowColor = "#FDB813";
+
+        // Sunrise feel: keep sun low near horizon during early day
+        const arc = Math.sin(progress * Math.PI);
+        sunX = x + (width * 0.1) + (width * 0.8 * progress);
+        sunY = y + height * 0.65 - arc * (height * 0.35);
+
+        // Sunrise / Sunset glow
+        const warmCore = isSunset ? "rgba(255, 160, 90, 0.9)" : "rgba(255, 210, 120, 0.9)";
+        const warmMid = isSunset ? "rgba(255, 120, 60, 0.55)" : "rgba(255, 180, 80, 0.5)";
+        const warmEdge = isSunset ? "rgba(255, 90, 40, 0)" : "rgba(255, 140, 60, 0)";
+        const sunGlow = ctx.createRadialGradient(sunX, sunY, 10, sunX, sunY, 90);
+        sunGlow.addColorStop(0, warmCore);
+        sunGlow.addColorStop(0.4, warmMid);
+        sunGlow.addColorStop(1, warmEdge);
+        ctx.fillStyle = sunGlow;
         ctx.beginPath();
-        ctx.arc(sunX, sunY, 30, 0, Math.PI * 2);
+        ctx.arc(sunX, sunY, 90, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = isSunset ? "#FF8A4C" : "#FDB813";
+        ctx.shadowBlur = 18; ctx.shadowColor = isSunset ? "rgba(255, 140, 80, 0.8)" : "rgba(255, 200, 120, 0.8)";
+        ctx.beginPath();
+        ctx.arc(sunX, sunY, 26, 0, Math.PI * 2);
         ctx.fill();
         ctx.shadowBlur = 0;
+
+        // Light rays (clear morning)
+        ctx.save();
+        ctx.translate(sunX, sunY);
+        ctx.strokeStyle = "rgba(255, 220, 170, 0.25)";
+        ctx.lineWidth = 2;
+        for (let i = 0; i < 8; i++) {
+            const ang = (i / 8) * Math.PI * 2;
+            ctx.beginPath();
+            ctx.moveTo(Math.cos(ang) * 35, Math.sin(ang) * 35);
+            ctx.lineTo(Math.cos(ang) * 80, Math.sin(ang) * 80);
+            ctx.stroke();
+        }
+        ctx.restore();
     }
 
     // Night: always draw moon; draw stars when clear or when no API data available
@@ -178,22 +308,40 @@ function drawSideEnvironment(side, x, y, width, height) {
     }
 
     // 3. Weather Effects
-        // Clouds
-        if (data && (data.main === 'Clouds' || data.main === 'Rain' || data.main === 'Snow')) {
-            if (pSystem.clouds.length < 4) { // Fewer, more distinct clouds
-                pSystem.clouds.push({ x: x - 100, y: y + Math.random() * 100, w: 80 + Math.random()*50, speed: 0.1 + Math.random() * 0.2 });
+        // Slow day clouds (always during day)
+        if (isDay) {
+            if (pSystem.clouds.length < 4) {
+                pSystem.clouds.push({ x: x - 120, y: y + 30 + Math.random() * 120, w: 90 + Math.random() * 60, speed: 0.05 + Math.random() * 0.08 });
             }
-            ctx.fillStyle = "rgba(200, 200, 200, 0.4)";
-            pSystem.clouds.forEach((c, i) => {
+            ctx.fillStyle = "rgba(230, 230, 230, 0.45)";
+            pSystem.clouds.forEach((c) => {
                 c.x += c.speed;
                 if (c.x - c.w > x + width) c.x = x - c.w;
                 ctx.beginPath();
-                ctx.arc(c.x, c.y, c.w * 0.4, 0, Math.PI * 2); // Center
-                ctx.arc(c.x + c.w * 0.3, c.y + c.w * 0.1, c.w * 0.3, 0, Math.PI * 2); // Right
-                ctx.arc(c.x - c.w * 0.3, c.y + c.w * 0.1, c.w * 0.3, 0, Math.PI * 2); // Left
-                ctx.arc(c.x, c.y - c.w * 0.2, c.w * 0.3, 0, Math.PI * 2); // Top
+                ctx.arc(c.x, c.y, c.w * 0.4, 0, Math.PI * 2);
+                ctx.arc(c.x + c.w * 0.3, c.y + c.w * 0.1, c.w * 0.3, 0, Math.PI * 2);
+                ctx.arc(c.x - c.w * 0.3, c.y + c.w * 0.1, c.w * 0.3, 0, Math.PI * 2);
+                ctx.arc(c.x, c.y - c.w * 0.2, c.w * 0.3, 0, Math.PI * 2);
                 ctx.fill();
             });
+        } else {
+            // Clouds only if weather says clouds/rain/snow at night
+            if (data && (data.main === 'Clouds' || data.main === 'Rain' || data.main === 'Snow')) {
+                if (pSystem.clouds.length < 4) {
+                    pSystem.clouds.push({ x: x - 100, y: y + Math.random() * 100, w: 80 + Math.random()*50, speed: 0.1 + Math.random() * 0.2 });
+                }
+                ctx.fillStyle = "rgba(200, 200, 200, 0.35)";
+                pSystem.clouds.forEach((c) => {
+                    c.x += c.speed;
+                    if (c.x - c.w > x + width) c.x = x - c.w;
+                    ctx.beginPath();
+                    ctx.arc(c.x, c.y, c.w * 0.4, 0, Math.PI * 2);
+                    ctx.arc(c.x + c.w * 0.3, c.y + c.w * 0.1, c.w * 0.3, 0, Math.PI * 2);
+                    ctx.arc(c.x - c.w * 0.3, c.y + c.w * 0.1, c.w * 0.3, 0, Math.PI * 2);
+                    ctx.arc(c.x, c.y - c.w * 0.2, c.w * 0.3, 0, Math.PI * 2);
+                    ctx.fill();
+                });
+            }
         }
 
         // Rain
@@ -216,7 +364,72 @@ function drawSideEnvironment(side, x, y, width, height) {
                 ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI*2); ctx.fill();
             });
         }
+
+        // Airplanes (day + night with lights)
+        updatePlanes(side, now, x, y, width, height, isDay);
     }
+
+function updatePlanes(side, now, x, y, width, height, isDay) {
+    // Spawn a plane roughly every 45 seconds (with randomness)
+    if (now - lastPlaneTime[side] > 45000 + Math.random() * 10000) {
+        lastPlaneTime[side] = now;
+        const fromLeft = Math.random() < 0.5;
+        const aboveClouds = Math.random() < 0.5;
+        const cloudBandY = y + height * 0.25;
+        const yPos = aboveClouds ? cloudBandY - 40 - Math.random() * 40 : cloudBandY + 10 + Math.random() * 40;
+        planes[side].push({
+            x: fromLeft ? x - 60 : x + width + 60,
+            y: yPos,
+            vx: (fromLeft ? 1 : -1) * (0.8 + Math.random() * 0.6),
+            side: fromLeft ? 1 : -1,
+            isDay,
+            blink: Math.random() * Math.PI * 2
+        });
+    }
+
+    // Draw and update planes
+    planes[side] = planes[side].filter(p => p.x > x - 120 && p.x < x + width + 120);
+    planes[side].forEach(p => {
+        p.x += p.vx;
+        p.blink += 0.15;
+
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.scale(p.side, 1);
+
+        // Fuselage
+        ctx.fillStyle = p.isDay ? "rgba(230,230,230,0.9)" : "rgba(220,220,220,0.7)";
+        ctx.beginPath();
+        ctx.roundRect(-16, -3, 32, 6, 3);
+        ctx.fill();
+
+        // Wings
+        ctx.fillStyle = "rgba(200,200,200,0.8)";
+        ctx.beginPath();
+        ctx.moveTo(-2, -1);
+        ctx.lineTo(10, -7);
+        ctx.lineTo(6, -1);
+        ctx.closePath();
+        ctx.fill();
+
+        // Tail
+        ctx.beginPath();
+        ctx.moveTo(-12, -1);
+        ctx.lineTo(-18, -8);
+        ctx.lineTo(-10, -2);
+        ctx.closePath();
+        ctx.fill();
+
+        // Lights
+        const blink = 0.5 + 0.5 * Math.sin(p.blink);
+        ctx.fillStyle = p.isDay ? `rgba(255, 80, 80, ${0.4 + blink * 0.4})` : `rgba(255, 230, 140, ${0.5 + blink * 0.5})`;
+        ctx.beginPath();
+        ctx.arc(14, 0, 2.2, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.restore();
+    });
+}
 
 function drawSky() {
     const dividerX = w/2;
@@ -350,6 +563,12 @@ function updateFireflies(baseX, baseY) {
 function drawGroundElements() {
     const dividerX = w / 2;
     const groundLevel = h - 100;
+    const now = Date.now();
+    const dataLeft = weatherData.left;
+    let isDayLeft = (new Date().getHours() >= 6 && new Date().getHours() < 18);
+    if (dataLeft && dataLeft.sunrise && dataLeft.sunset) {
+        isDayLeft = (now > dataLeft.sunrise && now < dataLeft.sunset);
+    }
 
     const dataLeft = weatherData.left;
     const now = Date.now();
@@ -448,36 +667,127 @@ function drawGroundElements() {
 
     ctx.restore(); // End clipping for buildings
 
-    // Draw House
-    const houseX = w * 0.75;
-    const houseY = groundLevel;
-    
-    // House Body
-    ctx.fillStyle = "#263238";
-    ctx.fillRect(houseX, houseY - 120, 120, 120); // Bigger body
-    
-    // Chimney & Smoke
-    ctx.fillStyle = "#1c2327";
-    ctx.fillRect(houseX + 85, houseY - 160, 15, 40);
-    updateSmoke(houseX + 92, houseY - 160);
+    // 5. Ground Gradient (drawn before foreground elements so legs are visible)
+    const groundGrd = ctx.createLinearGradient(0, groundLevel, 0, h);
+    groundGrd.addColorStop(0, '#050508');
+    groundGrd.addColorStop(1, '#000');
+    ctx.fillStyle = groundGrd;
+    ctx.fillRect(0, groundLevel, w, h);
 
-        // Character removed
+    // Realistic road on left side (asphalt with perspective + center dashes)
+    // Oriented to the left to match the male's walking direction
+    const roadTop = groundLevel - 12;
+    const roadLeft = 0;
+    const roadRight = w * 0.48;
+    const roadHorizon = roadTop + 26;
 
-    // Roof
-    ctx.beginPath(); 
-    ctx.moveTo(houseX - 10, houseY - 120); 
-    ctx.lineTo(houseX + 60, houseY - 170); // Higher peak for bigger roof
-    ctx.lineTo(houseX + 130, houseY - 120); 
-    ctx.fillStyle = "#37474f"; 
+    // Asphalt base
+    const asphaltGrad = ctx.createLinearGradient(0, roadTop, 0, h);
+    asphaltGrad.addColorStop(0, "#3a3a3a");
+    asphaltGrad.addColorStop(1, "#1e1e1e");
+    ctx.fillStyle = asphaltGrad;
+    ctx.beginPath();
+    ctx.moveTo(roadLeft, h);
+    ctx.lineTo(roadLeft, roadHorizon);
+    ctx.quadraticCurveTo(w * 0.12, groundLevel - 10, w * 0.24, roadHorizon); // bend left
+    ctx.lineTo(w * 0.38, h);
+    ctx.closePath();
     ctx.fill();
-    // Lit Window
-    ctx.fillStyle = "rgba(255, 235, 59, 0.5)"; 
-    ctx.fillRect(houseX + 40, houseY - 70, 25, 25);
+
+    // Road shoulder edge
+    ctx.strokeStyle = "rgba(220, 220, 220, 0.35)";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(roadLeft, roadHorizon);
+    ctx.quadraticCurveTo(w * 0.12, groundLevel - 10, w * 0.24, roadHorizon);
+    ctx.stroke();
+
+    // Center dashed line (perspective)
+    ctx.strokeStyle = "rgba(245, 214, 97, 0.8)";
+    ctx.lineWidth = 2.5;
+    const dashCount = 6;
+    for (let i = 0; i < dashCount; i++) {
+        const t = i / dashCount;
+        const y = roadHorizon + t * (h - roadHorizon);
+        const x = w * 0.12 + t * (w * 0.05); // drift leftward
+        const dashLen = 8 + t * 10;
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+        ctx.lineTo(x, y + dashLen);
+        ctx.stroke();
+    }
+
+    // Left-side coffee shop (near male)
+    drawCoffeeShop(w * 0.18, groundLevel, isDayLeft);
+
+    // Draw Rural House (right side, traditional village vibe)
+    const rightX = w * 0.5;
+    const rightW = w * 0.5;
+    const houseX = rightX + rightW * 0.12;
+    const houseY = groundLevel;
+
+    // Distant hills (morning haze)
+    ctx.fillStyle = "rgba(120, 170, 150, 0.35)";
+    ctx.beginPath();
+    ctx.moveTo(rightX, groundLevel - 80);
+    ctx.quadraticCurveTo(rightX + rightW * 0.3, groundLevel - 140, rightX + rightW * 0.6, groundLevel - 95);
+    ctx.quadraticCurveTo(rightX + rightW * 0.8, groundLevel - 120, rightX + rightW, groundLevel - 70);
+    ctx.lineTo(rightX + rightW, groundLevel);
+    ctx.lineTo(rightX, groundLevel);
+    ctx.closePath();
+    ctx.fill();
+
+    // Mud wall texture
+    const mudGrad = ctx.createLinearGradient(houseX, houseY - 120, houseX, houseY);
+    mudGrad.addColorStop(0, "#9b7b5d");
+    mudGrad.addColorStop(1, "#7b5f45");
+    ctx.fillStyle = mudGrad;
+    ctx.fillRect(houseX, houseY - 120, 160, 120);
+
+    // Wall texture strokes
+    ctx.strokeStyle = "rgba(255, 240, 220, 0.15)";
+    ctx.lineWidth = 1;
+    for (let i = 0; i < 10; i++) {
+        ctx.beginPath();
+        ctx.moveTo(houseX + 10, houseY - 110 + i * 10);
+        ctx.lineTo(houseX + 130, houseY - 108 + i * 10);
+        ctx.stroke();
+    }
+
+    // Thatched roof
+    ctx.beginPath();
+    ctx.moveTo(houseX - 14, houseY - 120);
+    ctx.lineTo(houseX + 80, houseY - 178);
+    ctx.lineTo(houseX + 174, houseY - 120);
+    ctx.closePath();
+    ctx.fillStyle = "#6b4f2f";
+    ctx.fill();
+
+    // Straw lines for thatch detail
+    ctx.strokeStyle = "rgba(255, 230, 180, 0.25)";
+    for (let i = 0; i < 13; i++) {
+        ctx.beginPath();
+        ctx.moveTo(houseX - 6 + i * 14, houseY - 122);
+        ctx.lineTo(houseX + 22 + i * 9, houseY - 150);
+        ctx.stroke();
+    }
+
+    // Wooden door
+    ctx.fillStyle = "#5a3e2a";
+    ctx.fillRect(houseX + 15, houseY - 60, 28, 60);
+    ctx.fillStyle = "rgba(255, 210, 160, 0.15)";
+    ctx.fillRect(houseX + 18, houseY - 55, 22, 50);
+
+    // Small window with warm light
+    ctx.fillStyle = "rgba(255, 220, 130, 0.55)";
+    ctx.fillRect(houseX + 90, houseY - 75, 34, 26);
+    ctx.strokeStyle = "rgba(80, 50, 30, 0.6)";
+    ctx.strokeRect(houseX + 90, houseY - 75, 34, 26);
 
     // Garden with White Flowers
     ctx.fillStyle = "#2e7d32"; // Green bed
     ctx.beginPath();
-    ctx.ellipse(houseX + 60, houseY + 5, 70, 10, 0, 0, Math.PI*2);
+    ctx.ellipse(houseX + 80, houseY + 5, 90, 10, 0, 0, Math.PI*2);
     ctx.fill();
 
     for(let i=0; i<12; i++) {
@@ -489,25 +799,47 @@ function drawGroundElements() {
         ctx.beginPath(); ctx.arc(fx, fy, 1, 0, Math.PI*2); ctx.fill();
     }
 
+    // Small plants with white flowers scattered in the garden (behind the character)
+    for (let i = 0; i < 8; i++) {
+        const rx = houseX + 20 + (Math.sin(i * 78.3) * 0.5 + 0.5) * 90;
+        const ry = houseY + 2 + (Math.cos(i * 52.1) * 0.5 + 0.5) * 6;
+        ctx.fillStyle = "#2e7d32";
+        ctx.beginPath();
+        ctx.ellipse(rx, ry, 4, 2.5, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = "#ffffff";
+        ctx.beginPath();
+        ctx.arc(rx, ry - 5, 2.2, 0, Math.PI * 2);
+        ctx.fill();
+    }
+
     // Female character near the house, facing left, waiting posture
     const houseScale = 0.45; // full-body, smaller than house
-    drawWaitingWoman(houseX + 130, houseY - 10, houseScale, true);
+    drawWaitingWoman(houseX + 150, houseY - 10, houseScale, true);
 
-    // Draw Tree
-    const treeX = w * 0.9;
+    // Male character on left side, walking toward the female
+    const maleScale = 0.45;
+    drawWalkingMan(w * 0.25, groundLevel - 10, maleScale, true);
+
+    // Draw Rural Tree (full, organic canopy)
+    const treeX = rightX + rightW * 0.82;
     const treeY = groundLevel;
-    
+
     // Trunk
-    ctx.fillStyle = "#3e2723";
-    ctx.fillRect(treeX, treeY - 150, 25, 150); // Taller and fatter trunk
-    
-    // Leaves
-    ctx.fillStyle = "#1b5e20";
+    ctx.fillStyle = "#4b2f1f";
+    ctx.fillRect(treeX, treeY - 170, 28, 170);
+
+    // Canopy
+    const leafGrad = ctx.createRadialGradient(treeX + 10, treeY - 160, 20, treeX + 10, treeY - 160, 90);
+    leafGrad.addColorStop(0, "#2f7a32");
+    leafGrad.addColorStop(1, "#1b4d22");
+    ctx.fillStyle = leafGrad;
     ctx.beginPath();
-    ctx.arc(treeX + 12, treeY - 160, 60, 0, Math.PI * 2); // Main large canopy
-    ctx.arc(treeX - 30, treeY - 140, 40, 0, Math.PI * 2); // Left cluster
-    ctx.arc(treeX + 50, treeY - 130, 45, 0, Math.PI * 2); // Right cluster
-    ctx.arc(treeX + 15, treeY - 110, 35, 0, Math.PI * 2); // Bottom cluster
+    ctx.arc(treeX + 12, treeY - 175, 70, 0, Math.PI * 2);
+    ctx.arc(treeX - 35, treeY - 150, 50, 0, Math.PI * 2);
+    ctx.arc(treeX + 55, treeY - 150, 55, 0, Math.PI * 2);
+    ctx.arc(treeX + 10, treeY - 120, 45, 0, Math.PI * 2);
     ctx.fill();
 
     // Tree Flowers
@@ -525,12 +857,67 @@ function drawGroundElements() {
     // High-quality character illustration (right side, under the tree)
     // Female character removed per request
 
-    // 5. Ground Gradient
-    const groundGrd = ctx.createLinearGradient(0, groundLevel, 0, h);
-    groundGrd.addColorStop(0, '#050508');
-    groundGrd.addColorStop(1, '#000');
-    ctx.fillStyle = groundGrd;
-    ctx.fillRect(0, groundLevel, w, h);
+    // Green grass patch on right side (where female stands)
+    const grassX = rightX;
+    const grassW = rightW;
+    const grassH = h - groundLevel; // fill to bottom of screen
+    const grassBaseY = groundLevel; // sit directly on ground
+    const grassGrad = ctx.createLinearGradient(grassX, grassBaseY - 10, grassX, h);
+    grassGrad.addColorStop(0, "#2e7d32");
+    grassGrad.addColorStop(1, "#1b5e20");
+    ctx.fillStyle = grassGrad;
+    ctx.beginPath();
+    ctx.moveTo(grassX, grassBaseY + 6);
+    ctx.quadraticCurveTo(grassX + grassW * 0.5, grassBaseY - 6, grassX + grassW, grassBaseY + 6);
+    ctx.lineTo(grassX + grassW, h);
+    ctx.lineTo(grassX, h);
+    ctx.closePath();
+    ctx.fill();
+
+    // Grass blades
+    ctx.strokeStyle = "rgba(120, 200, 120, 0.5)";
+    ctx.lineWidth = 1;
+    for (let i = 0; i < 18; i++) {
+        const gx = grassX + (i / 17) * grassW;
+        const gh = 6 + (i % 3) * 4;
+        ctx.beginPath();
+        ctx.moveTo(gx, grassBaseY + 6);
+        ctx.lineTo(gx - 2, grassBaseY + 6 - gh);
+        ctx.stroke();
+    }
+
+    // Soft fog layer near ground (morning)
+    const fogGrad = ctx.createLinearGradient(rightX, groundLevel - 20, rightX, groundLevel + 80);
+    fogGrad.addColorStop(0, "rgba(255, 240, 220, 0.25)");
+    fogGrad.addColorStop(1, "rgba(255, 240, 220, 0)");
+    ctx.fillStyle = fogGrad;
+    ctx.fillRect(rightX, groundLevel - 20, rightW, 100);
+
+    // Small village details: fence + clay pots + lantern
+    ctx.strokeStyle = "rgba(130, 90, 60, 0.8)";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(rightX + rightW * 0.05, groundLevel - 6);
+    ctx.lineTo(rightX + rightW * 0.28, groundLevel - 6);
+    ctx.stroke();
+    for (let i = 0; i < 5; i++) {
+        const px = rightX + rightW * 0.07 + i * (rightW * 0.04);
+        ctx.beginPath();
+        ctx.moveTo(px, groundLevel - 6);
+        ctx.lineTo(px, groundLevel - 20);
+        ctx.stroke();
+    }
+
+    // (plants now drawn within garden above)
+
+    // Hanging lantern glow near door
+    const lanternX = houseX + 48;
+    const lanternY = houseY - 70;
+    const lanternGlow = ctx.createRadialGradient(lanternX, lanternY, 2, lanternX, lanternY, 18);
+    lanternGlow.addColorStop(0, "rgba(255, 220, 140, 0.8)");
+    lanternGlow.addColorStop(1, "rgba(255, 220, 140, 0)");
+    ctx.fillStyle = lanternGlow;
+    ctx.beginPath(); ctx.arc(lanternX, lanternY, 18, 0, Math.PI * 2); ctx.fill();
 
     // 6. Divider Line
     ctx.strokeStyle = "rgba(255,255,255,0.2)";
@@ -539,15 +926,54 @@ function drawGroundElements() {
 
 }
 
+function drawCoffeeShop(x, groundY, isDay) {
+    // Base building
+    ctx.fillStyle = "#3b2f2a";
+    ctx.fillRect(x - 60, groundY - 70, 120, 70);
+
+    // Roof
+    ctx.fillStyle = "#2a211d";
+    ctx.beginPath();
+    ctx.moveTo(x - 70, groundY - 70);
+    ctx.lineTo(x, groundY - 100);
+    ctx.lineTo(x + 70, groundY - 70);
+    ctx.closePath();
+    ctx.fill();
+
+    // Door
+    ctx.fillStyle = "#5a463d";
+    ctx.fillRect(x - 15, groundY - 40, 30, 40);
+
+    // Window
+    ctx.fillStyle = isDay ? "rgba(255, 240, 200, 0.7)" : "rgba(180, 180, 180, 0.25)";
+    ctx.fillRect(x + 20, groundY - 45, 30, 25);
+
+    // Shop sign
+    ctx.fillStyle = "#f2e9d8";
+    ctx.fillRect(x - 55, groundY - 92, 110, 18);
+    ctx.fillStyle = "#2a211d";
+    ctx.font = "bold 12px Arial";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText("Strabucks", x, groundY - 83);
+
+    // Open/Closed sign
+    ctx.fillStyle = isDay ? "rgba(90, 200, 90, 0.9)" : "rgba(200, 90, 90, 0.9)";
+    ctx.fillRect(x - 20, groundY - 62, 40, 12);
+    ctx.fillStyle = "#111";
+    ctx.font = "bold 10px Arial";
+    ctx.fillText(isDay ? "OPEN" : "CLOSED", x, groundY - 56);
+}
+
 function drawWaitingWoman(x, y, scale, faceLeft) {
     ctx.save();
     ctx.translate(x, y);
     ctx.scale(scale * (faceLeft ? -1 : 1), scale);
 
     // Body proportions based on house height (~120)
-    const headR = 16;
+    const headR = 17;
     const torsoH = 42;
-    const torsoW = 22;
+    const torsoW = 18; // slimmer torso
     const legH = 55; // longer legs for model-like silhouette
 
     // Hair (sleek, long)
@@ -559,17 +985,43 @@ function drawWaitingWoman(x, y, scale, faceLeft) {
     ctx.ellipse(0, -40, 22, 34, 0, 0, Math.PI * 2);
     ctx.fill();
 
-    // Face (lighter, warm skin tone)
-    ctx.fillStyle = "#d9a27b";
+    // Face (clear human look with soft shading)
+    const faceGrad = ctx.createRadialGradient(0, -48, 4, 0, -48, 24);
+    faceGrad.addColorStop(0, "#e2b08a");
+    faceGrad.addColorStop(0.7, "#d29c75");
+    faceGrad.addColorStop(1, "#c48a66");
+    ctx.fillStyle = faceGrad;
     ctx.beginPath();
-    ctx.ellipse(0, -45, headR, headR + 3, 0, 0, Math.PI * 2);
+    ctx.ellipse(0, -45, headR - 2, headR + 4, 0, 0, Math.PI * 2); // slimmer face
     ctx.fill();
 
-    // Eyes (soft, looking left)
+    // Eyes (clearer, human)
     ctx.fillStyle = "#f6f4f2";
-    ctx.beginPath(); ctx.ellipse(-6, -48, 5, 4, 0, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = "#1b2f3a";
-    ctx.beginPath(); ctx.arc(-7, -48, 2.2, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(-6, -48, 6, 4.5, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(6, -48, 6, 4.5, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = "#2c5c77";
+    ctx.beginPath(); ctx.arc(-7, -48, 2.4, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(7, -48, 2.4, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = "#0b0b0b";
+    ctx.beginPath(); ctx.arc(-7, -48, 1.2, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(7, -48, 1.2, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = "rgba(255,255,255,0.9)";
+    ctx.beginPath(); ctx.arc(-8.5, -50, 1.1, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(5.5, -50, 1.1, 0, Math.PI * 2); ctx.fill();
+
+    // Brows
+    ctx.strokeStyle = "rgba(60,30,20,0.8)";
+    ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(-12, -56); ctx.quadraticCurveTo(-6, -60, 0, -56); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0, -56); ctx.quadraticCurveTo(6, -60, 12, -56); ctx.stroke();
+
+    // Nose and smile
+    ctx.strokeStyle = "rgba(120,80,60,0.6)";
+    ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(0, -47); ctx.quadraticCurveTo(2, -41, 0, -37); ctx.stroke();
+    ctx.strokeStyle = "rgba(140,80,80,0.7)";
+    ctx.lineWidth = 1.6;
+    ctx.beginPath(); ctx.moveTo(-6, -32); ctx.quadraticCurveTo(0, -29, 6, -32); ctx.stroke();
 
     // Bindi
     ctx.fillStyle = "#c62828";
@@ -581,42 +1033,194 @@ function drawWaitingWoman(x, y, scale, faceLeft) {
     ctx.roundRect(-6, -27, 12, 10, 4);
     ctx.fill();
 
-    // Torso (western dress)
+    // Torso (saree blouse)
     const clothGrad = ctx.createLinearGradient(-20, -20, 20, 60);
-    clothGrad.addColorStop(0, "#2b6cb0");
-    clothGrad.addColorStop(1, "#1a365d");
+    clothGrad.addColorStop(0, "#8a1730");
+    clothGrad.addColorStop(1, "#5d0c1f");
     ctx.fillStyle = clothGrad;
     ctx.beginPath();
-    ctx.roundRect(-torsoW / 2, -18, torsoW, torsoH, 8);
+    ctx.roundRect(-torsoW / 2, -18, torsoW, torsoH - 10, 7);
     ctx.fill();
 
     // Arm (down, waiting)
     ctx.fillStyle = "#d09a75";
     ctx.beginPath();
-    ctx.roundRect(-torsoW / 2 - 6, -5, 8, 26, 4);
+    ctx.roundRect(-torsoW / 2 - 6, -5, 6, 26, 4);
     ctx.fill();
 
-    // Dress flare
-    ctx.fillStyle = "rgba(26, 54, 93, 0.9)";
+    // Saree drape (pallu) over shoulder
+    ctx.fillStyle = "rgba(155, 31, 51, 0.9)";
     ctx.beginPath();
-    ctx.moveTo(-16, 20);
-    ctx.quadraticCurveTo(0, 35, 16, 20);
-    ctx.quadraticCurveTo(30, 55, 10, 70);
-    ctx.quadraticCurveTo(0, 78, -10, 70);
-    ctx.quadraticCurveTo(-30, 55, -16, 20);
+    ctx.moveTo(-6, -10);
+    ctx.quadraticCurveTo(20, 5, 14, 40);
+    ctx.quadraticCurveTo(4, 70, -12, 85);
+    ctx.quadraticCurveTo(-20, 55, -18, 30);
     ctx.closePath();
     ctx.fill();
 
-    // Legs
-    ctx.fillStyle = "#c98f6b";
+    // Saree skirt with pleats
+    const sareeGrad = ctx.createLinearGradient(-26, 10, 26, 80);
+    sareeGrad.addColorStop(0, "#a11f34");
+    sareeGrad.addColorStop(0.6, "#8a1730");
+    sareeGrad.addColorStop(1, "#6a0f20");
+    ctx.fillStyle = sareeGrad;
     ctx.beginPath();
-    ctx.roundRect(-9, 32, 7, legH, 4);
-    ctx.roundRect(2, 32, 7, legH, 4);
+    ctx.moveTo(-22, 10);
+    ctx.quadraticCurveTo(0, 30, 22, 10);
+    ctx.quadraticCurveTo(28, 45, 18, 75);
+    ctx.quadraticCurveTo(0, 88, -18, 75);
+    ctx.quadraticCurveTo(-28, 45, -22, 10);
+    ctx.closePath();
     ctx.fill();
 
-    // Feet
-    ctx.fillStyle = "#2d1a12";
+    ctx.strokeStyle = "rgba(255, 210, 210, 0.22)";
+    ctx.lineWidth = 1.2;
+    [-12, -6, 0, 6, 12].forEach((px) => {
+        ctx.beginPath();
+        ctx.moveTo(px, 15);
+        ctx.quadraticCurveTo(px + 2, 45, px - 1, 75);
+        ctx.stroke();
+    });
+
+    // Legs (covered with petticoat/leggings for traditional look)
+    ctx.fillStyle = "#7a6a5c";
+    ctx.beginPath();
+    ctx.roundRect(-8, 32, 6, legH, 4);
+    ctx.roundRect(2, 32, 6, legH, 4);
+    ctx.fill();
+
+    // Feet (simple sandals)
+    ctx.fillStyle = "#3a2a1f";
     ctx.beginPath(); ctx.ellipse(-6, 90, 8, 3, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(6, 90, 8, 3, 0, 0, Math.PI * 2); ctx.fill();
+
+    ctx.restore();
+}
+
+function drawWalkingMan(x, y, scale, faceRight) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.scale(scale * (faceRight ? 1 : -1), scale);
+
+    const headR = 16;
+    const torsoH = 44;
+    const torsoW = 18;
+    const legH = 55;
+    const armH = 30;
+    const walk = Math.sin(Date.now() * 0.008) * 10;
+
+    // Hair (youthful, full coverage)
+    const hairGrad = ctx.createLinearGradient(-18, -58, 18, -26);
+    hairGrad.addColorStop(0, "#2b1a14");
+    hairGrad.addColorStop(1, "#0f0906");
+    ctx.fillStyle = hairGrad;
+    ctx.beginPath();
+    ctx.moveTo(-20, -34);
+    ctx.quadraticCurveTo(-10, -64, 2, -66);
+    ctx.quadraticCurveTo(16, -64, 22, -46);
+    ctx.quadraticCurveTo(24, -34, 12, -30);
+    ctx.quadraticCurveTo(2, -26, -12, -28);
+    ctx.closePath();
+    ctx.fill();
+
+    // Side coverage (no baldness)
+    ctx.fillStyle = "#1a100b";
+    ctx.beginPath();
+    ctx.ellipse(-14, -36, 10, 12, -0.2, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.ellipse(4, -36, 10, 12, 0.2, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Top fill to ensure full coverage
+    ctx.fillStyle = "#1a100b";
+    ctx.beginPath();
+    ctx.ellipse(0, -54, 12, 10, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Face (same tone as female)
+    const faceGrad = ctx.createRadialGradient(0, -46, 4, 0, -46, 22);
+    faceGrad.addColorStop(0, "#e2b08a");
+    faceGrad.addColorStop(0.7, "#d29c75");
+    faceGrad.addColorStop(1, "#c48a66");
+    ctx.fillStyle = faceGrad;
+    ctx.beginPath();
+    ctx.ellipse(1, -45, headR - 3, headR + 3, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Eye with highlight
+    ctx.fillStyle = "#f6f4f2";
+    ctx.beginPath(); ctx.ellipse(6, -48, 5.5, 4, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = "#2c5c77";
+    ctx.beginPath(); ctx.arc(7, -48, 2.2, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = "#0b0b0b";
+    ctx.beginPath(); ctx.arc(7, -48, 1.1, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = "rgba(255,255,255,0.85)";
+    ctx.beginPath(); ctx.arc(6.2, -49.2, 0.9, 0, Math.PI * 2); ctx.fill();
+
+    // Brow
+    ctx.strokeStyle = "rgba(50,25,18,0.8)";
+    ctx.lineWidth = 1.4;
+    ctx.beginPath(); ctx.moveTo(2, -56); ctx.quadraticCurveTo(8, -60, 14, -56); ctx.stroke();
+
+    // Nose and mouth (profile)
+    ctx.strokeStyle = "rgba(120,80,60,0.6)";
+    ctx.lineWidth = 1.4;
+    ctx.beginPath(); ctx.moveTo(6, -46); ctx.quadraticCurveTo(12, -43, 8, -38); ctx.stroke();
+    ctx.strokeStyle = "rgba(140,80,80,0.7)";
+    ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(4, -32); ctx.quadraticCurveTo(10, -31, 13, -34); ctx.stroke();
+
+    // Neck
+    ctx.fillStyle = "#c48a66";
+    ctx.beginPath();
+    ctx.roundRect(-5, -27, 10, 10, 4);
+    ctx.fill();
+
+    // Shirt
+    const shirtGrad = ctx.createLinearGradient(-18, -18, 18, 40);
+    shirtGrad.addColorStop(0, "#4f7aa8");
+    shirtGrad.addColorStop(1, "#2f4c6e");
+    ctx.fillStyle = shirtGrad;
+    ctx.beginPath();
+    ctx.roundRect(-torsoW / 2, -18, torsoW, torsoH, 6);
+    ctx.fill();
+
+    // Arms (swinging)
+    ctx.fillStyle = "#d09a75";
+    ctx.save();
+    ctx.translate(-torsoW / 2 - 4, -4);
+    ctx.rotate((-walk * 0.03));
+    ctx.roundRect(0, 0, 6, armH, 4);
+    ctx.fill();
+    ctx.restore();
+
+    ctx.save();
+    ctx.translate(torsoW / 2 - 2, -4);
+    ctx.rotate((walk * 0.03));
+    ctx.roundRect(0, 0, 6, armH, 4);
+    ctx.fill();
+    ctx.restore();
+
+    // Jeans (walking)
+    ctx.fillStyle = "#2b3a55";
+    ctx.save();
+    ctx.translate(-6, 28);
+    ctx.rotate((walk * 0.03));
+    ctx.roundRect(0, 0, 6, legH, 4);
+    ctx.fill();
+    ctx.restore();
+
+    ctx.save();
+    ctx.translate(2, 28);
+    ctx.rotate((-walk * 0.03));
+    ctx.roundRect(0, 0, 6, legH, 4);
+    ctx.fill();
+    ctx.restore();
+
+    // Shoes
+    ctx.fillStyle = "#1f1b16";
+    ctx.beginPath(); ctx.ellipse(-3, 90, 8, 3, 0, 0, Math.PI * 2); ctx.fill();
     ctx.beginPath(); ctx.ellipse(6, 90, 8, 3, 0, 0, Math.PI * 2); ctx.fill();
 
     ctx.restore();
