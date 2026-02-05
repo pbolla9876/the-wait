@@ -575,6 +575,21 @@ function drawGroundElements() {
         isNightLeft = (now < dataLeft.sunrise || now > dataLeft.sunset);
     }
 
+    // Pick a single left-side building to label: tallest, then closest to center divider
+    let featuredBuilding = null;
+    let bestHeight = -Infinity;
+    let bestDist = Infinity;
+    buildings.forEach(b => {
+        const centerX = b.x + b.w / 2;
+        if (centerX >= dividerX) return;
+        const distToCenter = Math.abs(dividerX - centerX);
+        if (b.h > bestHeight || (b.h === bestHeight && distToCenter < bestDist)) {
+            bestHeight = b.h;
+            bestDist = distToCenter;
+            featuredBuilding = b;
+        }
+    });
+
     // Clip building drawing to the left side
     ctx.save();
     ctx.beginPath();
@@ -584,6 +599,7 @@ function drawGroundElements() {
     buildings.forEach(b => {
         ctx.fillStyle = b.color;
         const groundY = h - b.h;
+        let signRect = null;
 
         // Draw building based on its type
         switch (b.type) {
@@ -606,6 +622,22 @@ function drawGroundElements() {
                 ctx.fillRect(b.x, groundY, b.w, b.h);
                 break;
         }
+        if (featuredBuilding === b) {
+            const signW = Math.max(70, Math.min(140, b.w * 0.8));
+            const signH = 16;
+            const signX = b.x + (b.w - signW) / 2;
+            const signY = groundY + Math.max(10, b.h * 0.15);
+            const statusW = Math.min(64, signW * 0.7);
+            const statusH = 12;
+            const statusX = signX + (signW - statusW) / 2;
+            const statusY = signY + signH + 6;
+            signRect = {
+                x1: signX,
+                y1: signY,
+                x2: signX + signW,
+                y2: statusY + statusH
+            };
+        }
         
             // Draw windows (always). Size scales with building so they don't mix.
             const winW = Math.max(3, Math.floor(b.w / 10));
@@ -614,6 +646,14 @@ function drawGroundElements() {
             b.windows.forEach(win => {
                 const wx = Math.round(b.x + win.x);
                 const wy = Math.round(groundY + win.y);
+                if (signRect) {
+                    const overlaps =
+                        wx + winW > signRect.x1 &&
+                        wx < signRect.x2 &&
+                        wy + winH > signRect.y1 &&
+                        wy < signRect.y2;
+                    if (overlaps) return;
+                }
                 ctx.save();
                 if (isNightLeft) {
                     ctx.fillStyle = "rgba(255, 220, 150, 0.95)";
@@ -625,6 +665,32 @@ function drawGroundElements() {
                 ctx.fillRect(wx, wy, winW, winH);
                 ctx.restore();
             });
+
+            // Starbucks sign on a featured left-side skyscraper
+            if (featuredBuilding === b && signRect) {
+                const signW = signRect.x2 - signRect.x1;
+                const signH = 16;
+                const signX = signRect.x1;
+                const signY = signRect.y1;
+                const statusW = Math.min(64, signW * 0.7);
+                const statusH = 12;
+                const statusX = signX + (signW - statusW) / 2;
+                const statusY = signRect.y2 - statusH;
+
+                ctx.fillStyle = "#f2e9d8";
+                ctx.fillRect(signX, signY, signW, signH);
+                ctx.fillStyle = "#2a211d";
+                ctx.font = "bold 12px Arial";
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+                ctx.fillText("Starbucks", signX + signW / 2, signY + signH / 2);
+
+                ctx.fillStyle = isDayLeft ? "rgba(90, 200, 90, 0.9)" : "rgba(200, 90, 90, 0.9)";
+                ctx.fillRect(statusX, statusY, statusW, statusH);
+                ctx.fillStyle = "#111";
+                ctx.font = "bold 10px Arial";
+                ctx.fillText(isDayLeft ? "OPEN" : "CLOSED", statusX + statusW / 2, statusY + statusH / 2 + 0.5);
+            }
 
             b.x -= 0.5; // Parallax speed
             if (b.x + b.w < 0) {
@@ -713,9 +779,6 @@ function drawGroundElements() {
         ctx.lineTo(x, y + dashLen);
         ctx.stroke();
     }
-
-    // Left-side coffee shop (near male)
-    drawCoffeeShop(w * 0.18, groundLevel, isDayLeft);
 
     // Draw Rural House (right side, traditional village vibe)
     const rightX = w * 0.5;
@@ -921,45 +984,6 @@ function drawGroundElements() {
     ctx.lineWidth = 2;
     ctx.beginPath(); ctx.moveTo(dividerX, 0); ctx.lineTo(dividerX, h); ctx.stroke();
 
-}
-
-function drawCoffeeShop(x, groundY, isDay) {
-    // Base building
-    ctx.fillStyle = "#3b2f2a";
-    ctx.fillRect(x - 60, groundY - 70, 120, 70);
-
-    // Roof
-    ctx.fillStyle = "#2a211d";
-    ctx.beginPath();
-    ctx.moveTo(x - 70, groundY - 70);
-    ctx.lineTo(x, groundY - 100);
-    ctx.lineTo(x + 70, groundY - 70);
-    ctx.closePath();
-    ctx.fill();
-
-    // Door
-    ctx.fillStyle = "#5a463d";
-    ctx.fillRect(x - 15, groundY - 40, 30, 40);
-
-    // Window
-    ctx.fillStyle = isDay ? "rgba(255, 240, 200, 0.7)" : "rgba(180, 180, 180, 0.25)";
-    ctx.fillRect(x + 20, groundY - 45, 30, 25);
-
-    // Shop sign
-    ctx.fillStyle = "#f2e9d8";
-    ctx.fillRect(x - 55, groundY - 92, 110, 18);
-    ctx.fillStyle = "#2a211d";
-    ctx.font = "bold 12px Arial";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillText("Strabucks", x, groundY - 83);
-
-    // Open/Closed sign
-    ctx.fillStyle = isDay ? "rgba(90, 200, 90, 0.9)" : "rgba(200, 90, 90, 0.9)";
-    ctx.fillRect(x - 20, groundY - 62, 40, 12);
-    ctx.fillStyle = "#111";
-    ctx.font = "bold 10px Arial";
-    ctx.fillText(isDay ? "OPEN" : "CLOSED", x, groundY - 56);
 }
 
 function drawWaitingWoman(x, y, scale, faceLeft) {
