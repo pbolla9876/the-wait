@@ -42,6 +42,8 @@ let gameState = 'INTRO_TEXT';
 let animStartTime;
 let scrollLocked = false;
 let backToTitleBtn;
+const autoScrolly = true;
+const autoScrollyTimeScale = 0.5;
 
 const preventScroll = (e) => {
     if (scrollLocked) {
@@ -2000,7 +2002,7 @@ function initScrollytelling() {
     gsap.registerPlugin(ScrollTrigger);
 
     // 1. Create DOM Structure
-    const scrollHeight = '600vh'; // Length of scroll experience
+    const scrollHeight = autoScrolly ? '100vh' : '600vh'; // Length of scroll experience
     const spacer = document.createElement('div');
     spacer.style.height = scrollHeight;
     document.body.appendChild(spacer);
@@ -2106,10 +2108,12 @@ function initScrollytelling() {
     thread.style.strokeDasharray = `${length}`;
     thread.style.strokeDashoffset = `${length}`;
 
+    const titleText = "Two Hearts, Two Skies, One Moon";
     const line1 = "ప్రపంచం పౌర్ణమి కోసం ముప్పై రోజులు వేచి ఉంటుందని అంటారు... బహుశా అందుకే అది తిరిగి వచ్చినప్పుడు అంత ప్రకాశవంతంగా వెలుగుతుంది.";
     const line2 = "ఆ మాటకు అర్థం ఇప్పుడే తెలిసింది.";
     const line1El = cloud.querySelector("#cloud-translation-1");
     const line2El = cloud.querySelector("#cloud-text-2");
+    const introTitle = intro.querySelector('.intro-title');
 
     const typeLine = (el, text, speed = 26) => new Promise((resolve) => {
         let i = 0;
@@ -2117,6 +2121,21 @@ function initScrollytelling() {
             i++;
             el.textContent = text.slice(0, i);
             if (i < text.length) {
+                setTimeout(tick, speed);
+            } else {
+                resolve();
+            }
+        };
+        tick();
+    });
+
+    const typeWords = (el, text, speed = 420) => new Promise((resolve) => {
+        const words = text.split(' ');
+        let i = 0;
+        const tick = () => {
+            i++;
+            el.textContent = words.slice(0, i).join(' ');
+            if (i < words.length) {
                 setTimeout(tick, speed);
             } else {
                 resolve();
@@ -2138,27 +2157,34 @@ function initScrollytelling() {
     animateParticles();
 
     // GSAP Timeline
-    const tl = gsap.timeline({
-        scrollTrigger: {
-            trigger: spacer,
-            start: "top top",
-            end: "bottom bottom",
-            scrub: 1
-        }
-    });
+    const tl = autoScrolly
+        ? gsap.timeline()
+        : gsap.timeline({
+            scrollTrigger: {
+                trigger: spacer,
+                start: "top top",
+                end: "bottom bottom",
+                scrub: 1
+            }
+        });
+    if (autoScrolly) {
+        tl.timeScale(autoScrollyTimeScale);
+    }
 
     gsap.set([cloud], { y: 12 });
 
-    // Phase 1: Intro -> fade/zoom title, hide prompt, start scene (keep canvas hidden)
-    const introTitle = intro.querySelector('.intro-title');
+    // Phase 1: Intro -> type title words, hide prompt, fade intro, start scene (keep canvas hidden)
     const introPrompt = intro.querySelector('.intro-prompt');
-    tl.to(introPrompt, { opacity: 0, duration: 0.2 })
-      .to(introTitle, { opacity: 0, scale: 1.08, duration: 1.1 }, "<")
-      .to(intro, { opacity: 0, duration: 1.1, onComplete: () => intro.remove() }, "<0.2")
-      .to(bg, { opacity: 0, duration: 1.2 }, "<0.1")
-      .fromTo(maleImg, { opacity: 0, x: -60 }, { opacity: 1, x: 0, duration: 2.2 }, "<0.2")
-      .fromTo(cloud, { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 1.6 }, "<0.4")
-      .add(() => { typeLine(line1El, line1); }, "<0.1");
+    introTitle.textContent = "";
+    const titleWordSpeed = 1200;
+    tl.add(() => { typeWords(introTitle, titleText, titleWordSpeed); })
+      .to(introPrompt, { opacity: 0, duration: 0.5 }, "<0.4")
+      .to(introTitle, { opacity: 0, scale: 1.06, duration: 2.4 }, "+=1.0")
+      .to(intro, { opacity: 0, duration: 2.4, onComplete: () => intro.remove() }, "<0.3")
+      .to(bg, { opacity: 0, duration: 2.4 }, "<0.2")
+      .fromTo(maleImg, { opacity: 0, x: -70 }, { opacity: 1, x: 0, duration: 3.8 }, ">")
+      .fromTo(cloud, { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 2.8 }, "<0.6")
+      .add(() => { typeLine(line1El, line1, 30); }, "<0.2");
 
     // Phase 2: Thread draws, moon turns full, thread glows gold
     tl.to(thread, { opacity: 1, duration: 0.4 })
