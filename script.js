@@ -461,7 +461,7 @@ function drawGroundElements() {
     ctx.fillRect(houseX + 85, houseY - 160, 15, 40);
     updateSmoke(houseX + 92, houseY - 160);
 
-        // Female character removed
+        // Character removed
 
     // Roof
     ctx.beginPath(); 
@@ -488,6 +488,10 @@ function drawGroundElements() {
         ctx.fillStyle = "#ffd700"; 
         ctx.beginPath(); ctx.arc(fx, fy, 1, 0, Math.PI*2); ctx.fill();
     }
+
+    // Female character near the house, facing left, waiting posture
+    const houseScale = 0.45; // full-body, smaller than house
+    drawWaitingWoman(houseX + 130, houseY - 10, houseScale, true);
 
     // Draw Tree
     const treeX = w * 0.9;
@@ -518,6 +522,9 @@ function drawGroundElements() {
     // Birds
     updateBirds();
 
+    // High-quality character illustration (right side, under the tree)
+    // Female character removed per request
+
     // 5. Ground Gradient
     const groundGrd = ctx.createLinearGradient(0, groundLevel, 0, h);
     groundGrd.addColorStop(0, '#050508');
@@ -530,6 +537,316 @@ function drawGroundElements() {
     ctx.lineWidth = 2;
     ctx.beginPath(); ctx.moveTo(dividerX, 0); ctx.lineTo(dividerX, h); ctx.stroke();
 
+}
+
+function drawWaitingWoman(x, y, scale, faceLeft) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.scale(scale * (faceLeft ? -1 : 1), scale);
+
+    // Body proportions based on house height (~120)
+    const headR = 16;
+    const torsoH = 42;
+    const torsoW = 22;
+    const legH = 55; // longer legs for model-like silhouette
+
+    // Hair (sleek, long)
+    const hairGrad = ctx.createLinearGradient(-20, -70, 20, 10);
+    hairGrad.addColorStop(0, "#2a1a14");
+    hairGrad.addColorStop(1, "#1c110c");
+    ctx.fillStyle = hairGrad;
+    ctx.beginPath();
+    ctx.ellipse(0, -40, 22, 34, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Face (lighter, warm skin tone)
+    ctx.fillStyle = "#d9a27b";
+    ctx.beginPath();
+    ctx.ellipse(0, -45, headR, headR + 3, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Eyes (soft, looking left)
+    ctx.fillStyle = "#f6f4f2";
+    ctx.beginPath(); ctx.ellipse(-6, -48, 5, 4, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = "#1b2f3a";
+    ctx.beginPath(); ctx.arc(-7, -48, 2.2, 0, Math.PI * 2); ctx.fill();
+
+    // Bindi
+    ctx.fillStyle = "#c62828";
+    ctx.beginPath(); ctx.arc(0, -54, 2, 0, Math.PI * 2); ctx.fill();
+
+    // Neck
+    ctx.fillStyle = "#c48a66";
+    ctx.beginPath();
+    ctx.roundRect(-6, -27, 12, 10, 4);
+    ctx.fill();
+
+    // Torso (western dress)
+    const clothGrad = ctx.createLinearGradient(-20, -20, 20, 60);
+    clothGrad.addColorStop(0, "#2b6cb0");
+    clothGrad.addColorStop(1, "#1a365d");
+    ctx.fillStyle = clothGrad;
+    ctx.beginPath();
+    ctx.roundRect(-torsoW / 2, -18, torsoW, torsoH, 8);
+    ctx.fill();
+
+    // Arm (down, waiting)
+    ctx.fillStyle = "#d09a75";
+    ctx.beginPath();
+    ctx.roundRect(-torsoW / 2 - 6, -5, 8, 26, 4);
+    ctx.fill();
+
+    // Dress flare
+    ctx.fillStyle = "rgba(26, 54, 93, 0.9)";
+    ctx.beginPath();
+    ctx.moveTo(-16, 20);
+    ctx.quadraticCurveTo(0, 35, 16, 20);
+    ctx.quadraticCurveTo(30, 55, 10, 70);
+    ctx.quadraticCurveTo(0, 78, -10, 70);
+    ctx.quadraticCurveTo(-30, 55, -16, 20);
+    ctx.closePath();
+    ctx.fill();
+
+    // Legs
+    ctx.fillStyle = "#c98f6b";
+    ctx.beginPath();
+    ctx.roundRect(-9, 32, 7, legH, 4);
+    ctx.roundRect(2, 32, 7, legH, 4);
+    ctx.fill();
+
+    // Feet
+    ctx.fillStyle = "#2d1a12";
+    ctx.beginPath(); ctx.ellipse(-6, 90, 8, 3, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(6, 90, 8, 3, 0, 0, Math.PI * 2); ctx.fill();
+
+    ctx.restore();
+}
+
+function drawPixarWoman(x, y, scale) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.scale(scale, scale);
+
+    // Soft cinematic rim light
+    ctx.shadowColor = "rgba(255, 214, 170, 0.35)";
+    ctx.shadowBlur = 18;
+
+    // Full body proportions
+    const torsoW = 170;
+    const torsoH = 170;
+    const headR = 58;
+
+    // Neck
+    const neckGrad = ctx.createLinearGradient(0, -90, 0, -40);
+    neckGrad.addColorStop(0, "#b87452");
+    neckGrad.addColorStop(1, "#a86747");
+    ctx.fillStyle = neckGrad;
+    ctx.beginPath();
+    ctx.roundRect(-18, -85, 36, 50, 16);
+    ctx.fill();
+
+    // Saree / kurti torso with folds
+    const clothGrad = ctx.createLinearGradient(-80, -40, 80, 120);
+    clothGrad.addColorStop(0, "#7b1424");
+    clothGrad.addColorStop(0.5, "#9b1f33");
+    clothGrad.addColorStop(1, "#6a0f20");
+    ctx.fillStyle = clothGrad;
+    ctx.beginPath();
+    ctx.moveTo(-90, -40);
+    ctx.quadraticCurveTo(0, -90, 90, -40);
+    ctx.lineTo(100, 120);
+    ctx.quadraticCurveTo(0, 150, -100, 120);
+    ctx.closePath();
+    ctx.fill();
+
+    // Fabric highlight folds
+    ctx.shadowBlur = 0;
+    ctx.strokeStyle = "rgba(255, 200, 200, 0.25)";
+    ctx.lineWidth = 2;
+    [-55, -25, 5, 35, 60].forEach((fx, i) => {
+        ctx.beginPath();
+        ctx.moveTo(fx, -20);
+        ctx.quadraticCurveTo(fx + 8, 30 + i * 5, fx - 6, 110);
+        ctx.stroke();
+    });
+
+    // Blouse sleeve (right)
+    const sleeveGrad = ctx.createLinearGradient(60, -30, 120, 40);
+    sleeveGrad.addColorStop(0, "#8c1b2e");
+    sleeveGrad.addColorStop(1, "#5f0c1c");
+    ctx.fillStyle = sleeveGrad;
+    ctx.beginPath();
+    ctx.ellipse(85, 10, 30, 28, -0.3, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Waist and saree drape
+    const waistGrad = ctx.createLinearGradient(-80, 90, 80, 240);
+    waistGrad.addColorStop(0, "#8a1730");
+    waistGrad.addColorStop(0.6, "#7a122a");
+    waistGrad.addColorStop(1, "#5d0c1f");
+    ctx.fillStyle = waistGrad;
+    ctx.beginPath();
+    ctx.moveTo(-95, 110);
+    ctx.quadraticCurveTo(-20, 70, 70, 105);
+    ctx.quadraticCurveTo(90, 160, 60, 230);
+    ctx.quadraticCurveTo(0, 260, -60, 230);
+    ctx.quadraticCurveTo(-90, 170, -95, 110);
+    ctx.closePath();
+    ctx.fill();
+
+    // Saree pleats
+    ctx.strokeStyle = "rgba(255, 210, 210, 0.2)";
+    ctx.lineWidth = 2;
+    [-50, -30, -10, 10, 30, 50].forEach((px, i) => {
+        ctx.beginPath();
+        ctx.moveTo(px, 115);
+        ctx.quadraticCurveTo(px + 6, 170 + i * 2, px - 5, 235);
+        ctx.stroke();
+    });
+
+    // Arms
+    const skinGrad = ctx.createLinearGradient(60, -5, 110, 90);
+    skinGrad.addColorStop(0, "#c18260");
+    skinGrad.addColorStop(1, "#a86a4b");
+    ctx.fillStyle = skinGrad;
+    ctx.beginPath();
+    ctx.roundRect(70, 10, 22, 90, 10);
+    ctx.fill();
+
+    // Bangle
+    ctx.strokeStyle = "rgba(215, 179, 107, 0.9)";
+    ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.arc(81, 70, 11, 0, Math.PI * 2); ctx.stroke();
+
+    // Gold jewelry: earrings and bangles
+    ctx.fillStyle = "#d7b36b";
+    ctx.beginPath(); ctx.arc(-45, -125, 6, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(45, -125, 6, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = "#caa85e";
+    ctx.beginPath(); ctx.arc(70, 55, 10, 0, Math.PI * 2); ctx.strokeStyle = "rgba(255,230,160,0.5)"; ctx.lineWidth = 2; ctx.stroke();
+
+    // Face base with smooth gradient
+    const faceGrad = ctx.createRadialGradient(0, -150, 10, 0, -150, 85);
+    faceGrad.addColorStop(0, "#c98764");
+    faceGrad.addColorStop(0.6, "#b67754");
+    faceGrad.addColorStop(1, "#9f6046");
+    ctx.fillStyle = faceGrad;
+    ctx.beginPath();
+    ctx.ellipse(0, -145, 58, 68, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Soft cheek glow
+    ctx.globalAlpha = 0.25;
+    ctx.fillStyle = "#d6917a";
+    ctx.beginPath(); ctx.ellipse(-22, -135, 18, 12, -0.1, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(22, -135, 18, 12, 0.1, 0, Math.PI * 2); ctx.fill();
+    ctx.globalAlpha = 1;
+
+    // Hair back volume
+    const hairGrad = ctx.createLinearGradient(-80, -210, 80, -60);
+    hairGrad.addColorStop(0, "#2a1a14");
+    hairGrad.addColorStop(0.5, "#3b261c");
+    hairGrad.addColorStop(1, "#1c110c");
+    ctx.fillStyle = hairGrad;
+    ctx.beginPath();
+    ctx.moveTo(-75, -200);
+    ctx.quadraticCurveTo(-95, -120, -70, -40);
+    ctx.quadraticCurveTo(-20, -10, 0, 10);
+    ctx.quadraticCurveTo(20, -10, 70, -40);
+    ctx.quadraticCurveTo(100, -120, 75, -200);
+    ctx.quadraticCurveTo(0, -240, -75, -200);
+    ctx.closePath();
+    ctx.fill();
+
+    // Hair front strands
+    ctx.fillStyle = "#3a241a";
+    ctx.beginPath();
+    ctx.moveTo(-60, -195);
+    ctx.quadraticCurveTo(-20, -230, 0, -220);
+    ctx.quadraticCurveTo(20, -230, 60, -195);
+    ctx.quadraticCurveTo(30, -185, 0, -185);
+    ctx.quadraticCurveTo(-30, -185, -60, -195);
+    ctx.closePath();
+    ctx.fill();
+
+    // Eyes (large Pixar-style)
+    const eyeWhite = "#f6f4f2";
+    ctx.fillStyle = eyeWhite;
+    ctx.beginPath(); ctx.ellipse(-22, -150, 18, 14, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(22, -150, 18, 14, 0, 0, Math.PI * 2); ctx.fill();
+
+    // Iris + pupil with highlights
+    const irisGradL = ctx.createRadialGradient(-22, -150, 2, -22, -150, 10);
+    irisGradL.addColorStop(0, "#2c5c77");
+    irisGradL.addColorStop(1, "#1b2f3a");
+    ctx.fillStyle = irisGradL;
+    ctx.beginPath(); ctx.ellipse(-22, -150, 9, 9, 0, 0, Math.PI * 2); ctx.fill();
+    const irisGradR = ctx.createRadialGradient(22, -150, 2, 22, -150, 10);
+    irisGradR.addColorStop(0, "#2c5c77");
+    irisGradR.addColorStop(1, "#1b2f3a");
+    ctx.fillStyle = irisGradR;
+    ctx.beginPath(); ctx.ellipse(22, -150, 9, 9, 0, 0, Math.PI * 2); ctx.fill();
+
+    ctx.fillStyle = "#0b0b0b";
+    ctx.beginPath(); ctx.arc(-22, -150, 4.5, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(22, -150, 4.5, 0, Math.PI * 2); ctx.fill();
+
+    // Eye highlights
+    ctx.fillStyle = "rgba(255,255,255,0.9)";
+    ctx.beginPath(); ctx.arc(-26, -154, 3, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(18, -154, 3, 0, Math.PI * 2); ctx.fill();
+
+    // Eyelashes and brows
+    ctx.strokeStyle = "rgba(40,20,16,0.8)";
+    ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(-34, -162); ctx.quadraticCurveTo(-22, -170, -10, -162); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(10, -162); ctx.quadraticCurveTo(22, -170, 34, -162); ctx.stroke();
+
+    ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(-38, -172); ctx.quadraticCurveTo(-22, -180, -6, -172); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(6, -172); ctx.quadraticCurveTo(22, -180, 38, -172); ctx.stroke();
+
+    // Nose and smile
+    ctx.strokeStyle = "rgba(110,70,55,0.6)";
+    ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(0, -145); ctx.quadraticCurveTo(4, -135, 0, -128); ctx.stroke();
+
+    ctx.strokeStyle = "rgba(125,70,60,0.7)";
+    ctx.lineWidth = 2.5;
+    ctx.beginPath(); ctx.moveTo(-18, -112); ctx.quadraticCurveTo(0, -100, 18, -112); ctx.stroke();
+
+    // Lip tint
+    ctx.fillStyle = "rgba(175, 86, 86, 0.45)";
+    ctx.beginPath(); ctx.ellipse(0, -110, 12, 6, 0, 0, Math.PI * 2); ctx.fill();
+
+    // Bindi
+    ctx.fillStyle = "#c62828";
+    ctx.beginPath(); ctx.arc(0, -172, 4, 0, Math.PI * 2); ctx.fill();
+
+    // Subtle neck shadow
+    ctx.fillStyle = "rgba(60,30,20,0.2)";
+    ctx.beginPath(); ctx.ellipse(0, -80, 26, 10, 0, 0, Math.PI * 2); ctx.fill();
+
+    // Legs (full body)
+    const legGrad = ctx.createLinearGradient(-25, 230, 25, 360);
+    legGrad.addColorStop(0, "#b67654");
+    legGrad.addColorStop(1, "#9d5f43");
+    ctx.fillStyle = legGrad;
+    ctx.beginPath();
+    ctx.roundRect(-35, 220, 28, 120, 12);
+    ctx.roundRect(5, 220, 28, 120, 12);
+    ctx.fill();
+
+    // Feet / sandals
+    ctx.fillStyle = "#3e2a1e";
+    ctx.beginPath(); ctx.ellipse(-22, 350, 22, 8, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(18, 350, 22, 8, 0, 0, Math.PI * 2); ctx.fill();
+
+    // Saree hem shadow
+    ctx.fillStyle = "rgba(30, 10, 10, 0.2)";
+    ctx.beginPath(); ctx.ellipse(0, 245, 70, 14, 0, 0, Math.PI * 2); ctx.fill();
+
+    ctx.restore();
 }
 
 function drawCharacters(progress) {
@@ -546,7 +863,7 @@ function drawCharacters(progress) {
 
     // Initialize characterGap if needed
     if (characterGap === null) characterGap = startGap;
-    // Smoothly ease gap toward target so male appears to walk toward female
+    // Smoothly ease gap toward target so male appears to walk toward the partner
     characterGap += (targetGap - characterGap) * 0.06;
 
     // Compute male walk cycle speed and normalization
@@ -771,8 +1088,7 @@ function drawCharacterSilhouette() {
     // Removed per user request. This stub prevents errors from other calls.
 }
 
-// Draw a simple female character standing and facing left
-// drawFemaleCharacter removed per user request
+// Character drawing functions removed per user request
 
 
 init(); // Start animation logic immediately
