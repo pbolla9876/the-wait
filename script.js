@@ -463,84 +463,90 @@ function drawGroundElements() {
 
     ctx.restore(); // End clipping for buildings
 
-    // Right-side buildings (female side) - brighten and add soft ambient light
+    // Right-side village (female side) - rural, retro village style
     ctx.save();
     ctx.beginPath();
     ctx.rect(dividerX, 0, w - dividerX, h);
     ctx.clip();
 
-    buildings.forEach(b => {
-        const center = b.x + b.w / 2;
-        if (center < dividerX) return; // skip left-side buildings
+    // Fields
+    const villageX = dividerX + 20;
+    const villageW = w - villageX - 40;
+    ctx.fillStyle = '#203b10';
+    ctx.fillRect(villageX, groundLevel - 40, villageW, 40);
+    // Crop lines
+    ctx.strokeStyle = 'rgba(255,255,255,0.03)'; ctx.lineWidth = 1;
+    for (let i = 0; i < 10; i++) {
+        const lx = villageX + (i / 10) * villageW;
+        ctx.beginPath(); ctx.moveTo(lx, groundLevel - 40); ctx.lineTo(lx + 6, groundLevel); ctx.stroke();
+    }
 
-        // Slightly lighten colors for female side
-        ctx.fillStyle = lightenHSL(b.color, 12);
-        const groundY = h - b.h;
+    // Ponds / water
+    ctx.fillStyle = '#0b3b6f';
+    ctx.beginPath(); ctx.ellipse(villageX + villageW * 0.18, groundLevel - 10, 40, 18, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#06314f'; ctx.beginPath(); ctx.ellipse(villageX + villageW * 0.18, groundLevel - 10, 30, 12, 0, 0, Math.PI * 2); ctx.fill();
 
-        switch (b.type) {
-            case 'stepped':
-                ctx.fillRect(b.x, groundY, b.w, b.h);
-                const topHeightR = b.h * 0.4;
-                const topWidthR = b.w * 0.6;
-                ctx.fillRect(b.x + (b.w - topWidthR) / 2, groundY - topHeightR, topWidthR, topHeightR);
-                break;
-            case 'spire':
-                ctx.fillRect(b.x, groundY, b.w, b.h);
-                ctx.beginPath();
-                ctx.moveTo(b.x, groundY);
-                ctx.lineTo(b.x + b.w / 2, groundY - 50);
-                ctx.lineTo(b.x + b.w, groundY);
-                ctx.closePath();
-                ctx.fill();
-                break;
-            default:
-                ctx.fillRect(b.x, groundY, b.w, b.h);
-                break;
-        }
+    // Huts positions
+    const huts = [villageX + villageW * 0.12, villageX + villageW * 0.45, villageX + villageW * 0.78];
+    huts.forEach((hx, idx) => {
+        const hutW = 80 - idx * 8;
+        const hutH = 50 + idx * 10;
+        const hutY = groundLevel - hutH;
 
-        // Windows with slightly stronger day glow on female side
-        const winW = Math.max(3, Math.floor(b.w / 10));
-        const winH = Math.max(3, Math.floor(b.h / 15));
-        b.windows.forEach(win => {
-            const wx = Math.round(b.x + win.x);
-            const wy = Math.round(groundY + win.y);
-            ctx.save();
-            if (isNightRight) {
-                ctx.fillStyle = "rgba(255, 230, 160, 0.95)";
-                ctx.shadowBlur = 10; ctx.shadowColor = "rgba(255,210,140,0.8)";
-            } else {
-                // lighten daytime windows a bit more than left side
-                ctx.fillStyle = "rgba(220, 235, 255, 0.28)";
-            }
-            ctx.fillRect(wx, wy, winW, winH);
-            ctx.restore();
-        });
+        // Hut body (mud)
+        ctx.fillStyle = '#ad7b4b';
+        ctx.beginPath(); ctx.ellipse(hx, hutY + hutH / 2, hutW * 0.6, hutH / 1.1, 0, 0, Math.PI * 2); ctx.fill();
+
+        // Thatched roof
+        ctx.fillStyle = '#b57f2a';
+        ctx.beginPath(); ctx.moveTo(hx - hutW * 0.7, hutY + 4); ctx.lineTo(hx, hutY - hutH * 0.4); ctx.lineTo(hx + hutW * 0.7, hutY + 4); ctx.closePath(); ctx.fill();
+
+        // Door
+        ctx.fillStyle = '#5b3a24'; ctx.fillRect(hx - 12, hutY + hutH / 4, 24, hutH / 2);
+
+        // Small window
+        ctx.fillStyle = isNightRight ? 'rgba(255,220,150,0.9)' : 'rgba(240,245,250,0.25)';
+        ctx.fillRect(hx + hutW * 0.2, hutY + hutH / 6, 12, 12);
+
+        // Smoke from small earthen stove
+        if (Math.random() < 0.02) updateSmoke(hx + 8, hutY - 10);
     });
+
+    // Lanterns / ambient lights
+    const lanterns = [villageX + villageW * 0.28, villageX + villageW * 0.6];
+    lanterns.forEach((lx, i) => {
+        const ly = groundLevel - 70 - (i * 8);
+        ctx.fillStyle = isNightRight ? 'rgba(255,180,80,0.95)' : 'rgba(255,200,120,0.45)';
+        ctx.beginPath(); ctx.arc(lx, ly, 6, 0, Math.PI * 2); ctx.fill();
+        // glow
+        if (isNightRight) {
+            const g = ctx.createRadialGradient(lx, ly, 6, lx, ly, 40);
+            g.addColorStop(0, 'rgba(255,180,80,0.6)'); g.addColorStop(1, 'rgba(255,180,80,0)');
+            ctx.fillStyle = g; ctx.beginPath(); ctx.arc(lx, ly, 40, 0, Math.PI * 2); ctx.fill();
+        }
+    });
+
     ctx.restore();
 
-    // Draw House
-    const houseX = w * 0.75;
-    const houseY = groundLevel;
-    
-    // House Body
-    ctx.fillStyle = "#263238";
-    ctx.fillRect(houseX, houseY - 120, 120, 120); // Bigger body
-    
-    // Chimney & Smoke
-    ctx.fillStyle = "#1c2327";
-    ctx.fillRect(houseX + 85, houseY - 160, 15, 40);
-    updateSmoke(houseX + 92, houseY - 160);
+    // Draw Rural Hut (female side centerpiece)
+    const hutX = w * 0.75;
+    const hutY = groundLevel;
+    // Hut body (rounded mud)
+    ctx.fillStyle = '#a66e3a';
+    ctx.beginPath(); ctx.ellipse(hutX, hutY - 60, 70, 55, 0, 0, Math.PI * 2); ctx.fill();
 
-    // Roof
-    ctx.beginPath(); 
-    ctx.moveTo(houseX - 10, houseY - 120); 
-    ctx.lineTo(houseX + 60, houseY - 170); // Higher peak for bigger roof
-    ctx.lineTo(houseX + 130, houseY - 120); 
-    ctx.fillStyle = "#37474f"; 
-    ctx.fill();
-    // Lit Window
-    ctx.fillStyle = "rgba(255, 235, 59, 0.5)"; 
-    ctx.fillRect(houseX + 40, houseY - 70, 25, 25);
+    // Thatched roof
+    ctx.fillStyle = '#b8862b';
+    ctx.beginPath(); ctx.moveTo(hutX - 80, hutY - 90); ctx.lineTo(hutX, hutY - 140); ctx.lineTo(hutX + 80, hutY - 90); ctx.closePath(); ctx.fill();
+
+    // Small stove pot and smoke
+    ctx.fillStyle = '#5b3a24'; ctx.fillRect(hutX + 45, hutY - 110, 10, 18);
+    updateSmoke(hutX + 50, hutY - 112);
+
+    // Door and window
+    ctx.fillStyle = '#4a2f1b'; ctx.fillRect(hutX - 18, hutY - 40, 36, 50);
+    ctx.fillStyle = isNightRight ? 'rgba(255,220,150,0.9)' : 'rgba(230,240,255,0.22)';
+    ctx.fillRect(hutX + 28, hutY - 60, 14, 14);
 
     // Garden with White Flowers
     ctx.fillStyle = "#2e7d32"; // Green bed
