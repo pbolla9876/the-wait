@@ -565,14 +565,11 @@ function drawGroundElements() {
     const groundLevel = h - 100;
     const now = Date.now();
     const dataLeft = weatherData.left;
-    let isDayLeft = (new Date().getHours() >= 6 && new Date().getHours() < 18);
+    const currentHour = new Date().getHours();
+    let isDayLeft = (currentHour >= 6 && currentHour < 18);
     if (dataLeft && dataLeft.sunrise && dataLeft.sunset) {
         isDayLeft = (now > dataLeft.sunrise && now < dataLeft.sunset);
     }
-
-    const dataLeft = weatherData.left;
-    const now = Date.now();
-    const currentHour = new Date().getHours();
     let isNightLeft = (currentHour < 6 || currentHour >= 18);
     if (dataLeft && dataLeft.sunrise && dataLeft.sunset) {
         isNightLeft = (now < dataLeft.sunrise || now > dataLeft.sunset);
