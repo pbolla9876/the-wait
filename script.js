@@ -866,9 +866,11 @@ function drawGroundElements() {
     ctx.ellipse(houseX + 80, houseY + 5, 90, 10, 0, 0, Math.PI*2);
     ctx.fill();
 
-    for(let i=0; i<12; i++) {
-        const fx = houseX + 10 + (i * 9) + Math.sin(i*99)*5;
+    for(let i=0; i<15; i++) {
+        const fSway = Math.sin(now * 0.003 + i) * 2;
+        const fx = houseX + 10 + (i * 8) + Math.sin(i*99)*5 + fSway;
         const fy = houseY + 2 + Math.cos(i*50)*3;
+        
         ctx.fillStyle = "#ffffff";
         ctx.beginPath(); ctx.arc(fx, fy, 3, 0, Math.PI*2); ctx.fill();
         ctx.fillStyle = "#ffd700"; 
@@ -898,25 +900,37 @@ function drawGroundElements() {
     const maleScale = 0.45;
     drawWalkingMan(w * 0.25, groundLevel - 10, maleScale, true);
 
-    // Draw Rural Tree (full, organic canopy)
+    // Draw Rural Tree (full, organic canopy with sway)
     const treeX = rightX + rightW * 0.82;
     const treeY = groundLevel;
+    const treeSway = Math.sin(now * 0.0015) * 5;
 
     // Trunk
     ctx.fillStyle = "#4b2f1f";
-    ctx.fillRect(treeX, treeY - 170, 28, 170);
+    ctx.beginPath();
+    ctx.moveTo(treeX, treeY);
+    ctx.lineTo(treeX + 28, treeY);
+    ctx.lineTo(treeX + 24 + treeSway * 0.2, treeY - 170);
+    ctx.lineTo(treeX + 4 + treeSway * 0.2, treeY - 170);
+    ctx.fill();
 
     // Canopy
+    ctx.save();
+    ctx.translate(treeX + 14, treeY - 170);
+    ctx.rotate(treeSway * 0.005); // Slight rotation
+    ctx.translate(-(treeX + 14), -(treeY - 170));
+
     const leafGrad = ctx.createRadialGradient(treeX + 10, treeY - 160, 20, treeX + 10, treeY - 160, 90);
     leafGrad.addColorStop(0, "#2f7a32");
     leafGrad.addColorStop(1, "#1b4d22");
     ctx.fillStyle = leafGrad;
     ctx.beginPath();
-    ctx.arc(treeX + 12, treeY - 175, 70, 0, Math.PI * 2);
-    ctx.arc(treeX - 35, treeY - 150, 50, 0, Math.PI * 2);
-    ctx.arc(treeX + 55, treeY - 150, 55, 0, Math.PI * 2);
-    ctx.arc(treeX + 10, treeY - 120, 45, 0, Math.PI * 2);
+    ctx.arc(treeX + 12 + treeSway, treeY - 175, 70, 0, Math.PI * 2);
+    ctx.arc(treeX - 35 + treeSway, treeY - 150, 50, 0, Math.PI * 2);
+    ctx.arc(treeX + 55 + treeSway, treeY - 150, 55, 0, Math.PI * 2);
+    ctx.arc(treeX + 10 + treeSway, treeY - 120, 45, 0, Math.PI * 2);
     ctx.fill();
+    ctx.restore();
 
     // Tree Flowers
     ctx.fillStyle = "#f48fb1";
@@ -950,15 +964,17 @@ function drawGroundElements() {
     ctx.closePath();
     ctx.fill();
 
-    // Grass blades
-    ctx.strokeStyle = "rgba(120, 200, 120, 0.5)";
-    ctx.lineWidth = 1;
-    for (let i = 0; i < 18; i++) {
-        const gx = grassX + (i / 17) * grassW;
-        const gh = 6 + (i % 3) * 4;
+    // Grass blades (Animated)
+    ctx.strokeStyle = "rgba(120, 200, 120, 0.4)";
+    ctx.lineWidth = 1.2;
+    for (let i = 0; i < 60; i++) {
+        const gx = grassX + (i / 60) * grassW + Math.random()*5;
+        const gh = 8 + Math.random() * 12;
+        const gSway = Math.sin(now * 0.002 + i * 0.1) * 4;
+        
         ctx.beginPath();
         ctx.moveTo(gx, grassBaseY + 6);
-        ctx.lineTo(gx - 2, grassBaseY + 6 - gh);
+        ctx.quadraticCurveTo(gx + gSway * 0.5, grassBaseY + 6 - gh * 0.5, gx + gSway, grassBaseY + 6 - gh);
         ctx.stroke();
     }
 
@@ -986,14 +1002,33 @@ function drawGroundElements() {
 
     // (plants now drawn within garden above)
 
-    // Hanging lantern glow near door
+    // Hanging lantern (Swinging)
     const lanternX = houseX + 48;
     const lanternY = houseY - 70;
-    const lanternGlow = ctx.createRadialGradient(lanternX, lanternY, 2, lanternX, lanternY, 18);
-    lanternGlow.addColorStop(0, "rgba(255, 220, 140, 0.8)");
+    const lanternSwing = Math.sin(now * 0.002) * 0.15;
+
+    ctx.save();
+    ctx.translate(lanternX, lanternY - 10); // Pivot at rope top
+    ctx.rotate(lanternSwing);
+    
+    // Rope
+    ctx.strokeStyle = "rgba(80, 60, 40, 0.8)";
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(0, 15); ctx.stroke();
+
+    // Lantern Glow & Body
+    ctx.translate(0, 15);
+    const lanternGlow = ctx.createRadialGradient(0, 0, 3, 0, 0, 22);
+    lanternGlow.addColorStop(0, "rgba(255, 220, 140, 0.9)");
     lanternGlow.addColorStop(1, "rgba(255, 220, 140, 0)");
     ctx.fillStyle = lanternGlow;
-    ctx.beginPath(); ctx.arc(lanternX, lanternY, 18, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(0, 0, 22, 0, Math.PI * 2); ctx.fill();
+    
+    ctx.fillStyle = "#3e2723";
+    ctx.fillRect(-5, -6, 10, 12);
+    ctx.beginPath(); ctx.moveTo(-6, -6); ctx.lineTo(6, -6); ctx.lineTo(0, -10); ctx.fill(); // Top
+    
+    ctx.restore();
 
     // 6. Divider Line
     ctx.strokeStyle = "rgba(255,255,255,0.2)";
