@@ -62,6 +62,17 @@ function processWeatherData(data) {
     };
 }
 
+// Utility: lighten an `hsl(h, s%, l%)` color string by `add` percent (clamped)
+function lightenHSL(hslStr, add) {
+    const m = /hsl\((\d+),\s*(\d+)%\s*,\s*(\d+)%\)/i.exec(hslStr);
+    if (!m) return hslStr;
+    let h = Number(m[1]);
+    let s = Number(m[2]);
+    let l = Number(m[3]);
+    l = Math.min(90, l + add);
+    return `hsl(${h}, ${s}%, ${l}%)`;
+}
+
 function init() {
     gameState = 'INTRO_TEXT';
     animStartTime = Date.now();
@@ -351,11 +362,16 @@ function drawGroundElements() {
     const groundLevel = h - 100;
 
     const dataLeft = weatherData.left;
+    const dataRight = weatherData.right;
     const now = Date.now();
     const currentHour = new Date().getHours();
     let isNightLeft = (currentHour < 6 || currentHour >= 18);
     if (dataLeft && dataLeft.sunrise && dataLeft.sunset) {
         isNightLeft = (now < dataLeft.sunrise || now > dataLeft.sunset);
+    }
+    let isNightRight = (currentHour < 6 || currentHour >= 18);
+    if (dataRight && dataRight.sunrise && dataRight.sunset) {
+        isNightRight = (now < dataRight.sunrise || now > dataRight.sunset);
     }
 
     // Clip building drawing to the left side
@@ -446,6 +462,61 @@ function drawGroundElements() {
     });
 
     ctx.restore(); // End clipping for buildings
+
+    // Right-side buildings (female side) - brighten and add soft ambient light
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(dividerX, 0, w - dividerX, h);
+    ctx.clip();
+
+    buildings.forEach(b => {
+        const center = b.x + b.w / 2;
+        if (center < dividerX) return; // skip left-side buildings
+
+        // Slightly lighten colors for female side
+        ctx.fillStyle = lightenHSL(b.color, 12);
+        const groundY = h - b.h;
+
+        switch (b.type) {
+            case 'stepped':
+                ctx.fillRect(b.x, groundY, b.w, b.h);
+                const topHeightR = b.h * 0.4;
+                const topWidthR = b.w * 0.6;
+                ctx.fillRect(b.x + (b.w - topWidthR) / 2, groundY - topHeightR, topWidthR, topHeightR);
+                break;
+            case 'spire':
+                ctx.fillRect(b.x, groundY, b.w, b.h);
+                ctx.beginPath();
+                ctx.moveTo(b.x, groundY);
+                ctx.lineTo(b.x + b.w / 2, groundY - 50);
+                ctx.lineTo(b.x + b.w, groundY);
+                ctx.closePath();
+                ctx.fill();
+                break;
+            default:
+                ctx.fillRect(b.x, groundY, b.w, b.h);
+                break;
+        }
+
+        // Windows with slightly stronger day glow on female side
+        const winW = Math.max(3, Math.floor(b.w / 10));
+        const winH = Math.max(3, Math.floor(b.h / 15));
+        b.windows.forEach(win => {
+            const wx = Math.round(b.x + win.x);
+            const wy = Math.round(groundY + win.y);
+            ctx.save();
+            if (isNightRight) {
+                ctx.fillStyle = "rgba(255, 230, 160, 0.95)";
+                ctx.shadowBlur = 10; ctx.shadowColor = "rgba(255,210,140,0.8)";
+            } else {
+                // lighten daytime windows a bit more than left side
+                ctx.fillStyle = "rgba(220, 235, 255, 0.28)";
+            }
+            ctx.fillRect(wx, wy, winW, winH);
+            ctx.restore();
+        });
+    });
+    ctx.restore();
 
     // Draw House
     const houseX = w * 0.75;
