@@ -30,6 +30,7 @@ let w, h, buildings = [], fireflies = [], smokeParticles = [], birds = [], firew
 let planes = { left: [], right: [] }; // moving airplanes per side
 let lastPlaneTime = { left: 0, right: 0 };
 let weatherData = { left: null, right: null };
+let featuredBuildingId = null;
 let particles = {
     left: { rain: [], snow: [], clouds: [] },
     right: { rain: [], snow: [], clouds: [] }
@@ -575,20 +576,8 @@ function drawGroundElements() {
         isNightLeft = (now < dataLeft.sunrise || now > dataLeft.sunset);
     }
 
-    // Pick a single left-side building to label: tallest, then closest to center divider
-    let featuredBuilding = null;
-    let bestHeight = -Infinity;
-    let bestDist = Infinity;
-    buildings.forEach(b => {
-        const centerX = b.x + b.w / 2;
-        if (centerX >= dividerX) return;
-        const distToCenter = Math.abs(dividerX - centerX);
-        if (b.h > bestHeight || (b.h === bestHeight && distToCenter < bestDist)) {
-            bestHeight = b.h;
-            bestDist = distToCenter;
-            featuredBuilding = b;
-        }
-    });
+    // Use a fixed building id so the Starbucks label never changes
+    const featuredBuilding = buildings[featuredBuildingId] || null;
 
     // Clip building drawing to the left side
     ctx.save();
@@ -1757,7 +1746,22 @@ function resize() {
         else if (typeRoll < 0.85) type = 'stepped';
         else type = 'spire';
 
-        return { x: bx, h: bH, w: bW, windows: wins, color: color, type: type };
+        return { id: i, x: bx, h: bH, w: bW, windows: wins, color: color, type: type };
+    });
+
+    // Pick a fixed left-side building to label: tallest, then closest to center divider
+    let bestHeight = -Infinity;
+    let bestDist = Infinity;
+    featuredBuildingId = null;
+    buildings.forEach((b, idx) => {
+        const centerX = b.x + b.w / 2;
+        if (centerX >= w / 2) return;
+        const distToCenter = Math.abs(w / 2 - centerX);
+        if (b.h > bestHeight || (b.h === bestHeight && distToCenter < bestDist)) {
+            bestHeight = b.h;
+            bestDist = distToCenter;
+            featuredBuildingId = idx;
+        }
     });
 
     // Fireflies
