@@ -2014,6 +2014,15 @@ function initScrollytelling() {
 
     const bg = document.createElement('div');
     bg.className = 'scrolly-bg';
+    const spacePhotoUrl = typeof CONFIG !== 'undefined' ? CONFIG.SPACE_PHOTO_URL : '';
+    if (spacePhotoUrl) {
+        container.classList.add('space-real');
+        bg.style.setProperty('--space-photo', `url('${spacePhotoUrl}')`);
+        document.documentElement.style.setProperty('--space-photo', `url('${spacePhotoUrl}')`);
+    } else {
+        container.classList.add('space-stylized');
+        document.documentElement.style.removeProperty('--space-photo');
+    }
     container.appendChild(bg);
 
     const stars = document.createElement('div');
@@ -2158,6 +2167,13 @@ function initScrollytelling() {
         tl.timeScale(autoScrollyTimeScale);
     }
 
+    const line1Speed = 90;
+    const line2Speed = 90;
+    const line1Duration = (line1.length * line1Speed) / 1000;
+    const line2Duration = (line2.length * line2Speed) / 1000;
+    const femaleRevealDuration = 2.2;
+    const threadDrawDuration = line1Duration + femaleRevealDuration + line2Duration;
+
     gsap.set([cloud], { y: 12 });
     gsap.set([line1El, line2El], { opacity: 0 });
 
@@ -2187,22 +2203,26 @@ function initScrollytelling() {
       .fromTo(cloud, { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 2.8 }, "<0.6")
       .add(() => {
           gsap.to(line1El, { opacity: 1, duration: 1.2, ease: "power2.out" });
-          typeLine(line1El, line1, 60);
-      }, "<0.2");
-
-    // Phase 2: Thread draws, moon turns full, thread glows gold
-    tl.to(thread, { opacity: 1, duration: 0.4 })
-      .to(particleGroup, { opacity: 1, duration: 0.6 }, "<")
-      .to(thread, { strokeDashoffset: 0, duration: 4 }, "<")
-      .to(thread, { stroke: "#FFD700", strokeWidth: 4, duration: 1 }, "<")
-      .to(window, { moonPhase: 1, duration: 2 }, "<");
-
-    // Phase 3: Female reveal, then final line in cloud
-    tl.to(femaleImg, { opacity: 1, duration: 2.2 })
+          typeLine(line1El, line1, line1Speed);
+      }, "<0.2")
+      .addLabel('textStart')
+      .to({}, { duration: line1Duration })
+      .addLabel('afterLine1')
+      .to(femaleImg, { opacity: 1, duration: femaleRevealDuration }, 'afterLine1')
+      .addLabel('afterFemale', `afterLine1+=${femaleRevealDuration}`)
       .add(() => {
           gsap.to(line2El, { opacity: 1, duration: 1.2, ease: "power2.out" });
-          typeLine(line2El, line2, 60);
-      }, "<0.2");
+          typeLine(line2El, line2, line2Speed);
+      }, 'afterFemale')
+      .to({}, { duration: line2Duration }, 'afterFemale')
+      .addLabel('textComplete', `afterFemale+=${line2Duration}`);
+
+    // Thread draws with the text; reaches the female when the full cloud text is revealed.
+    tl.to(thread, { opacity: 1, duration: 0.4 }, 'textStart')
+      .to(particleGroup, { opacity: 1, duration: 0.6 }, 'textStart')
+      .to(thread, { strokeDashoffset: 0, duration: threadDrawDuration }, 'textStart')
+      .to(thread, { stroke: "#FFD700", strokeWidth: 4, duration: 1 }, 'afterFemale')
+      .to(window, { moonPhase: 1, duration: 2 }, 'afterLine1');
 
     // Phase 4: Hold moment, then transition to canvas animation
     tl.to(container, { opacity: 0, duration: 2, onComplete: () => {

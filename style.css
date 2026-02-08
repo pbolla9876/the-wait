@@ -1,13 +1,21 @@
+:root {
+    --space-photo: none;
+}
+
 body, html {
     margin: 0; padding: 0;
     width: 100%; height: 100%;
     overflow-x: hidden;
     overflow-y: auto;
-    background:
+    background-image:
+        var(--space-photo),
         radial-gradient(1200px 800px at 15% 20%, rgba(255, 208, 140, 0.10), rgba(0, 0, 0, 0) 60%),
         radial-gradient(1000px 700px at 85% 30%, rgba(120, 170, 255, 0.12), rgba(0, 0, 0, 0) 60%),
         radial-gradient(900px 700px at 50% 0%, rgba(255, 255, 255, 0.06), rgba(0, 0, 0, 0) 55%),
         linear-gradient(180deg, #08192e 0%, #03070e 45%, #000 100%);
+    background-position: center, center, center, center, center;
+    background-size: cover, auto, auto, auto, auto;
+    background-repeat: no-repeat, no-repeat, no-repeat, no-repeat, no-repeat;
     color-rendering: optimizeLegibility;
 }
 
@@ -16,16 +24,20 @@ body, html {
     height: 100% !important;
 }
 
- .intro-screen {
+.intro-screen {
     position: absolute;
     inset: 0;
     z-index: 30;
     display: flex;
     align-items: center;
     justify-content: center;
-    background:
+    background-image:
+        var(--space-photo),
         radial-gradient(900px 600px at 50% 30%, rgba(255, 255, 255, 0.08), rgba(0, 0, 0, 0) 60%),
         linear-gradient(180deg, #0a1b34 0%, #04070e 55%, #000 100%);
+    background-position: center, center, center;
+    background-size: cover, auto, auto;
+    background-repeat: no-repeat, no-repeat, no-repeat;
     text-align: center;
     color: #f2f2f2;
     font-family: "Georgia", serif;
@@ -198,12 +210,28 @@ canvas {
 .scrolly-bg {
     position: absolute;
     inset: 0;
+    overflow: hidden;
+}
+
+#scrolly-overlay.space-stylized .scrolly-bg {
     background:
         radial-gradient(1200px 700px at 20% 65%, rgba(255, 210, 140, 0.18), rgba(0, 0, 0, 0) 60%),
         radial-gradient(1000px 600px at 80% 60%, rgba(120, 170, 255, 0.16), rgba(0, 0, 0, 0) 60%),
         radial-gradient(900px 600px at 50% 10%, rgba(255, 255, 255, 0.08), rgba(0, 0, 0, 0) 55%),
         linear-gradient(180deg, #08172c 0%, #02060d 45%, #000 100%);
-    overflow: hidden;
+}
+
+#scrolly-overlay.space-real .scrolly-bg {
+    background-color: #000;
+    background-image:
+        var(--space-photo, none),
+        radial-gradient(900px 600px at 25% 35%, rgba(120, 160, 255, 0.12), rgba(0, 0, 0, 0) 60%),
+        radial-gradient(800px 500px at 75% 65%, rgba(255, 200, 140, 0.10), rgba(0, 0, 0, 0) 60%),
+        linear-gradient(180deg, #070b14 0%, #03050a 45%, #000 100%);
+    background-position: center, center, center, center;
+    background-size: cover, auto, auto, auto;
+    background-repeat: no-repeat, no-repeat, no-repeat, no-repeat;
+    filter: saturate(0.85) contrast(1.05);
 }
 
 .scrolly-stars {
@@ -222,6 +250,15 @@ canvas {
         radial-gradient(1.8px 1.8px at 65% 80%, rgba(255,255,255,0.95), transparent 60%),
         radial-gradient(1.6px 1.6px at 45% 55%, rgba(255,255,255,0.85), transparent 60%);
     animation: starTwinkle 5s ease-in-out infinite;
+}
+
+#scrolly-overlay.space-real .scrolly-stars {
+    opacity: 0.55;
+    filter: blur(0.4px);
+}
+
+#scrolly-overlay.space-stylized .scrolly-stars {
+    opacity: 0.95;
 }
 
 @keyframes starTwinkle {
@@ -248,6 +285,7 @@ canvas {
     background: radial-gradient(120% 85% at 50% 60%, rgba(0, 0, 0, 0) 45%, rgba(0, 0, 0, 0.65) 100%);
     pointer-events: none;
 }
+
 
 .thought-cloud {
     position: absolute;
