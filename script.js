@@ -2014,7 +2014,7 @@ function initScrollytelling() {
 
     const bg = document.createElement('div');
     bg.className = 'scrolly-bg';
-    const spacePhotoUrl = typeof CONFIG !== 'undefined' ? CONFIG.SPACE_PHOTO_URL : '';
+    const spacePhotoUrl = (typeof CONFIG !== 'undefined' && CONFIG.SPACE_PHOTO_URL) ? CONFIG.SPACE_PHOTO_URL : 'space.png';
     if (spacePhotoUrl) {
         container.classList.add('space-real');
         bg.style.setProperty('--space-photo', `url('${spacePhotoUrl}')`);
