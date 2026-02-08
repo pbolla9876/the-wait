@@ -2129,20 +2129,7 @@ function initScrollytelling() {
         tick();
     });
 
-    const typeWords = (el, text, speed = 420) => new Promise((resolve) => {
-        const words = text.split(' ');
-        let i = 0;
-        const tick = () => {
-            i++;
-            el.textContent = words.slice(0, i).join(' ');
-            if (i < words.length) {
-                setTimeout(tick, speed);
-            } else {
-                resolve();
-            }
-        };
-        tick();
-    });
+    // Smooth reveal uses a mask + blur; no typing needed.
 
     const animateParticles = () => {
         const time = performance.now() * 0.00008;
@@ -2172,19 +2159,36 @@ function initScrollytelling() {
     }
 
     gsap.set([cloud], { y: 12 });
+    gsap.set([line1El, line2El], { opacity: 0 });
 
     // Phase 1: Intro -> type title words, hide prompt, fade intro, start scene (keep canvas hidden)
     const introPrompt = intro.querySelector('.intro-prompt');
-    introTitle.textContent = "";
-    const titleWordSpeed = 1200;
-    tl.add(() => { typeWords(introTitle, titleText, titleWordSpeed); })
+    introTitle.textContent = titleText;
+    const titleRevealDuration = 4.0;
+    gsap.set(introTitle, {
+        clipPath: 'inset(0 100% 0 0)',
+        WebkitClipPath: 'inset(0 100% 0 0)',
+        filter: 'blur(10px)',
+        opacity: 0.2
+    });
+    tl.to(introTitle, {
+        clipPath: 'inset(0 0% 0 0)',
+        WebkitClipPath: 'inset(0 0% 0 0)',
+        filter: 'blur(0px)',
+        opacity: 1,
+        duration: titleRevealDuration,
+        ease: 'power2.out'
+    })
       .to(introPrompt, { opacity: 0, duration: 0.5 }, "<0.4")
       .to(introTitle, { opacity: 0, scale: 1.06, duration: 2.4 }, "+=1.0")
       .to(intro, { opacity: 0, duration: 2.4, onComplete: () => intro.remove() }, "<0.3")
       .to(bg, { opacity: 0, duration: 2.4 }, "<0.2")
       .fromTo(maleImg, { opacity: 0, x: -70 }, { opacity: 1, x: 0, duration: 3.8 }, ">")
       .fromTo(cloud, { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 2.8 }, "<0.6")
-      .add(() => { typeLine(line1El, line1, 30); }, "<0.2");
+      .add(() => {
+          gsap.to(line1El, { opacity: 1, duration: 1.2, ease: "power2.out" });
+          typeLine(line1El, line1, 60);
+      }, "<0.2");
 
     // Phase 2: Thread draws, moon turns full, thread glows gold
     tl.to(thread, { opacity: 1, duration: 0.4 })
@@ -2195,7 +2199,10 @@ function initScrollytelling() {
 
     // Phase 3: Female reveal, then final line in cloud
     tl.to(femaleImg, { opacity: 1, duration: 2.2 })
-      .add(() => { typeLine(line2El, line2); }, "<0.2");
+      .add(() => {
+          gsap.to(line2El, { opacity: 1, duration: 1.2, ease: "power2.out" });
+          typeLine(line2El, line2, 60);
+      }, "<0.2");
 
     // Phase 4: Hold moment, then transition to canvas animation
     tl.to(container, { opacity: 0, duration: 2, onComplete: () => {

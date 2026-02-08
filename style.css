@@ -32,10 +32,12 @@ body, html {
 }
 
 .intro-title {
+    display: inline-block;
     font-size: clamp(2.2rem, 4vw, 4rem);
     letter-spacing: 1px;
     margin: 0 0 14px 0;
     text-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    will-change: clip-path, filter, opacity, transform;
 }
 
 .intro-prompt {
@@ -253,13 +255,13 @@ canvas {
     width: fit-content;
     max-width: 360px;
     padding: 16px 18px;
-    background: rgba(255, 255, 255, 0.72);
+    background: rgba(255, 255, 255, 0.86);
     border-radius: 22px;
     color: #111;
     font-family: "Georgia", serif;
     font-size: 18px;
     line-height: 1.5;
-    box-shadow: 0 14px 36px rgba(0, 0, 0, 0.28), 0 0 22px rgba(255, 255, 255, 0.35);
+    box-shadow: 0 14px 36px rgba(0, 0, 0, 0.32), 0 0 24px rgba(255, 255, 255, 0.4);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     border: 1px solid rgba(255, 255, 255, 0.6);
@@ -290,8 +292,17 @@ canvas {
 
 .thought-cloud .translation {
     font-size: 14px;
-    color: #666;
+    color: #3b3b3b;
     margin-top: 6px;
+}
+
+.thought-cloud #cloud-text-2 {
+    color: #e6c15a;
+    font-weight: 600;
+    text-shadow:
+        0 2px 8px rgba(80, 55, 0, 0.55),
+        0 0 10px rgba(255, 215, 120, 0.6);
+    letter-spacing: 0.2px;
 }
 
 #scrolly-lock {
