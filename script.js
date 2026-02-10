@@ -14,6 +14,13 @@ function createSlideshowOverlay() {
     const overlay = document.createElement('div');
     overlay.id = 'romance-slideshow';
     overlay.innerHTML = `
+        <svg class="cloud-mask-defs" width="0" height="0" aria-hidden="true" focusable="false">
+            <defs>
+                <clipPath id="cloud-clip" clipPathUnits="objectBoundingBox">
+                    <path d="M0.12,0.74 C0.04,0.74 0.0,0.69 0.0,0.62 C0.0,0.56 0.03,0.52 0.08,0.50 C0.08,0.41 0.16,0.34 0.26,0.34 C0.30,0.34 0.34,0.35 0.37,0.37 C0.42,0.27 0.53,0.20 0.66,0.20 C0.83,0.20 0.97,0.32 0.98,0.48 C0.99,0.48 1.0,0.48 1.0,0.48 C1.0,0.56 0.95,0.63 0.88,0.63 C0.86,0.63 0.84,0.63 0.82,0.62 C0.78,0.69 0.70,0.74 0.60,0.74 Z"></path>
+                </clipPath>
+            </defs>
+        </svg>
         <div class="slideshow-frame">
             <img class="slide-image is-front" alt="Memory slide">
             <img class="slide-image is-back" alt="Memory slide">

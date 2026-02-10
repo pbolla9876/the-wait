@@ -293,23 +293,31 @@ body.music-waiting #back-to-title {
     display: grid;
     place-items: center;
     background:
-        radial-gradient(900px 600px at 50% 35%, rgba(255, 220, 180, 0.18), rgba(0, 0, 0, 0) 60%),
-        radial-gradient(800px 600px at 20% 70%, rgba(120, 170, 255, 0.16), rgba(0, 0, 0, 0) 55%),
-        linear-gradient(180deg, rgba(8, 14, 28, 0.95), rgba(2, 4, 10, 0.98));
+        radial-gradient(900px 600px at 50% 30%, rgba(255, 225, 190, 0.18), rgba(0, 0, 0, 0) 60%),
+        radial-gradient(800px 600px at 75% 65%, rgba(120, 170, 255, 0.16), rgba(0, 0, 0, 0) 55%),
+        linear-gradient(180deg, rgba(10, 16, 32, 0.92), rgba(3, 5, 12, 0.98));
     opacity: 0;
     animation: slideshowFadeIn 1.4s ease forwards;
 }
 
+.cloud-mask-defs {
+    position: absolute;
+    width: 0;
+    height: 0;
+}
+
 .slideshow-frame {
-    width: min(78vw, 620px);
-    height: min(78vh, 820px);
-    border-radius: 28px;
+    width: min(86vw, 900px);
+    height: min(64vh, 560px);
+    border-radius: 0;
     position: relative;
     overflow: hidden;
     box-shadow:
         0 30px 80px rgba(0, 0, 0, 0.55),
-        0 0 80px rgba(255, 220, 190, 0.22);
-    background: rgba(8, 10, 18, 0.25);
+        0 0 90px rgba(255, 220, 190, 0.24);
+    background: rgba(8, 10, 18, 0.2);
+    clip-path: url(#cloud-clip);
+    -webkit-clip-path: url(#cloud-clip);
 }
 
 .slide-image {
@@ -345,6 +353,33 @@ body.slideshow-mode #ui-layer,
 body.slideshow-mode #back-to-title {
     opacity: 0 !important;
     pointer-events: none !important;
+}
+
+.slideshow-frame::before {
+    content: "";
+    position: absolute;
+    inset: -10px;
+    clip-path: url(#cloud-clip);
+    -webkit-clip-path: url(#cloud-clip);
+    background:
+        radial-gradient(circle at 40% 35%, rgba(255, 240, 220, 0.45), rgba(255, 255, 255, 0) 55%),
+        radial-gradient(circle at 70% 60%, rgba(160, 200, 255, 0.35), rgba(255, 255, 255, 0) 60%);
+    opacity: 0.5;
+    filter: blur(12px);
+    z-index: 1;
+    pointer-events: none;
+}
+
+.slideshow-frame::after {
+    content: "";
+    position: absolute;
+    inset: 4px;
+    clip-path: url(#cloud-clip);
+    -webkit-clip-path: url(#cloud-clip);
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    box-shadow: 0 0 40px rgba(255, 220, 190, 0.25);
+    z-index: 2;
+    pointer-events: none;
 }
 
 
