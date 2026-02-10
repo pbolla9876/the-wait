@@ -2,9 +2,75 @@ const canvas = document.getElementById('scene');
 const ctx = canvas.getContext('2d');
 const timerElement = document.getElementById('timer');
 const YT_MUSIC_VIDEO_ID = 'PoB3ZAuMzWE';
+const FEMALE_SLIDES = Array.from({ length: 30 }, (_, i) => `fm${i + 1}.jpg`);
 let ytApiReadyPromise = null;
 let ytPlayer = null;
 let scrollyTimeline = null;
+let slideshowIntervalId = null;
+let slideshowIndex = 0;
+
+function createSlideshowOverlay() {
+    if (document.getElementById('romance-slideshow')) return;
+    const overlay = document.createElement('div');
+    overlay.id = 'romance-slideshow';
+    overlay.innerHTML = `
+        <div class="slideshow-frame">
+            <img class="slide-image is-front" alt="Memory slide">
+            <img class="slide-image is-back" alt="Memory slide">
+        </div>
+    `;
+    document.body.appendChild(overlay);
+}
+
+function startSlideshow() {
+    if (slideshowIntervalId) return;
+    createSlideshowOverlay();
+    const overlay = document.getElementById('romance-slideshow');
+    if (!overlay) return;
+    document.body.classList.add('slideshow-mode');
+    const front = overlay.querySelector('.slide-image.is-front');
+    const back = overlay.querySelector('.slide-image.is-back');
+    if (!front || !back) return;
+
+    const showSlide = (imgEl, src) => {
+        imgEl.src = src;
+        imgEl.classList.add('is-visible');
+        imgEl.classList.remove('is-hidden');
+    };
+    const hideSlide = (imgEl) => {
+        imgEl.classList.add('is-hidden');
+        imgEl.classList.remove('is-visible');
+    };
+
+    slideshowIndex = 0;
+    showSlide(front, FEMALE_SLIDES[slideshowIndex % FEMALE_SLIDES.length]);
+    hideSlide(back);
+
+    slideshowIntervalId = setInterval(() => {
+        slideshowIndex++;
+        const nextSrc = FEMALE_SLIDES[slideshowIndex % FEMALE_SLIDES.length];
+        const frontVisible = front.classList.contains('is-visible');
+        const nextEl = frontVisible ? back : front;
+        const currentEl = frontVisible ? front : back;
+        showSlide(nextEl, nextSrc);
+        hideSlide(currentEl);
+    }, 6500);
+}
+
+function stopSlideshow() {
+    if (slideshowIntervalId) {
+        clearInterval(slideshowIntervalId);
+        slideshowIntervalId = null;
+    }
+    document.body.classList.remove('slideshow-mode');
+    const overlay = document.getElementById('romance-slideshow');
+    if (overlay) overlay.remove();
+}
+
+function handleMusicEnded() {
+    stopSlideshow();
+    if (scrollyTimeline) scrollyTimeline.play();
+}
 
 function loadYouTubeIframeApi() {
     if (ytApiReadyPromise) return ytApiReadyPromise;
@@ -41,6 +107,11 @@ async function createYouTubePlayer() {
                 e.target.unMute();
                 e.target.setVolume(100);
                 e.target.playVideo();
+            },
+            onStateChange: (e) => {
+                if (e.data === YT.PlayerState.ENDED) {
+                    handleMusicEnded();
+                }
             }
         }
     });
@@ -2296,7 +2367,11 @@ function initScrollytelling() {
           typeLine(line2El, line2, line2Speed);
       }, 'afterFemale')
       .to({}, { duration: line2Duration }, 'afterFemale')
-      .addLabel('textComplete', `afterFemale+=${line2Duration}`);
+      .addLabel('textComplete', `afterFemale+=${line2Duration}`)
+      .add(() => {
+          startSlideshow();
+          tl.pause();
+      }, 'textComplete');
 
     // Thread draws with the text; reaches the female when the full cloud text is revealed.
     tl.to(thread, { opacity: 1, duration: 0.4 }, 'textStart')

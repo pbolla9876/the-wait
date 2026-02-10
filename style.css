@@ -286,6 +286,66 @@ body.music-waiting #back-to-title {
     100% { transform: rotate(360deg); }
 }
 
+#romance-slideshow {
+    position: fixed;
+    inset: 0;
+    z-index: 205;
+    display: grid;
+    place-items: center;
+    background:
+        radial-gradient(circle at 50% 40%, rgba(255, 235, 210, 0.12), rgba(0, 0, 0, 0) 60%),
+        linear-gradient(180deg, rgba(3, 4, 8, 0.92), rgba(0, 0, 0, 0.98));
+    opacity: 0;
+    animation: slideshowFadeIn 1.4s ease forwards;
+}
+
+.slideshow-frame {
+    width: min(62vw, 420px);
+    aspect-ratio: 3 / 4;
+    border-radius: 22px;
+    position: relative;
+    overflow: hidden;
+    box-shadow:
+        0 24px 60px rgba(0, 0, 0, 0.55),
+        0 0 60px rgba(255, 220, 190, 0.18);
+    background: rgba(8, 10, 18, 0.4);
+}
+
+.slide-image {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0;
+    transform: scale(1.08);
+    transition: opacity 1.6s ease, transform 7s ease;
+    filter: saturate(1.05) contrast(1.02);
+}
+
+.slide-image.is-visible {
+    opacity: 1;
+    transform: scale(1);
+}
+
+.slide-image.is-hidden {
+    opacity: 0;
+    transform: scale(1.08);
+}
+
+@keyframes slideshowFadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+body.slideshow-mode #scrolly-overlay,
+body.slideshow-mode canvas,
+body.slideshow-mode #ui-layer,
+body.slideshow-mode #back-to-title {
+    opacity: 0 !important;
+    pointer-events: none !important;
+}
+
 
 
 #ui-layer.scrolly-center {
