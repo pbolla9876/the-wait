@@ -19,10 +19,11 @@ function createSlideshowOverlay() {
         <svg class="cloud-mask-defs" width="0" height="0" aria-hidden="true" focusable="false">
             <defs>
                 <clipPath id="cloud-clip" clipPathUnits="objectBoundingBox">
-                    <path d="M0.12,0.74 C0.04,0.74 0.0,0.69 0.0,0.62 C0.0,0.56 0.03,0.52 0.08,0.50 C0.08,0.41 0.16,0.34 0.26,0.34 C0.30,0.34 0.34,0.35 0.37,0.37 C0.42,0.27 0.53,0.20 0.66,0.20 C0.83,0.20 0.97,0.32 0.98,0.48 C0.99,0.48 1.0,0.48 1.0,0.48 C1.0,0.56 0.95,0.63 0.88,0.63 C0.86,0.63 0.84,0.63 0.82,0.62 C0.78,0.69 0.70,0.74 0.60,0.74 Z"></path>
+                    <path d="M0.10,0.86 C0.03,0.86 0.0,0.80 0.0,0.72 C0.0,0.64 0.04,0.58 0.10,0.56 C0.10,0.44 0.20,0.34 0.32,0.34 C0.36,0.34 0.40,0.35 0.44,0.37 C0.50,0.24 0.62,0.15 0.76,0.15 C0.91,0.15 1.0,0.26 1.0,0.40 C1.0,0.52 0.93,0.60 0.86,0.60 C0.84,0.60 0.82,0.60 0.80,0.59 C0.77,0.77 0.64,0.86 0.48,0.86 Z"></path>
                 </clipPath>
             </defs>
         </svg>
+        <img class="slideshow-male" src="male.png" alt="He is waiting">
         <div class="slideshow-frame">
             <img class="slide-image is-front" alt="Memory slide">
             <img class="slide-image is-back" alt="Memory slide">
@@ -137,6 +138,7 @@ function showMusicPrompt(onStart) {
     prompt.addEventListener('click', async () => {
         prompt.disabled = true;
         prompt.textContent = 'Starting music...';
+        musicStarted = true;
         try {
             await createYouTubePlayer();
             if (ytPlayer) {
@@ -144,7 +146,6 @@ function showMusicPrompt(onStart) {
                 ytPlayer.setVolume(100);
                 ytPlayer.playVideo();
             }
-            musicStarted = true;
             prompt.remove();
             document.body.classList.remove('music-waiting');
             if (typeof onStart === 'function') onStart();
@@ -2384,10 +2385,8 @@ function initScrollytelling() {
       .addLabel('textComplete', `afterFemale+=${line2Duration}`)
       .add(() => {
           textCompleteReached = true;
-          if (musicStarted) {
-              startSlideshow();
-              tl.pause();
-          }
+          startSlideshow();
+          tl.pause();
       }, 'textComplete');
 
     // Thread draws with the text; reaches the female when the full cloud text is revealed.

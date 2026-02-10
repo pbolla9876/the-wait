@@ -307,8 +307,8 @@ body.music-waiting #back-to-title {
 }
 
 .slideshow-frame {
-    width: min(92vw, 1100px);
-    height: min(80vh, 760px);
+    width: min(90vw, 1100px);
+    height: min(84vh, 860px);
     border-radius: 0;
     position: relative;
     overflow: hidden;
@@ -354,6 +354,29 @@ body.slideshow-mode #ui-layer,
 body.slideshow-mode #back-to-title {
     opacity: 0 !important;
     pointer-events: none !important;
+}
+
+.slideshow-male {
+    position: absolute;
+    left: 6%;
+    bottom: 5%;
+    width: min(28vw, 320px);
+    height: min(60vh, 520px);
+    object-fit: cover;
+    opacity: 0.95;
+    filter: drop-shadow(0 20px 35px rgba(0, 0, 0, 0.45));
+    z-index: 204;
+    animation: maleFloat 5.6s ease-in-out infinite;
+}
+
+.slideshow-male::selection {
+    background: transparent;
+}
+
+@keyframes maleFloat {
+    0% { transform: translateY(0); }
+    50% { transform: translateY(-6px); }
+    100% { transform: translateY(0); }
 }
 
 .slideshow-frame::before {
