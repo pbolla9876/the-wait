@@ -23,7 +23,6 @@ function createSlideshowOverlay() {
                 </clipPath>
             </defs>
         </svg>
-        <img class="slideshow-male" src="male.png" alt="He is waiting">
         <div class="slideshow-frame">
             <img class="slide-image is-front" alt="Memory slide">
             <img class="slide-image is-back" alt="Memory slide">
