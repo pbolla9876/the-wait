@@ -8,6 +8,8 @@ let ytPlayer = null;
 let scrollyTimeline = null;
 let slideshowIntervalId = null;
 let slideshowIndex = 0;
+let musicStarted = false;
+let textCompleteReached = false;
 
 function createSlideshowOverlay() {
     if (document.getElementById('romance-slideshow')) return;
@@ -142,9 +144,14 @@ function showMusicPrompt(onStart) {
                 ytPlayer.setVolume(100);
                 ytPlayer.playVideo();
             }
+            musicStarted = true;
             prompt.remove();
             document.body.classList.remove('music-waiting');
             if (typeof onStart === 'function') onStart();
+            if (textCompleteReached) {
+                startSlideshow();
+                if (scrollyTimeline) scrollyTimeline.pause();
+            }
         } catch (err) {
             console.warn('YouTube playback blocked or failed', err);
             prompt.disabled = false;
@@ -2376,8 +2383,11 @@ function initScrollytelling() {
       .to({}, { duration: line2Duration }, 'afterFemale')
       .addLabel('textComplete', `afterFemale+=${line2Duration}`)
       .add(() => {
-          startSlideshow();
-          tl.pause();
+          textCompleteReached = true;
+          if (musicStarted) {
+              startSlideshow();
+              tl.pause();
+          }
       }, 'textComplete');
 
     // Thread draws with the text; reaches the female when the full cloud text is revealed.
