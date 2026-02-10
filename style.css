@@ -181,36 +181,109 @@ canvas {
 
 #yt-audio-player {
     position: fixed;
-    width: 0;
-    height: 0;
+    width: 1px;
+    height: 1px;
     opacity: 0;
     pointer-events: none;
+    left: -9999px;
+    top: -9999px;
 }
 
 #music-prompt {
     position: fixed;
     left: 50%;
-    top: 62%;
+    top: 58%;
     transform: translate(-50%, -50%);
     z-index: 220;
-    padding: 12px 18px;
-    border-radius: 999px;
-    border: 1px solid rgba(255, 255, 255, 0.4);
-    background: rgba(12, 16, 26, 0.72);
-    color: #f6f2ee;
+    width: 104px;
+    height: 104px;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    background:
+        radial-gradient(circle at 50% 35%, rgba(255, 235, 200, 0.25), rgba(0, 0, 0, 0) 55%),
+        radial-gradient(circle at 50% 70%, rgba(120, 170, 255, 0.18), rgba(0, 0, 0, 0) 60%),
+        rgba(8, 12, 20, 0.45);
+    color: #f9f4ee;
     font-family: "Georgia", serif;
-    font-size: 14px;
-    letter-spacing: 1px;
+    font-size: 11px;
+    letter-spacing: 3px;
     text-transform: uppercase;
     cursor: pointer;
-    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45);
+    box-shadow:
+        0 18px 35px rgba(0, 0, 0, 0.5),
+        0 0 30px rgba(255, 210, 150, 0.25),
+        0 0 70px rgba(120, 170, 255, 0.22);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
+    transition: transform 0.4s ease, box-shadow 0.4s ease, opacity 0.4s ease, filter 0.4s ease;
+    animation: musicPromptFloat 4.2s ease-in-out infinite;
 }
 
 #music-prompt:disabled {
     opacity: 0.7;
     cursor: wait;
+}
+
+#music-prompt:hover {
+    transform: translate(-50%, -52%) scale(1.03);
+    box-shadow:
+        0 22px 40px rgba(0, 0, 0, 0.6),
+        0 0 40px rgba(255, 230, 190, 0.4),
+        0 0 90px rgba(120, 170, 255, 0.35);
+    filter: brightness(1.05);
+}
+
+#music-prompt::before {
+    content: "";
+    position: absolute;
+    inset: -8px;
+    border-radius: 50%;
+    background: conic-gradient(
+        from 0deg,
+        rgba(255, 220, 170, 0.45),
+        rgba(120, 170, 255, 0.35),
+        rgba(255, 220, 170, 0.45)
+    );
+    opacity: 0.6;
+    filter: blur(10px);
+    z-index: -1;
+    animation: sealSpin 18s linear infinite;
+}
+
+#music-prompt::after {
+    content: "";
+    position: absolute;
+    inset: 10px;
+    border-radius: 50%;
+    border: 1px dashed rgba(255, 255, 255, 0.35);
+    pointer-events: none;
+}
+
+body.music-waiting,
+body.music-waiting::before,
+body.music-waiting::after {
+    background: #000 !important;
+    background-image: none !important;
+}
+
+body.music-waiting .ambient-orbs,
+body.music-waiting #scrolly-overlay,
+body.music-waiting canvas,
+body.music-waiting #ui-layer,
+body.music-waiting #back-to-title {
+    opacity: 0 !important;
+    pointer-events: none !important;
+}
+
+@keyframes musicPromptFloat {
+    0% { transform: translate(-50%, -50%); }
+    50% { transform: translate(-50%, -54%); }
+    100% { transform: translate(-50%, -50%); }
+}
+
+@keyframes sealSpin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
 }
 
 

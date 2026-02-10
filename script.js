@@ -4,6 +4,7 @@ const timerElement = document.getElementById('timer');
 const YT_MUSIC_VIDEO_ID = 'PoB3ZAuMzWE';
 let ytApiReadyPromise = null;
 let ytPlayer = null;
+let scrollyTimeline = null;
 
 function loadYouTubeIframeApi() {
     if (ytApiReadyPromise) return ytApiReadyPromise;
@@ -24,36 +25,48 @@ async function createYouTubePlayer() {
     await loadYouTubeIframeApi();
     if (ytPlayer) return ytPlayer;
     ytPlayer = new YT.Player('yt-audio-player', {
-        height: '0',
-        width: '0',
+        height: '1',
+        width: '1',
         videoId: YT_MUSIC_VIDEO_ID,
         playerVars: {
             autoplay: 1,
             controls: 0,
             rel: 0,
             modestbranding: 1,
-            playsinline: 1
+            playsinline: 1,
+            origin: window.location.origin
         },
         events: {
-            onReady: (e) => e.target.playVideo()
+            onReady: (e) => {
+                e.target.unMute();
+                e.target.setVolume(100);
+                e.target.playVideo();
+            }
         }
     });
     return ytPlayer;
 }
 
-function showMusicPrompt() {
+function showMusicPrompt(onStart) {
     if (!YT_MUSIC_VIDEO_ID || document.getElementById('music-prompt')) return;
+    document.body.classList.add('music-waiting');
     const prompt = document.createElement('button');
     prompt.id = 'music-prompt';
     prompt.type = 'button';
-    prompt.textContent = 'Tap to play music';
+    prompt.textContent = 'Tap to start music';
     prompt.addEventListener('click', async () => {
         prompt.disabled = true;
         prompt.textContent = 'Starting music...';
         try {
             await createYouTubePlayer();
-            if (ytPlayer) ytPlayer.playVideo();
+            if (ytPlayer) {
+                ytPlayer.unMute();
+                ytPlayer.setVolume(100);
+                ytPlayer.playVideo();
+            }
             prompt.remove();
+            document.body.classList.remove('music-waiting');
+            if (typeof onStart === 'function') onStart();
         } catch (err) {
             console.warn('YouTube playback blocked or failed', err);
             prompt.disabled = false;
@@ -2224,6 +2237,7 @@ function initScrollytelling() {
                 scrub: 1
             }
         });
+    scrollyTimeline = tl;
     if (autoScrolly) {
         tl.timeScale(autoScrollyTimeScale);
     }
@@ -2258,7 +2272,12 @@ function initScrollytelling() {
     })
       .to(introPrompt, { opacity: 0, duration: 0.5 }, "<0.4")
       .to(introTitle, { opacity: 0, scale: 1.06, duration: 2.4 }, "+=1.0")
-      .add(() => showMusicPrompt(), ">")
+      .add(() => {
+          showMusicPrompt(() => {
+              if (scrollyTimeline) scrollyTimeline.play();
+          });
+          tl.pause();
+      }, ">")
       .to(intro, { opacity: 0, duration: 2.4, onComplete: () => intro.remove() }, "<0.3")
       .to(bg, { opacity: 0, duration: 2.4 }, "<0.2")
       .fromTo(maleImg, { opacity: 0, x: -70 }, { opacity: 1, x: 0, duration: 3.8 }, ">")
