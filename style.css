@@ -179,6 +179,40 @@ canvas {
     transform: translateY(-2px);
 }
 
+#yt-audio-player {
+    position: fixed;
+    width: 0;
+    height: 0;
+    opacity: 0;
+    pointer-events: none;
+}
+
+#music-prompt {
+    position: fixed;
+    left: 50%;
+    top: 62%;
+    transform: translate(-50%, -50%);
+    z-index: 220;
+    padding: 12px 18px;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    background: rgba(12, 16, 26, 0.72);
+    color: #f6f2ee;
+    font-family: "Georgia", serif;
+    font-size: 14px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    cursor: pointer;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
+#music-prompt:disabled {
+    opacity: 0.7;
+    cursor: wait;
+}
+
 
 
 #ui-layer.scrolly-center {

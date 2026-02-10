@@ -1,6 +1,67 @@
 const canvas = document.getElementById('scene');
 const ctx = canvas.getContext('2d');
 const timerElement = document.getElementById('timer');
+const YT_MUSIC_VIDEO_ID = 'PoB3ZAuMzWE';
+let ytApiReadyPromise = null;
+let ytPlayer = null;
+
+function loadYouTubeIframeApi() {
+    if (ytApiReadyPromise) return ytApiReadyPromise;
+    ytApiReadyPromise = new Promise((resolve) => {
+        if (window.YT && window.YT.Player) {
+            resolve();
+            return;
+        }
+        const tag = document.createElement('script');
+        tag.src = 'https://www.youtube.com/iframe_api';
+        document.head.appendChild(tag);
+        window.onYouTubeIframeAPIReady = () => resolve();
+    });
+    return ytApiReadyPromise;
+}
+
+async function createYouTubePlayer() {
+    await loadYouTubeIframeApi();
+    if (ytPlayer) return ytPlayer;
+    ytPlayer = new YT.Player('yt-audio-player', {
+        height: '0',
+        width: '0',
+        videoId: YT_MUSIC_VIDEO_ID,
+        playerVars: {
+            autoplay: 1,
+            controls: 0,
+            rel: 0,
+            modestbranding: 1,
+            playsinline: 1
+        },
+        events: {
+            onReady: (e) => e.target.playVideo()
+        }
+    });
+    return ytPlayer;
+}
+
+function showMusicPrompt() {
+    if (!YT_MUSIC_VIDEO_ID || document.getElementById('music-prompt')) return;
+    const prompt = document.createElement('button');
+    prompt.id = 'music-prompt';
+    prompt.type = 'button';
+    prompt.textContent = 'Tap to play music';
+    prompt.addEventListener('click', async () => {
+        prompt.disabled = true;
+        prompt.textContent = 'Starting music...';
+        try {
+            await createYouTubePlayer();
+            if (ytPlayer) ytPlayer.playVideo();
+            prompt.remove();
+        } catch (err) {
+            console.warn('YouTube playback blocked or failed', err);
+            prompt.disabled = false;
+            prompt.textContent = 'Tap to play music';
+        }
+    });
+    document.body.appendChild(prompt);
+}
 
 // Polyfill for roundRect (prevents blank screen in browsers without support)
 if (!CanvasRenderingContext2D.prototype.roundRect) {
@@ -2197,6 +2258,7 @@ function initScrollytelling() {
     })
       .to(introPrompt, { opacity: 0, duration: 0.5 }, "<0.4")
       .to(introTitle, { opacity: 0, scale: 1.06, duration: 2.4 }, "+=1.0")
+      .add(() => showMusicPrompt(), ">")
       .to(intro, { opacity: 0, duration: 2.4, onComplete: () => intro.remove() }, "<0.3")
       .to(bg, { opacity: 0, duration: 2.4 }, "<0.2")
       .fromTo(maleImg, { opacity: 0, x: -70 }, { opacity: 1, x: 0, duration: 3.8 }, ">")
