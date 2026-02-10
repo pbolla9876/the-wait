@@ -293,22 +293,23 @@ body.music-waiting #back-to-title {
     display: grid;
     place-items: center;
     background:
-        radial-gradient(circle at 50% 40%, rgba(255, 235, 210, 0.12), rgba(0, 0, 0, 0) 60%),
-        linear-gradient(180deg, rgba(3, 4, 8, 0.92), rgba(0, 0, 0, 0.98));
+        radial-gradient(900px 600px at 50% 35%, rgba(255, 220, 180, 0.18), rgba(0, 0, 0, 0) 60%),
+        radial-gradient(800px 600px at 20% 70%, rgba(120, 170, 255, 0.16), rgba(0, 0, 0, 0) 55%),
+        linear-gradient(180deg, rgba(8, 14, 28, 0.95), rgba(2, 4, 10, 0.98));
     opacity: 0;
     animation: slideshowFadeIn 1.4s ease forwards;
 }
 
 .slideshow-frame {
-    width: min(62vw, 420px);
-    aspect-ratio: 3 / 4;
-    border-radius: 22px;
+    width: min(78vw, 620px);
+    height: min(78vh, 820px);
+    border-radius: 28px;
     position: relative;
     overflow: hidden;
     box-shadow:
-        0 24px 60px rgba(0, 0, 0, 0.55),
-        0 0 60px rgba(255, 220, 190, 0.18);
-    background: rgba(8, 10, 18, 0.4);
+        0 30px 80px rgba(0, 0, 0, 0.55),
+        0 0 80px rgba(255, 220, 190, 0.22);
+    background: rgba(8, 10, 18, 0.25);
 }
 
 .slide-image {
