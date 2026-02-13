@@ -307,8 +307,8 @@ body.music-waiting #back-to-title {
 }
 
 .slideshow-frame {
-    width: min(96vw, 1300px);
-    height: min(90vh, 980px);
+    width: min(98vw, 1500px);
+    height: min(94vh, 1100px);
     border-radius: 0;
     position: relative;
     overflow: hidden;
