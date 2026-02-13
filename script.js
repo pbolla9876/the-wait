@@ -1,7 +1,7 @@
 const canvas = document.getElementById('scene');
 const ctx = canvas.getContext('2d');
 const timerElement = document.getElementById('timer');
-const YT_MUSIC_VIDEO_ID = 'pRWAJlI9QPM';
+const YT_MUSIC_VIDEO_ID = 'Eyx0Hvi1_Ng';
 const FEMALE_SLIDES = Array.from({ length: 30 }, (_, i) => `fm${i + 1}.jpg`);
 let ytApiReadyPromise = null;
 let ytPlayer = null;

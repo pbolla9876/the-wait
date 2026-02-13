@@ -388,10 +388,11 @@ body.slideshow-mode #back-to-title {
     inset: -10px;
     border-radius: 30px;
     background:
-        radial-gradient(circle at 40% 35%, rgba(255, 240, 220, 0.35), rgba(255, 255, 255, 0) 55%),
-        radial-gradient(circle at 70% 60%, rgba(160, 200, 255, 0.30), rgba(255, 255, 255, 0) 60%);
-    opacity: 0.5;
+        radial-gradient(70% 60% at 50% 35%, rgba(255, 235, 200, 0.55), rgba(255, 255, 255, 0) 70%),
+        radial-gradient(circle at 70% 60%, rgba(160, 200, 255, 0.25), rgba(255, 255, 255, 0) 65%);
+    opacity: 0.6;
     filter: blur(12px);
+    mix-blend-mode: screen;
     z-index: 1;
     pointer-events: none;
 }
