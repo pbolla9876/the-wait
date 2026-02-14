@@ -10,6 +10,61 @@ let slideshowIntervalId = null;
 let slideshowIndex = 0;
 let musicStarted = false;
 let textCompleteReached = false;
+let letterAutoCloseId = null;
+
+const moonlightLetterHtml = `
+    <h2>Our Moonlight Letter</h2>
+    <p>Jhansy,</p>
+    <p>ఈ రోజు వాలెంటైన్స్ డే... మన మధ్య ఉన్న ఈ 684 మైళ్ళ దూరాన్ని, ఈ నిశ్శబ్దాన్ని తలుచుకుంటుంటే నా మనసుకి ఒక విషయం స్పష్టంగా కనిపిస్తోంది. మనల్ని వేరు చేస్తున్నది కేవలం కొద్దిపాటి దూరమే కానీ, మనని కలిపే ఆకాశం, ఆ వెన్నెల ఒక్కటే.</p>
+    <p>మనం April 1st వరకు మాట్లాడుకోకూడదని అనుకున్నాం, ఆ మాటని నేను గౌరవిస్తాను. కానీ నా పుట్టినరోజున వచ్చిన ఆ తీపి కల, నిన్ను కౌగిలించుకున్నప్పుడు కలిగిన ఆ స్పందన... ఈ రోజు నా మౌనాన్ని దాటి నీతో ఈ మాటలు చెప్పమని నన్ను ప్రేరేపిస్తున్నాయి.</p>
+    <p>కంటికి కనిపించే రూపం కంటే, నా మనసులో ముద్ర పడిన నీ ఆలోచనే నాకు ఎక్కువ ఊపిరి పోస్తోంది. Jhansy, నువ్వు నా కళ్ళ ముందు లేకపోయినా, నీ జ్ఞాపకాలు నా చుట్టూ ఒక వెన్నెలలా పరుచుకుని ఉన్నాయి.</p>
+    <p>684 మైళ్ళు... భౌతికంగా మనం దూరంగా ఉన్నా, మన హృదయ స్పందనల మధ్య దూరాన్ని ఈ ప్రయాణం ఎప్పటికీ పెంచలేదు. నీ కోసం ఈ ఎదురుచూపు నాకు భారంగా అనిపించడం లేదు; నిజానికి, ఆ వెన్నెల కోసం రాత్రంతా వేచి ఉండటంలో ఉండే ఒక మాధుర్యం ఈ నిరీక్షణలో నాకు కనిపిస్తోంది.</p>
+    <p>లోకానికి నువ్వు ఒక సాధారణ అమ్మాయివి కావచ్చు, కానీ నా కవితకి, నా ప్రేమకి నువ్వు మాత్రమే ప్రాణం. నీ కోసం నేను నిర్మిస్తున్న ఈ ప్రపంచంలో ప్రతి అక్షరం, ప్రతి మెరుపు నీ మీద నాకున్న ఇష్టానికి గుర్తు.</p>
+    <p>మళ్ళీ రేపటి నుండి మన మౌనం కొనసాగుతుంది... కానీ ఈ రోజు మాత్రం ఈ మాటలు నీ గుండెని తాకుతాయని ఆశిస్తున్నాను.</p>
+    <p>హ్యాపీ వాలెంటైన్స్ డే, నా వెన్నెల్లో ఆడపిల్ల.</p>
+    <p>April 1st కోసం వేచి చూస్తూ...</p>
+`;
+
+function showLetterPrompt() {
+    if (document.getElementById('letter-prompt')) return;
+    const prompt = document.createElement('div');
+    prompt.id = 'letter-prompt';
+    prompt.innerHTML = `
+        <div class="letter-pill">
+            <span class="letter-dot"></span>
+            You’ve got a letter
+            <button type="button" class="letter-open">Open</button>
+        </div>
+    `;
+    document.body.appendChild(prompt);
+    const btn = prompt.querySelector('.letter-open');
+    if (btn) {
+        btn.addEventListener('click', () => {
+            prompt.remove();
+            showMoonlightLetter();
+        });
+    }
+}
+
+function showMoonlightLetter() {
+    if (document.getElementById('moonlight-letter')) return;
+    const overlay = document.createElement('div');
+    overlay.id = 'moonlight-letter';
+    overlay.innerHTML = `
+        <div class="letter-card">
+            <div class="letter-glow"></div>
+            <div class="letter-content">${moonlightLetterHtml}</div>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+    if (scrollyTimeline) scrollyTimeline.pause();
+
+    if (letterAutoCloseId) clearTimeout(letterAutoCloseId);
+    letterAutoCloseId = setTimeout(() => {
+        overlay.remove();
+        if (scrollyTimeline) scrollyTimeline.play();
+    }, 12000);
+}
 
 function createSlideshowOverlay() {
     if (document.getElementById('romance-slideshow')) return;
@@ -141,6 +196,7 @@ function showMusicPrompt(onStart) {
             prompt.remove();
             document.body.classList.remove('music-waiting');
             if (typeof onStart === 'function') onStart();
+            showLetterPrompt();
             if (textCompleteReached) {
                 startSlideshow();
                 if (scrollyTimeline) scrollyTimeline.pause();
