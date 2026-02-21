@@ -47,6 +47,11 @@ function showLetterPrompt() {
     }
 }
 
+function hideLetterPrompt() {
+    const prompt = document.getElementById('letter-prompt');
+    if (prompt) prompt.remove();
+}
+
 function showMoonlightLetter() {
     if (document.getElementById('moonlight-letter')) return;
     const overlay = document.createElement('div');
@@ -90,26 +95,29 @@ function spawnSlideshowFirework(layer) {
     burst.style.setProperty('--y', `${8 + Math.random() * 52}%`);
     burst.style.setProperty('--hue', `${Math.floor(Math.random() * 360)}`);
 
-    const sparkCount = 16;
+    const sparkCount = 26;
     for (let i = 0; i < sparkCount; i++) {
         const spark = document.createElement('span');
         spark.className = 'slideshow-firework-spark';
         spark.style.setProperty('--angle', `${(360 / sparkCount) * i}deg`);
-        spark.style.setProperty('--distance', `${80 + Math.random() * 90}px`);
-        spark.style.setProperty('--delay', `${Math.random() * 0.16}s`);
-        spark.style.setProperty('--size', `${2 + Math.random() * 2.8}px`);
+        spark.style.setProperty('--distance', `${110 + Math.random() * 120}px`);
+        spark.style.setProperty('--delay', `${Math.random() * 0.12}s`);
+        spark.style.setProperty('--size', `${2.2 + Math.random() * 3.4}px`);
         burst.appendChild(spark);
     }
 
     layer.appendChild(burst);
-    setTimeout(() => burst.remove(), 1700);
+    setTimeout(() => burst.remove(), 1900);
 }
 
 function scheduleSlideshowFirework(layer) {
     if (!layer) return;
-    const delay = 900 + Math.random() * 1300;
+    const delay = 520 + Math.random() * 780;
     slideshowFireworkTimeoutId = setTimeout(() => {
-        spawnSlideshowFirework(layer);
+        const burstCount = 2 + Math.floor(Math.random() * 2);
+        for (let i = 0; i < burstCount; i++) {
+            setTimeout(() => spawnSlideshowFirework(layer), i * (120 + Math.random() * 120));
+        }
         scheduleSlideshowFirework(layer);
     }, delay);
 }
@@ -120,6 +128,8 @@ function startSlideshowFx(overlay) {
     const fireworksLayer = overlay.querySelector('.slideshow-fireworks-layer');
     if (!fireworksLayer) return;
     spawnSlideshowFirework(fireworksLayer);
+    setTimeout(() => spawnSlideshowFirework(fireworksLayer), 120);
+    setTimeout(() => spawnSlideshowFirework(fireworksLayer), 260);
     scheduleSlideshowFirework(fireworksLayer);
 }
 
@@ -134,6 +144,7 @@ function stopSlideshowFx() {
 
 function startSlideshow() {
     if (slideshowIntervalId) return;
+    hideLetterPrompt();
     createSlideshowOverlay();
     const overlay = document.getElementById('romance-slideshow');
     if (!overlay) return;
