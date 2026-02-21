@@ -7,6 +7,7 @@ let ytApiReadyPromise = null;
 let ytPlayer = null;
 let scrollyTimeline = null;
 let slideshowIntervalId = null;
+let slideshowFireworkTimeoutId = null;
 let slideshowIndex = 0;
 let musicStarted = false;
 let textCompleteReached = false;
@@ -71,6 +72,8 @@ function createSlideshowOverlay() {
     const overlay = document.createElement('div');
     overlay.id = 'romance-slideshow';
     overlay.innerHTML = `
+        <div class="slideshow-stars-layer" aria-hidden="true"></div>
+        <div class="slideshow-fireworks-layer" aria-hidden="true"></div>
         <div class="slideshow-frame">
             <img class="slide-image is-front" alt="Memory slide">
             <img class="slide-image is-back" alt="Memory slide">
@@ -79,12 +82,63 @@ function createSlideshowOverlay() {
     document.body.appendChild(overlay);
 }
 
+function spawnSlideshowFirework(layer) {
+    if (!layer) return;
+    const burst = document.createElement('div');
+    burst.className = 'slideshow-firework-burst';
+    burst.style.setProperty('--x', `${8 + Math.random() * 84}%`);
+    burst.style.setProperty('--y', `${8 + Math.random() * 52}%`);
+    burst.style.setProperty('--hue', `${Math.floor(Math.random() * 360)}`);
+
+    const sparkCount = 16;
+    for (let i = 0; i < sparkCount; i++) {
+        const spark = document.createElement('span');
+        spark.className = 'slideshow-firework-spark';
+        spark.style.setProperty('--angle', `${(360 / sparkCount) * i}deg`);
+        spark.style.setProperty('--distance', `${80 + Math.random() * 90}px`);
+        spark.style.setProperty('--delay', `${Math.random() * 0.16}s`);
+        spark.style.setProperty('--size', `${2 + Math.random() * 2.8}px`);
+        burst.appendChild(spark);
+    }
+
+    layer.appendChild(burst);
+    setTimeout(() => burst.remove(), 1700);
+}
+
+function scheduleSlideshowFirework(layer) {
+    if (!layer) return;
+    const delay = 900 + Math.random() * 1300;
+    slideshowFireworkTimeoutId = setTimeout(() => {
+        spawnSlideshowFirework(layer);
+        scheduleSlideshowFirework(layer);
+    }, delay);
+}
+
+function startSlideshowFx(overlay) {
+    stopSlideshowFx();
+    if (!overlay) return;
+    const fireworksLayer = overlay.querySelector('.slideshow-fireworks-layer');
+    if (!fireworksLayer) return;
+    spawnSlideshowFirework(fireworksLayer);
+    scheduleSlideshowFirework(fireworksLayer);
+}
+
+function stopSlideshowFx() {
+    if (slideshowFireworkTimeoutId) {
+        clearTimeout(slideshowFireworkTimeoutId);
+        slideshowFireworkTimeoutId = null;
+    }
+    const fireworksLayer = document.querySelector('#romance-slideshow .slideshow-fireworks-layer');
+    if (fireworksLayer) fireworksLayer.innerHTML = '';
+}
+
 function startSlideshow() {
     if (slideshowIntervalId) return;
     createSlideshowOverlay();
     const overlay = document.getElementById('romance-slideshow');
     if (!overlay) return;
     document.body.classList.add('slideshow-mode');
+    startSlideshowFx(overlay);
     const front = overlay.querySelector('.slide-image.is-front');
     const back = overlay.querySelector('.slide-image.is-back');
     if (!front || !back) return;
@@ -119,6 +173,7 @@ function stopSlideshow() {
         clearInterval(slideshowIntervalId);
         slideshowIntervalId = null;
     }
+    stopSlideshowFx();
     document.body.classList.remove('slideshow-mode');
     const overlay = document.getElementById('romance-slideshow');
     if (overlay) overlay.remove();
