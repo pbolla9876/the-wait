@@ -2,6 +2,22 @@ const canvas = document.getElementById('scene');
 const ctx = canvas.getContext('2d');
 const timerElement = document.getElementById('timer');
 const YT_MUSIC_VIDEO_ID = 'zsurkoSu5KM';
+const REVEAL_AUDIO_SRC = 'Jannu.MOV';
+const REVEAL_WORD_DELAY_MS = 420;
+const REVEAL_START_DELAY_MS = 1500;
+const REVEAL_SIDE_TEXT = `Jaanu,
+
+ఈ గడియారం ముల్లు 'సున్నా' ని తాకిన వేళ... నా నిరీక్షణ ఒక రూపం దాల్చింది. ఈ చిత్రంలో మనం పక్కపక్కన నిలబడి ఉండవచ్చు, కానీ మన మధ్య దూరం 684 మైళ్లు మాత్రమే కాదు... అది ఇప్పుడు కొలవలేనంత అంతులేని దూరం అయిపోయిందని నాకు తెలుసు. నువ్వు నా పక్కనే ఉన్నా, అందనంత దూరంలో ఉన్నావని నా మనసుకి తెలుస్తూనే ఉంది.
+
+నువ్వు అన్నావు కదా... 'నా మీద నీకు ఎప్పుడూ ఫీలింగ్స్ లేవు' అని. ఆ ఒక్క మాటతో నా ప్రపంచం నిశ్శబ్దమైపోయింది. కానీ వెన్నెలకి కాంతిని ఇవ్వడం ఎలాగో తెలుసో, నాకు నిన్ను ప్రేమించడం అలాగే తెలుసు. నువ్వు వద్దన్నా, నీ జ్ఞాపకం నా గుండె చప్పుడై కాదు... నా పుట్టినరోజున నువ్వు పంపిన ఆ సముద్రపు ఇసుక సాక్షిగా, ఆ సముద్రపు అలల హోరులా నా చెవుల్లో ఎప్పుడూ వినిపిస్తూనే ఉంటుంది.
+
+మనకి ఇష్టమైన ఆ పాటలో అన్నట్టు...
+"నీతో ప్రతి పేజీని నింపేశానే... తెరవకముందే అది మూసేసావే..." అవును, నేను నా సర్వస్వాన్ని ఈ అక్షరాల్లో కుమ్మరించాను. నువ్వు చదవకపోయినా, ఈ పేజీలు నీ పరిమళాన్ని కోల్పోవు. నా పుట్టినరోజున నువ్వు ఇచ్చిన ఆ కానుక నా చేతుల్లో ఉన్నంత కాలం, నీ ప్రేమ నాకు అందకపోయినా నీ తోడు నాకు ఉన్నట్టే భావిస్తాను.
+
+నువ్వు నా 'వెన్నెల్లో ఆడపిల్ల' వి. చంద్రుడికి వెన్నెల మీద అధికారం లేకపోయినా అది అతనితోనే ఉన్నట్టు... నీకు నా మీద ప్రేమ లేకపోయినా, నా ప్రేమ మాత్రం నీ నీడలా నీతోనే ఉంటుంది. ఈ ప్రాజెక్ట్ ముగియవచ్చు, ఈ గడియారం ఆగవచ్చు... కానీ నీ కోసం నా నిరీక్షణ మాత్రం అనంతం.
+
+నీ మౌనాన్ని కూడా ప్రేమించే...
+నీ Ram`;
 const FEMALE_SLIDES = Array.from({ length: 30 }, (_, i) => `fm${i + 1}.jpg`);
 let ytApiReadyPromise = null;
 let ytPlayer = null;
@@ -12,6 +28,16 @@ let slideshowIndex = 0;
 let musicStarted = false;
 let textCompleteReached = false;
 let letterAutoCloseId = null;
+let revealMessageStarted = false;
+let revealMessageIntervalId = null;
+let revealMessageDelayTimeoutId = null;
+let revealMessageUnitIndex = 0;
+let revealMessageUnits = [];
+let revealTypingActive = false;
+let revealFinaleTriggered = false;
+let revealAudioPlayer = null;
+let revealAudioStarted = false;
+let revealAudioPrimed = false;
 
 const moonlightLetterHtml = `
     <h2>Our Moonlight Letter</h2>
@@ -50,6 +76,201 @@ function showLetterPrompt() {
 function hideLetterPrompt() {
     const prompt = document.getElementById('letter-prompt');
     if (prompt) prompt.remove();
+}
+
+function getRevealAudioPlayer() {
+    if (revealAudioPlayer) return revealAudioPlayer;
+    const media = document.createElement('video');
+    media.id = 'reveal-audio-player';
+    media.src = REVEAL_AUDIO_SRC;
+    media.preload = 'auto';
+    media.playsInline = true;
+    media.setAttribute('playsinline', 'true');
+    media.style.display = 'none';
+    document.body.appendChild(media);
+    revealAudioPlayer = media;
+    return revealAudioPlayer;
+}
+
+async function primeRevealAudioTrack() {
+    if (!REVEAL_AUDIO_SRC || revealAudioPrimed) return;
+    try {
+        const media = getRevealAudioPlayer();
+        media.muted = true;
+        await media.play();
+        media.pause();
+        media.currentTime = 0;
+        media.muted = false;
+        revealAudioPrimed = true;
+    } catch (err) {
+        console.warn('Reveal audio prime skipped', err);
+    }
+}
+
+function showRevealAudioFallbackButton() {
+    const card = document.querySelector('.reveal-message-card');
+    if (!card) return;
+    if (card.querySelector('.reveal-audio-fallback')) return;
+
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'reveal-audio-fallback';
+    btn.textContent = 'Tap to play audio';
+    btn.addEventListener('click', () => {
+        playRevealAudioTrack();
+    });
+    card.appendChild(btn);
+}
+
+function hideRevealAudioFallbackButton() {
+    const btn = document.querySelector('.reveal-audio-fallback');
+    if (btn) btn.remove();
+}
+
+function pauseYouTubeTrack() {
+    if (!ytPlayer || typeof ytPlayer.pauseVideo !== 'function') return;
+    try {
+        ytPlayer.pauseVideo();
+    } catch (err) {
+        console.warn('Could not pause YouTube track', err);
+    }
+}
+
+async function playRevealAudioTrack() {
+    if (!REVEAL_AUDIO_SRC || revealAudioStarted) return;
+    try {
+        const media = getRevealAudioPlayer();
+        pauseYouTubeTrack();
+        media.muted = false;
+        media.volume = 1;
+        media.currentTime = 0;
+        await media.play();
+        revealAudioStarted = true;
+        hideRevealAudioFallbackButton();
+    } catch (err) {
+        console.warn('Reveal audio play blocked', err);
+        showRevealAudioFallbackButton();
+    }
+}
+
+function escapeHtml(value) {
+    return value
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+function buildRevealParagraphs() {
+    return REVEAL_SIDE_TEXT
+        .split('\n')
+        .map((line) => line.trim())
+        .filter((line) => line.length > 0);
+}
+
+function isPhraseRevealParagraph(paragraph) {
+    return (
+        paragraph.includes('మనకి ఇష్టమైన') ||
+        paragraph.includes('"నీతో ప్రతి పేజీని') ||
+        paragraph.includes('నీ మౌనాన్ని కూడా ప్రేమించే') ||
+        paragraph.includes('నీ Ram')
+    );
+}
+
+function buildRevealMessageUnits() {
+    const paragraphs = buildRevealParagraphs();
+    const units = [];
+    paragraphs.forEach((paragraph, paragraphIndex) => {
+        const words = paragraph.split(/\s+/);
+        const chunkSize = isPhraseRevealParagraph(paragraph) ? 3 : 1;
+        for (let i = 0; i < words.length; i += chunkSize) {
+            units.push({
+                paragraphIndex,
+                text: words.slice(i, i + chunkSize).join(' ')
+            });
+        }
+    });
+    return units;
+}
+
+function renderRevealMessageUnits(totalUnitsToShow) {
+    const textEl = document.getElementById('reveal-message-text');
+    if (!textEl) return;
+
+    const paragraphCount = buildRevealParagraphs().length;
+    const composed = Array.from({ length: paragraphCount }, () => []);
+    const visibleUnits = revealMessageUnits.slice(0, totalUnitsToShow);
+    visibleUnits.forEach((unit) => composed[unit.paragraphIndex].push(unit.text));
+
+    const html = composed
+        .map((parts) => parts.join(' ').trim())
+        .filter((line) => line.length > 0)
+        .map((line) => `<p>${escapeHtml(line)}</p>`)
+        .join('');
+
+    textEl.innerHTML = html;
+
+    const card = document.querySelector('.reveal-message-card');
+    if (card) {
+        card.scrollTop = card.scrollHeight;
+    }
+}
+
+function triggerRevealFinaleFireworks() {
+    if (revealFinaleTriggered) return;
+    revealFinaleTriggered = true;
+    for (let i = 0; i < 18; i++) {
+        setTimeout(() => {
+            createFirework(
+                w * 0.5 + (Math.random() - 0.5) * w * 0.65,
+                h * (0.12 + Math.random() * 0.22)
+            );
+        }, i * 85);
+    }
+}
+
+function ensureRevealMessageOverlay() {
+    let overlay = document.getElementById('reveal-message');
+    if (overlay) return overlay;
+
+    overlay = document.createElement('div');
+    overlay.id = 'reveal-message';
+    overlay.innerHTML = `
+        <div class="reveal-message-card">
+            <div id="reveal-message-text"></div>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+    return overlay;
+}
+
+function startRevealMessageSequence() {
+    if (revealMessageStarted) return;
+    revealMessageStarted = true;
+    revealMessageUnitIndex = 0;
+    revealFinaleTriggered = false;
+
+    ensureRevealMessageOverlay();
+    revealMessageUnits = buildRevealMessageUnits();
+    renderRevealMessageUnits(0);
+
+    revealTypingActive = true;
+
+    revealMessageDelayTimeoutId = setTimeout(() => {
+        revealMessageDelayTimeoutId = null;
+        revealMessageIntervalId = setInterval(() => {
+            revealMessageUnitIndex += 1;
+            renderRevealMessageUnits(revealMessageUnitIndex);
+            if (revealMessageUnitIndex >= revealMessageUnits.length) {
+                clearInterval(revealMessageIntervalId);
+                revealMessageIntervalId = null;
+                revealTypingActive = false;
+                triggerRevealFinaleFireworks();
+                playRevealAudioTrack();
+            }
+        }, REVEAL_WORD_DELAY_MS);
+    }, REVEAL_START_DELAY_MS);
 }
 
 function showMoonlightLetter() {
@@ -252,6 +473,7 @@ function showMusicPrompt(onStart) {
         prompt.disabled = true;
         prompt.textContent = 'Starting music...';
         musicStarted = true;
+        primeRevealAudioTrack();
         try {
             await createYouTubePlayer();
             if (ytPlayer) {
@@ -326,6 +548,55 @@ const preventScroll = (e) => {
         return false;
     }
 };
+
+function createFirework(x, y) {
+    const hue = Math.floor(Math.random() * 360);
+    const count = 34 + Math.floor(Math.random() * 18);
+    const particles = Array.from({ length: count }, (_, i) => {
+        const angle = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.22;
+        const speed = 2.2 + Math.random() * 4.6;
+        return {
+            x,
+            y,
+            vx: Math.cos(angle) * speed,
+            vy: Math.sin(angle) * speed,
+            life: 48 + Math.floor(Math.random() * 20),
+            maxLife: 48 + Math.floor(Math.random() * 20),
+            size: 1.8 + Math.random() * 2.4,
+            hue
+        };
+    });
+    fireworks.push({ particles });
+}
+
+function updateFireworks() {
+    for (let i = fireworks.length - 1; i >= 0; i--) {
+        const fw = fireworks[i];
+        for (let j = fw.particles.length - 1; j >= 0; j--) {
+            const p = fw.particles[j];
+            p.life -= 1;
+            if (p.life <= 0) {
+                fw.particles.splice(j, 1);
+                continue;
+            }
+            p.x += p.vx;
+            p.y += p.vy;
+            p.vy += 0.045;
+            p.vx *= 0.992;
+            p.vy *= 0.992;
+            const alpha = p.life / p.maxLife;
+
+            ctx.fillStyle = `hsla(${p.hue}, 100%, 66%, ${Math.max(0, alpha)})`;
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = `hsla(${p.hue}, 100%, 68%, ${Math.max(0, alpha)})`;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.shadowBlur = 0;
+        }
+        if (!fw.particles.length) fireworks.splice(i, 1);
+    }
+}
 
 const introText = "Hey Jaan, sorry it took almost more than a couple of days to build this... I thought it was easy, but every time I get an idea, it’s getting even more difficult to implement. But yeah, here is the output—hope it works well on your side. Coming to the no communication thing, it’s so tough. More than the timer, I am counting each and every second in my mind, wishing the timer would become zero... For the first time, I am wishing maybe I could be Thanos, so I could snap my fingers and make the timer zero, but in real life, I am not a Marvel character. I'm just a character in real life who is 678 miles away from the person whom I love and admire so much. Previously, only the distance used to affect me, now the time as well... but I am missing you so much... I want to say more, but I will save it for that day—hope we will be back and with lots of affection. Miss you so much.........";
 let introState = { charIndex: 0, phase: 'typing', lastUpdate: 0, completeTime: 0 };
@@ -2156,13 +2427,15 @@ function animate() {
                 ctx.drawImage(img, sx, sy, img.width/grid, img.height/grid, dx, dy, w/grid, h/grid);
             }
         
-        if (Math.random() < 0.05) {
+        const revealFireworkChance = revealTypingActive ? 0.018 : 0.055;
+        if (Math.random() < revealFireworkChance) {
             createFirework(Math.random() * w, Math.random() * h * 0.5);
         }
         updateFireworks();
 
             if (limit >= pieces.length) {
                 drawLockAndTimer(1.1); // Draw unlocked lock on top of finished image
+                startRevealMessageSequence();
             }
             break;
     }
