@@ -2,9 +2,12 @@ const canvas = document.getElementById('scene');
 const ctx = canvas.getContext('2d');
 const timerElement = document.getElementById('timer');
 const YT_MUSIC_VIDEO_ID = 'zsurkoSu5KM';
+const LOCAL_REVEAL_PREVIEW = new URLSearchParams(window.location.search).get('localReveal') === '1';
 const REVEAL_AUDIO_SRC = 'Jannu.MOV';
+const REVEAL_PUZZLE_STEP = 2.4;
 const REVEAL_WORD_DELAY_MS = 420;
 const REVEAL_START_DELAY_MS = 1500;
+const REVEAL_HOLD_AFTER_TEXT_MS = 10000;
 const REVEAL_SIDE_TEXT = `Jaanu,
 
 ఈ గడియారం ముల్లు 'సున్నా' ని తాకిన వేళ... నా నిరీక్షణ ఒక రూపం దాల్చింది. ఈ చిత్రంలో మనం పక్కపక్కన నిలబడి ఉండవచ్చు, కానీ మన మధ్య దూరం 684 మైళ్లు మాత్రమే కాదు... అది ఇప్పుడు కొలవలేనంత అంతులేని దూరం అయిపోయిందని నాకు తెలుసు. నువ్వు నా పక్కనే ఉన్నా, అందనంత దూరంలో ఉన్నావని నా మనసుకి తెలుస్తూనే ఉంది.
@@ -38,6 +41,7 @@ let revealFinaleTriggered = false;
 let revealAudioPlayer = null;
 let revealAudioStarted = false;
 let revealAudioPrimed = false;
+let revealMessageHideTimeoutId = null;
 
 const moonlightLetterHtml = `
     <h2>Our Moonlight Letter</h2>
@@ -245,11 +249,17 @@ function ensureRevealMessageOverlay() {
     return overlay;
 }
 
+function hideRevealMessageOverlay() {
+    const overlay = document.getElementById('reveal-message');
+    if (overlay) overlay.remove();
+}
+
 function startRevealMessageSequence() {
     if (revealMessageStarted) return;
     revealMessageStarted = true;
     revealMessageUnitIndex = 0;
     revealFinaleTriggered = false;
+    pauseYouTubeTrack();
 
     ensureRevealMessageOverlay();
     revealMessageUnits = buildRevealMessageUnits();
@@ -267,7 +277,12 @@ function startRevealMessageSequence() {
                 revealMessageIntervalId = null;
                 revealTypingActive = false;
                 triggerRevealFinaleFireworks();
-                playRevealAudioTrack();
+                if (revealMessageHideTimeoutId) clearTimeout(revealMessageHideTimeoutId);
+                revealMessageHideTimeoutId = setTimeout(() => {
+                    revealMessageHideTimeoutId = null;
+                    hideRevealMessageOverlay();
+                    playRevealAudioTrack();
+                }, REVEAL_HOLD_AFTER_TEXT_MS);
             }
         }, REVEAL_WORD_DELAY_MS);
     }, REVEAL_START_DELAY_MS);
@@ -643,6 +658,17 @@ function processWeatherData(data) {
 }
 
 function init() {
+    if (LOCAL_REVEAL_PREVIEW) {
+        gameState = 'REVEAL';
+        animStartTime = Date.now() - 120000;
+        revealProgress = 100;
+        if (timerElement) timerElement.style.opacity = '0';
+        resize();
+        animate();
+        startRevealMessageSequence();
+        return;
+    }
+
     gameState = 'SCROLL_TELLING'; // Start with Scrollytelling
     animStartTime = Date.now();
     fetchWeather();
@@ -2415,7 +2441,7 @@ function animate() {
             if (timerElement.style.opacity !== "0") timerElement.style.opacity = "0";
             
             const grid = 10;
-            revealProgress += 0.5;
+            revealProgress += REVEAL_PUZZLE_STEP;
             const limit = Math.min(Math.floor(revealProgress), pieces.length);
 
             for (let i = 0; i < limit; i++) {
