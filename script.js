@@ -371,6 +371,24 @@ function processWeatherData(data) {
     };
 }
 
+function applyPreviewModeFromUrl() {
+    const mode = new URLSearchParams(window.location.search).get('preview');
+    if (!mode) return;
+
+    if (mode === 'reveal') {
+        gameState = 'REVEAL';
+        revealProgress = 100;
+        timerElement.style.opacity = '0';
+        return;
+    }
+
+    if (mode === 'slideshow') {
+        textCompleteReached = true;
+        startSlideshow();
+        if (scrollyTimeline) scrollyTimeline.pause();
+    }
+}
+
 function init() {
     gameState = 'SCROLL_TELLING'; // Start with Scrollytelling
     animStartTime = Date.now();
@@ -387,6 +405,7 @@ function init() {
 
     resize(); // Set initial sizes and create dimension-dependent assets
     initScrollytelling(); // Setup GSAP and HTML elements
+    applyPreviewModeFromUrl(); // Optional URL shortcuts for fast ending previews
     animate();
 
     // Splash removed from HTML; nothing to fade out.
