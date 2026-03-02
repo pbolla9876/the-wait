@@ -3,7 +3,7 @@ const ctx = canvas.getContext('2d');
 const timerElement = document.getElementById('timer');
 const YT_MUSIC_VIDEO_ID = 'zsurkoSu5KM';
 const LOCAL_REVEAL_PREVIEW = new URLSearchParams(window.location.search).get('localReveal') === '1';
-const REVEAL_AUDIO_SRC = 'Jannu.MOV';
+const REVEAL_YT_VIDEO_ID = 'Cz2Z_94qung';
 const REVEAL_PUZZLE_STEP = 2.4;
 const REVEAL_WORD_DELAY_MS = 420;
 const REVEAL_START_DELAY_MS = 1500;
@@ -38,9 +38,7 @@ let revealMessageUnitIndex = 0;
 let revealMessageUnits = [];
 let revealTypingActive = false;
 let revealFinaleTriggered = false;
-let revealAudioPlayer = null;
 let revealAudioStarted = false;
-let revealAudioPrimed = false;
 let revealMessageHideTimeoutId = null;
 
 const moonlightLetterHtml = `
@@ -82,33 +80,34 @@ function hideLetterPrompt() {
     if (prompt) prompt.remove();
 }
 
-function getRevealAudioPlayer() {
-    if (revealAudioPlayer) return revealAudioPlayer;
-    const media = document.createElement('video');
-    media.id = 'reveal-audio-player';
-    media.src = REVEAL_AUDIO_SRC;
-    media.preload = 'auto';
-    media.playsInline = true;
-    media.setAttribute('playsinline', 'true');
-    media.style.display = 'none';
-    document.body.appendChild(media);
-    revealAudioPlayer = media;
-    return revealAudioPlayer;
+function hideSkipToRevealButton() {
+    const btn = document.getElementById('reveal-skip-btn');
+    if (btn) btn.remove();
+}
+
+function jumpToRevealNow() {
+    document.body.classList.remove('music-waiting');
+    hideLetterPrompt();
+    hideSkipToRevealButton();
+    const prompt = document.getElementById('music-prompt');
+    if (prompt) prompt.remove();
+
+    if (scrollyTimeline && typeof scrollyTimeline.pause === 'function') {
+        scrollyTimeline.pause();
+    }
+    const scrollyOverlay = document.getElementById('scrolly-overlay');
+    if (scrollyOverlay) scrollyOverlay.remove();
+
+    canvas.style.opacity = '1';
+    if (timerElement) timerElement.style.opacity = '0';
+    gameState = 'REVEAL';
+    animStartTime = Date.now() - 120000;
+    revealProgress = 100;
+    startRevealMessageSequence();
 }
 
 async function primeRevealAudioTrack() {
-    if (!REVEAL_AUDIO_SRC || revealAudioPrimed) return;
-    try {
-        const media = getRevealAudioPlayer();
-        media.muted = true;
-        await media.play();
-        media.pause();
-        media.currentTime = 0;
-        media.muted = false;
-        revealAudioPrimed = true;
-    } catch (err) {
-        console.warn('Reveal audio prime skipped', err);
-    }
+    return;
 }
 
 function showRevealAudioFallbackButton() {
@@ -141,18 +140,21 @@ function pauseYouTubeTrack() {
 }
 
 async function playRevealAudioTrack() {
-    if (!REVEAL_AUDIO_SRC || revealAudioStarted) return;
+    if (!REVEAL_YT_VIDEO_ID || revealAudioStarted) return;
     try {
-        const media = getRevealAudioPlayer();
-        pauseYouTubeTrack();
-        media.muted = false;
-        media.volume = 1;
-        media.currentTime = 0;
-        await media.play();
+        const player = await createYouTubePlayer();
+        if (!player) return;
+        player.unMute();
+        player.setVolume(100);
+        if (typeof player.loadVideoById === 'function') {
+            player.loadVideoById(REVEAL_YT_VIDEO_ID);
+        } else {
+            player.playVideo();
+        }
         revealAudioStarted = true;
         hideRevealAudioFallbackButton();
     } catch (err) {
-        console.warn('Reveal audio play blocked', err);
+        console.warn('Reveal YouTube track play blocked', err);
         showRevealAudioFallbackButton();
     }
 }
@@ -269,6 +271,7 @@ function startRevealMessageSequence() {
 
     revealMessageDelayTimeoutId = setTimeout(() => {
         revealMessageDelayTimeoutId = null;
+        playRevealAudioTrack();
         revealMessageIntervalId = setInterval(() => {
             revealMessageUnitIndex += 1;
             renderRevealMessageUnits(revealMessageUnitIndex);
@@ -281,7 +284,6 @@ function startRevealMessageSequence() {
                 revealMessageHideTimeoutId = setTimeout(() => {
                     revealMessageHideTimeoutId = null;
                     hideRevealMessageOverlay();
-                    playRevealAudioTrack();
                 }, REVEAL_HOLD_AFTER_TEXT_MS);
             }
         }, REVEAL_WORD_DELAY_MS);
@@ -497,6 +499,7 @@ function showMusicPrompt(onStart) {
                 ytPlayer.playVideo();
             }
             prompt.remove();
+            hideSkipToRevealButton();
             document.body.classList.remove('music-waiting');
             if (typeof onStart === 'function') onStart();
             showLetterPrompt();
@@ -511,6 +514,17 @@ function showMusicPrompt(onStart) {
         }
     });
     document.body.appendChild(prompt);
+
+    if (!document.getElementById('reveal-skip-btn')) {
+        const skipBtn = document.createElement('button');
+        skipBtn.id = 'reveal-skip-btn';
+        skipBtn.type = 'button';
+        skipBtn.textContent = 'Skip to reveal';
+        skipBtn.addEventListener('click', () => {
+            jumpToRevealNow();
+        });
+        document.body.appendChild(skipBtn);
+    }
 }
 
 // Polyfill for roundRect (prevents blank screen in browsers without support)
@@ -2392,6 +2406,29 @@ function handleSceneBuildup() {
     ctx.globalAlpha = 1;
 }
 
+function getContainRect(imgW, imgH, boxW, boxH) {
+    if (!imgW || !imgH || !boxW || !boxH) {
+        return { x: 0, y: 0, width: boxW, height: boxH };
+    }
+    const imgRatio = imgW / imgH;
+    const boxRatio = boxW / boxH;
+    let width;
+    let height;
+    if (imgRatio > boxRatio) {
+        width = boxW;
+        height = boxW / imgRatio;
+    } else {
+        height = boxH;
+        width = boxH * imgRatio;
+    }
+    return {
+        x: (boxW - width) / 2,
+        y: (boxH - height) / 2,
+        width,
+        height
+    };
+}
+
 function animate() {
     const now = Date.now();
     const timeLeft = targetDate - now;
@@ -2443,14 +2480,25 @@ function animate() {
             const grid = 10;
             revealProgress += REVEAL_PUZZLE_STEP;
             const limit = Math.min(Math.floor(revealProgress), pieces.length);
+            const contain = getContainRect(img.width, img.height, w, h);
 
             for (let i = 0; i < limit; i++) {
                 const idx = pieces[i];
                 const sx = (idx % grid) * (img.width / grid);
                 const sy = Math.floor(idx / grid) * (img.height / grid);
-                const dx = (idx % grid) * (w / grid);
-                const dy = Math.floor(idx / grid) * (h / grid);
-                ctx.drawImage(img, sx, sy, img.width/grid, img.height/grid, dx, dy, w/grid, h/grid);
+                const dx = contain.x + (idx % grid) * (contain.width / grid);
+                const dy = contain.y + Math.floor(idx / grid) * (contain.height / grid);
+                ctx.drawImage(
+                    img,
+                    sx,
+                    sy,
+                    img.width / grid,
+                    img.height / grid,
+                    dx,
+                    dy,
+                    contain.width / grid,
+                    contain.height / grid
+                );
             }
         
         const revealFireworkChance = revealTypingActive ? 0.018 : 0.055;
